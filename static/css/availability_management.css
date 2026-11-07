@@ -1,0 +1,328 @@
+/* =========================
+   AVAILABILITY MANAGEMENT - MODERN DESIGN
+========================= */
+
+.availability-page{
+    display:flex;
+    flex-direction:column;
+    gap: 20px;
+    width:100%;
+    padding: 10px 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.top-grid{
+    margin:0;
+}
+
+.table-panel{
+    display:flex;
+    gap:16px;
+}
+
+/* Modern Card Panels */
+.control-panel,
+.summary-panel,
+.table-panel{
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+}
+
+.control-panel:hover,
+.summary-panel:hover,
+.table-panel:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.table-panel{
+    flex-direction:column;
+    width:100%;
+    min-width:0;
+}
+
+.upload-panel{
+    display:flex;
+    gap:10px;
+}
+
+.upload-panel .form-control {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 10px 15px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.upload-panel .btn{
+    width: 90px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.slot-panel-container{
+    margin-top: 20px;
+}
+
+.summary-panel{
+    width:100%;
+}
+
+.summary-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    margin-bottom: 16px;
+    color: #334155;
+    font-size: 1.1rem;
+}
+
+.summary-actions{
+    display:flex;
+    gap:8px;
+}
+
+.summary-actions .btn{
+    width:34px;
+    height:34px;
+    border-radius: 8px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    transition: all 0.2s;
+}
+
+/* Modern Tables */
+.summary-table, .availability-table {
+    margin:0;
+    font-size: 14px;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: none;
+}
+
+.summary-table th, .availability-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+.summary-table td, .availability-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    color: #475569;
+    vertical-align: middle;
+}
+
+.summary-table td:last-child{
+    text-align:right;
+    font-weight:700;
+    color:#0d9488; /* sleek teal */
+}
+
+.summary-total td{
+    background:#f0fdf4;
+    font-weight: 700;
+    color: #16a34a;
+    border-bottom: none;
+}
+
+.summary-table tr:hover td, .availability-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+.prefix-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:24px;
+    height:24px;
+    border-radius:6px;
+    background:#e0f2fe;
+    color:#0369a1;
+    font-weight:700;
+    font-size: 0.8rem;
+}
+
+.unavailable-row td {
+    background:#fff1f2 !important;
+    color: #be123c !important;
+}
+
+.table-toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom: 20px;
+    gap:16px;
+    flex-wrap:wrap;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.table-toolbar > div:first-child strong {
+    font-size: 1.25rem;
+    color: #334155;
+    display: block;
+}
+
+.table-toolbar input{
+    max-width:360px;
+    min-width:220px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    background: #f8fafc;
+}
+
+.table-toolbar input:focus {
+    background: #ffffff;
+    box-shadow: 0 0 0 3px #e0f2fe;
+    border-color: #3b82f6;
+}
+
+.export-buttons{
+    display:flex;
+    gap:10px;
+    margin-left:auto;
+}
+
+.export-buttons .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+}
+
+.table-panel .table-responsive{
+    width:100%;
+}
+
+.availability-table{
+    table-layout:auto;
+    width:100%;
+}
+
+.availability-table td[contenteditable="true"]{
+    cursor:text;
+    background:inherit;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.availability-table td[contenteditable="true"]:focus,
+.availability-table select:focus{
+    outline: none;
+    box-shadow: 0 0 0 2px #3b82f6;
+    background:#eff6ff !important;
+}
+
+.remarks-cell{
+    width:140px;
+    max-width:140px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.status-cell{
+    min-width:120px;
+}
+
+.status-cell select{
+    min-width:110px;
+    background:inherit;
+    border: 1px solid transparent;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: #475569;
+    font-weight: 500;
+}
+
+.remarks-cell.disabled{
+    color:#94a3b8;
+    background:#f8fafc !important;
+}
+
+.delete-row{
+    width:34px;
+    height:30px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius: 8px;
+}
+
+/* Custom form elements for filters */
+.slot-panel-container .form-label {
+    font-weight: 600;
+    color: #64748b;
+}
+
+.slot-panel-container .form-control,
+.slot-panel-container .form-select {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+}
+
+.slot-panel-container .form-control:focus,
+.slot-panel-container .form-select:focus {
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px #e0f2fe;
+    border-color: #3b82f6;
+}
+
+#btnClearAvailability {
+    border-radius: 12px !important;
+    font-weight: 600;
+    color: #ef4444;
+    border-color: #fee2e2;
+    background: #fef2f2;
+    transition: all 0.2s;
+}
+
+#btnClearAvailability:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+}
+
+@media (max-width: 900px){
+    .upload-panel{
+        min-width:0;
+        flex-direction:column;
+    }
+
+    .upload-panel .btn{
+        width:100%;
+    }
+
+    .table-toolbar input{
+        max-width:none;
+        width:100%;
+    }
+
+    .export-buttons{
+        margin-left:0;
+    }
+}

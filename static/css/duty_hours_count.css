@@ -1,0 +1,284 @@
+/* Duty Hours Count Custom Styles */
+
+.duty-hours-page {
+    padding: 10px 0;
+}
+
+/* Premium Upload Card */
+.upload-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.upload-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.upload-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 30px 20px;
+    text-align: center;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+    background: #f1f5f9;
+    border-color: #3b82f6;
+}
+
+.upload-zone i {
+    font-size: 2.5rem;
+    color: #64748b;
+    margin-bottom: 12px;
+    transition: color 0.2s;
+}
+
+.upload-zone:hover i, .upload-zone.dragover i {
+    color: #3b82f6;
+}
+
+/* Dropdown styling */
+.filter-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    padding: 20px;
+}
+
+.form-select-custom {
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 1rem;
+    border-color: #cbd5e1;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-select-custom:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Summary Cards */
+.summary-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.2s;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+}
+
+.summary-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.summary-icon.groups {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.summary-icon.rows {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.summary-details h6 {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.summary-details h3 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Excel Preview Container */
+.preview-container {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+}
+
+.preview-header h5 {
+    margin: 0;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.table-viewport {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 600px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+/* Table Style Override to look like Excel */
+.excel-preview-table {
+    border-collapse: collapse;
+    background: white;
+}
+
+.excel-preview-table td {
+    padding: 6px 8px;
+    font-size: 10.5pt;
+    vertical-align: middle;
+}
+
+/* Action button with micro-animation */
+.btn-download-excel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-download-excel:hover {
+    transform: scale(1.02);
+}
+
+.btn-download-excel:active {
+    transform: scale(0.98);
+}
+
+/* Available Sign Off Dates Summary Table Styling */
+#datesSummaryTable {
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+
+#datesSummaryTable thead th {
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.82rem !important;
+    padding: 7px 8px !important;
+    border: 1px solid #3b82f6 !important;
+    vertical-align: middle !important;
+    letter-spacing: 0.3px;
+    text-align: center !important;
+}
+
+#datesSummaryTable thead th.text-start {
+    text-align: left !important;
+}
+
+#datesSummaryTable thead th.text-end {
+    text-align: right !important;
+}
+
+/* Sub-headers row (Nos / %) */
+#datesSummaryTable thead tr:nth-child(2) th {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    padding: 4px 6px !important;
+    border: 1px solid #60a5fa !important;
+    text-align: right !important;
+}
+
+/* Override any inherited dark text classes inside thead */
+#datesSummaryTable thead th,
+#datesSummaryTable thead th * {
+    color: #ffffff !important;
+}
+
+/* Table body */
+#datesSummaryTable tbody td {
+    padding: 6px 8px !important;
+    font-size: 0.82rem !important;
+    vertical-align: middle !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+    background-color: #ffffff;
+}
+
+#datesSummaryTable tbody tr:nth-child(even) td {
+    background-color: #f8fafc !important;
+}
+
+#datesSummaryTable tbody tr:hover td {
+    background-color: #eff6ff !important;
+}
+
+#datesSummaryTable tbody td.slab-pct {
+    color: #475569 !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+}
+
+#datesSummaryTable tbody td.slab-nos {
+    font-weight: 600 !important;
+    color: #0f172a !important;
+}
+
+#datesSummaryTable tbody td.total-col {
+    font-weight: 700 !important;
+    color: #1d4ed8 !important;
+}
+
+/* Footer Total Row */
+#datesSummaryTable tfoot tr td {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 0.82rem !important;
+    padding: 7px 8px !important;
+    border-top: 2px solid #94a3b8 !important;
+    border-bottom: 2px solid #0f172a !important;
+    border-left: 1px solid #cbd5e1 !important;
+    border-right: 1px solid #cbd5e1 !important;
+}
+
+#datesSummaryTable tfoot tr td.total-col {
+    color: #1d4ed8 !important;
+}
+
+#datesSummaryTable tfoot tr td.slab-pct {
+    color: #475569 !important;
+    font-size: 0.78rem !important;
+}

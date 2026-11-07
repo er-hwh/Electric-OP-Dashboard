@@ -1,0 +1,193 @@
+/* =========================
+   LONG HOURS CONVERTER
+========================= */
+
+/* Page Heading */
+.content{
+    background:#f5f7fb;
+}
+
+.content h3{
+    font-weight:700;
+    color:#1e3a5f;
+}
+
+/* Card */
+.card{
+    border-radius:14px;
+    border:none;
+    margin-bottom:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.10);
+}
+
+/* Card Header */
+.card-header{
+    background:#1e3a5f;
+    color:#ffffff;
+    font-weight:600;
+    border:none;
+}
+
+/* Table Container */
+.table-responsive{
+    border-radius:12px;
+    overflow:auto;
+    max-height:70vh;
+    background:#ffffff;
+    box-shadow:0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* Table */
+table{
+    width:100% !important;
+    border-collapse:collapse !important;
+}
+
+thead th{
+    background:#1e3a5f !important;
+    color:#ffffff !important;
+    text-align:center;
+    font-size:12px;
+    white-space:pre-line;
+    padding:8px;
+    border:1px solid #0d2440 !important;
+    position:sticky;
+    top:0;
+    z-index:3;
+}
+
+td{
+    text-align:center;
+    vertical-align:middle;
+    font-size:12px;
+    padding:6px 8px;
+    border:1px solid #d0d8e4 !important;
+    white-space:normal;
+}
+
+/* Zebra Rows */
+tbody tr:nth-child(even){
+    background:#f4f7fb;
+}
+
+/* Hover */
+tbody tr:hover{
+    background:#e8f1ff;
+}
+
+/* Editable Cells */
+.editable{
+    background:#fff8dc;
+}
+
+.editable:focus{
+    outline:2px solid #4a90e2;
+    background:#ffffff;
+}
+
+/* Freeze First Column */
+thead th:first-child,
+tbody td:first-child{
+    position:sticky;
+    left:0;
+    background:#f1f5fb;
+    z-index:4;
+    font-weight:bold;
+    border-right:2px solid #1e3a5f !important;
+}
+
+/* Buttons */
+.btn{
+    border-radius:20px;
+}
+
+/* DataTable Search */
+.dataTables_filter input{
+    border-radius:20px;
+    padding:4px 10px;
+    margin-left:6px;
+}
+
+/* DataTable Wrapper */
+.dataTables_wrapper{
+    padding-top:10px;
+}
+
+/* No WR Highlight */
+.no-wr-row{
+    background:#ffe5e5 !important;
+}
+
+.no-wr-row td{
+    border-color:#dc3545 !important;
+}
+
+.no-wr-row td:first-child{
+    background:#ffd6d6 !important;
+}
+
+/* Crew Report */
+#crewReportContainer{
+    margin-top:20px;
+}
+
+/* Remarks Column - Main Table */
+#resultTable th:last-child,
+#resultTable td:last-child{
+    width:340px !important;
+    min-width:340px !important;
+    max-width:340px !important;
+    text-align:left !important;
+    vertical-align:top !important;
+    white-space:pre-line;
+    word-break:break-word;
+}
+
+/* Remarks Column - Crew Report */
+#crewReportTable th:last-child,
+#crewReportTable td:last-child{
+    width:520px !important;
+    min-width:520px !important;
+    max-width:520px !important;
+    text-align:left !important;
+    vertical-align:top !important;
+    white-space:pre-line;
+    word-break:break-word;
+}
+
+/* Upload Section */
+.upload-card{
+    border-radius:14px;
+    background:#ffffff;
+}
+
+/* Page Title */
+.page-title{
+    font-size:24px;
+    font-weight:700;
+    color:#1e3a5f;
+}
+
+.page-subtitle{
+    color:#6b7280;
+    font-size:14px;
+}
+
+/* Print */
+@media print{
+
+    .sidebar,
+    .topbar,
+    .btn,
+    .dataTables_filter,
+    .dataTables_paginate,
+    .dataTables_length,
+    .dataTables_info{
+        display:none !important;
+    }
+
+    .table-responsive{
+        box-shadow:none;
+        max-height:none;
+    }
+}

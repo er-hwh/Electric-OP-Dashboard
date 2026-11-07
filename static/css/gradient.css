@@ -1,0 +1,76 @@
+/* Gradient Register Page Styling */
+
+.gradient-page {
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+/* Header Area */
+.analysis-header {
+    border: none;
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.bg-light-primary {
+    background-color: #eff6ff;
+}
+
+/* Slope direction badges */
+.badge-rise {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fee2e2;
+    font-weight: 600;
+}
+
+.badge-fall {
+    background-color: #fff7ed;
+    color: #ea580c;
+    border: 1px solid #ffedd5;
+    font-weight: 600;
+}
+
+.badge-level {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #dcfce7;
+    font-weight: 600;
+}
+
+/* Border dashed for upload card */
+#adminUploadCard {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    background-color: #ffffff;
+}
+
+/* Table styles */
+.table-responsive {
+    border-radius: 8px;
+}
+
+thead th {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 12px 8px !important;
+}
+
+tbody td {
+    padding: 12px 8px !important;
+    font-size: 13px;
+}
+
+/* Pagination links style */
+.pagination .page-link {
+    color: #1e3a8a;
+    border-color: #e2e8f0;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #94a3b8;
+    background-color: #f8fafc;
+}

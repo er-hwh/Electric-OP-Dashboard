@@ -1,0 +1,333 @@
+.section-card{
+    border:none;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+
+#loadingBox{
+    display:none;
+}
+
+.footer-note{
+    font-size:12px;
+    color:#666;
+}
+
+/* ===========================
+   HEADER
+=========================== */
+
+.stats-line{
+
+    font-size:14px;
+
+    font-weight:600;
+
+    color:#4b5563;
+
+    line-height:1.8;
+}
+
+.stats-line span{
+
+    color:#0d6efd;
+
+    font-weight:700;
+
+    margin-right:6px;
+}
+
+/* ===========================
+   TOOLBAR
+=========================== */
+
+.toolbar{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+}
+
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+}
+
+.toolbar-left input{
+
+    width:220px;
+}
+
+.toolbar-right .btn {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+/* ===========================
+   TABS
+=========================== */
+
+.nav-pills{
+
+    gap:6px;
+}
+
+.nav-pills .nav-link{
+
+    border-radius:8px;
+
+    font-weight:600;
+
+    color:#495057;
+
+    border:1px solid #dee2e6;
+
+    background:#fff;
+}
+
+.nav-pills .nav-link.active{
+
+    background:#0d6efd;
+
+    border-color:#0d6efd;
+
+    color:#fff;
+}
+
+/* ===========================
+   RUNNING KM FILTER
+=========================== */
+
+#runningKmFilterPanel{
+
+    border-left:4px solid #0d6efd;
+}
+
+#runningKmFilterPanel .card-body{
+
+    padding:12px 18px;
+}
+
+/* ===========================
+   TABLE
+=========================== */
+
+.table-responsive{
+
+    max-height:75vh;
+
+    overflow:auto;
+}
+
+table.dataTable{
+
+    white-space:nowrap;
+
+    font-size:13px;
+}
+
+table.dataTable thead th{
+
+    background:#212529;
+
+    color:#fff;
+
+    font-size:12px;
+
+    position:sticky;
+
+    top:0;
+
+    z-index:10;
+}
+
+/* ===========================
+   COLUMN FILTER
+=========================== */
+
+.filter-row th{
+
+    padding:2px !important;
+
+    background:#f8f9fa !important;
+}
+
+.filter-row input{
+
+    width:100%;
+
+    min-width:40px;
+
+    max-width:100%;
+
+    height:24px;
+
+    font-size:11px;
+
+    padding:2px 4px;
+
+    border:1px solid #ced4da;
+
+    border-radius:4px;
+
+    box-sizing:border-box;
+}
+
+.filter-row input:focus{
+
+    outline:none;
+
+    border-color:#0d6efd;
+
+    box-shadow:
+        0 0 0 2px rgba(13,110,253,.15);
+}
+
+/* ===========================
+   BUTTONS
+=========================== */
+
+.btn{
+
+    border-radius:8px;
+}
+
+/* ===========================
+   DATATABLE
+=========================== */
+
+.dataTables_wrapper .dataTables_filter{
+
+    margin-bottom:10px;
+}
+
+.dataTables_wrapper .dataTables_length{
+
+    margin-bottom:10px;
+}
+
+/* ===========================
+   MOBILE
+=========================== */
+
+@media(max-width:992px){
+
+    .toolbar{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+    }
+
+    .toolbar-left input{
+
+        width:100%;
+    }
+
+    .stats-line{
+
+        margin-top:10px;
+    }
+
+}
+
+@media(max-width:768px){
+
+    .stats-line{
+
+        font-size:12px;
+    }
+
+    .toolbar-left,
+    .toolbar-center,
+    .toolbar-right{
+
+        width:100%;
+    }
+
+}
+
+/* ===========================
+   SUMMARY MODAL TABLE
+=========================== */
+
+#summaryTable thead th {
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 10px 12px;
+    border: 1px solid #3b82f6 !important;
+    text-align: center !important;
+}
+
+#summaryTable tbody td {
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    vertical-align: middle;
+    text-align: center !important;
+}
+
+#summaryTable tr.table-warning td {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    font-weight: 700;
+    text-align: center !important;
+}
+
+#summaryTable tr.table-info td {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-size: 0.9rem;
+    border-top: 2px solid #94a3b8 !important;
+    border-bottom: 2px solid #0f172a !important;
+    text-align: center !important;
+}
+
+/* ===========================
+   DAILY SUMMARY SECTION
+=========================== */
+
+#dailySummarySection .card-header {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+#dailySummarySection table thead th {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    border-bottom: 2px solid #cbd5e1 !important;
+    text-align: center !important;
+}
+
+#dailySummarySection table tbody td {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+#dailySummarySection .table-danger-subtle td {
+    background-color: #fef2f2 !important;
+}
