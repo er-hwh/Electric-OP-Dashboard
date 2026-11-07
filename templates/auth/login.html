@@ -18,11 +18,11 @@
                 <form method="POST" action="{{ url_for('auth.login') }}">
                     <div class="mb-3">
                         <label for="username" class="form-label fw-bold small text-dark">
-                            <i class="fa-solid fa-user me-1 text-primary"></i> Username / Mobile No. / CLI ID:
+                            <i class="fa-solid fa-user me-1 text-primary"></i> Login Identifier (CMS ID / CLI ID / Username / Mobile):
                         </label>
-                        <input type="text" class="form-control form-control-lg fs-6" id="username" name="username" placeholder="e.g. admin, Sr. DEE(OP)/HWH, CLI_HWH_01, 9876543210" required autofocus>
+                        <input type="text" class="form-control form-control-lg fs-6" id="username" name="username" placeholder="e.g. admin, Sr. DEE(OP)/HWH, CNL_HWH, CLI_HWH_01, HWH0001, 9876543210" required autofocus>
                         <div class="form-text small">
-                            Crews enter Mobile No; CLIs enter CLI ID; Officers enter Officer Title.
+                            Crew: CMS ID (e.g. HWH0001) or Mobile; CLI: CLI ID or Name; Officer/Admin: Official ID.
                         </div>
                     </div>
 
@@ -47,46 +47,87 @@
                     </div>
                 </form>
 
-                <!-- DEFAULT CREDENTIALS HELPER TABLE -->
+                <!-- HIERARCHY OF POWER & DEFAULT SYSTEM CREDENTIALS -->
                 <div class="mt-4 p-3 bg-light rounded border small">
-                    <h6 class="fw-bold text-dark mb-2 border-bottom pb-1">
-                        <i class="fa-solid fa-key me-1 text-warning"></i> Default System Credentials
-                    </h6>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-2">
+                        <h6 class="fw-bold text-dark mb-0">
+                            <i class="fa-solid fa-sitemap me-1 text-primary"></i> Hierarchy of Power & Credentials
+                        </h6>
+                        <span class="badge bg-primary">5-Tier Power Structure</span>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-sm table-borderless mb-0">
-                            <thead>
-                                <tr class="text-muted">
-                                    <th>Role</th>
-                                    <th>Username / ID</th>
-                                    <th>Default Password</th>
+                        <table class="table table-sm table-bordered align-middle mb-2">
+                            <thead class="table-light">
+                                <tr class="text-muted small">
+                                    <th>Level</th>
+                                    <th>Power / Role</th>
+                                    <th>Login Identifier</th>
+                                    <th>Default Pass</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td><strong>Admin</strong></td>
+                                <tr class="table-danger border-start border-3 border-danger">
+                                    <td><span class="badge bg-danger">Level 5</span></td>
+                                    <td>
+                                        <strong class="text-danger">Admin Login</strong><br>
+                                        <small class="text-muted"><i class="fa-solid fa-gear me-1"></i>Only Admin can do System Edit</small>
+                                    </td>
                                     <td><code>admin</code></td>
                                     <td><code>12345</code></td>
                                 </tr>
-                                <tr>
-                                    <td><strong>Officers</strong></td>
-                                    <td><code>Sr. DEE(OP)/HWH</code><br><code>AEE(OP)/HWH</code><br><code>AME(P)/HWH</code></td>
+                                <tr class="table-warning border-start border-3 border-warning">
+                                    <td><span class="badge bg-warning text-dark">Level 4</span></td>
+                                    <td>
+                                        <strong>Officer Login</strong><br>
+                                        <small class="text-muted">
+                                            1. <strong>Sr. DEE(OP)/HWH</strong> (Branch Officer)<br>
+                                            2. <strong>DEE(OP)/HWH</strong> (Divisional Officer)<br>
+                                            3. <strong>AEE(OP)/HWH</strong> & <strong>AME(P)/HWH</strong>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <code>Sr. DEE(OP)/HWH</code><br>
+                                        <code>DEE(OP)/HWH</code><br>
+                                        <code>AEE(OP)/HWH</code><br>
+                                        <code>AME(P)/HWH</code>
+                                    </td>
                                     <td><code>12345</code></td>
                                 </tr>
-                                <tr>
-                                    <td><strong>CLI / CCC</strong></td>
-                                    <td><code>CLI_HWH_01</code></td>
+                                <tr class="table-info border-start border-3 border-info">
+                                    <td><span class="badge bg-info text-dark">Level 3</span></td>
+                                    <td>
+                                        <strong>CNL Login</strong><br>
+                                        <small class="text-muted">Divisional Control / Power Controller</small>
+                                    </td>
+                                    <td><code>CNL_HWH</code></td>
                                     <td><code>12345</code></td>
                                 </tr>
-                                <tr>
-                                    <td><strong>Running Crew</strong></td>
-                                    <td><code>9876543210</code> (Mobile)</td>
+                                <tr class="table-primary border-start border-3 border-primary">
+                                    <td><span class="badge bg-primary">Level 2</span></td>
+                                    <td>
+                                        <strong>CLI Login</strong><br>
+                                        <small class="text-muted">Chief Loco Inspector & CCC</small>
+                                    </td>
+                                    <td><code>CLI_HWH_01</code> / <code>CCC_HWH</code></td>
+                                    <td><code>12345</code></td>
+                                </tr>
+                                <tr class="table-secondary border-start border-3 border-secondary">
+                                    <td><span class="badge bg-secondary">Level 1</span></td>
+                                    <td>
+                                        <strong>Crew Login</strong><br>
+                                        <small class="text-muted">LPM / LPP / LPG / LPS / ALP</small>
+                                    </td>
+                                    <td><code>9876543210</code> (Mobile / PF)</td>
                                     <td><code>12345</code></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <small class="text-muted d-block mt-2">
-                        <i class="fa-solid fa-circle-info me-1"></i> Users with password <code>12345</code> will be asked to change it upon login.
+                    <div class="alert alert-warning py-1 px-2 small mb-1">
+                        <i class="fa-solid fa-shield-halved me-1"></i><strong>System Rule:</strong> Any system configuration, master upload, or settings edit can <strong>only be performed by Admin</strong>.
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        <i class="fa-solid fa-circle-info me-1"></i> Users with default password <code>12345</code> will be prompted to choose a secure password upon initial login.
                     </small>
                 </div>
 

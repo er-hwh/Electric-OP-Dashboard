@@ -48,6 +48,18 @@ def control_login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def admin_only_api_required(f):
+    """Strict Rule: Only Admin can execute system resets or clear master database tables."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'detail': 'Authentication required. Admin privileges needed.'}), 401
+        user = User.query.get(session['user_id'])
+        if not user or not user.is_admin():
+            return jsonify({'detail': 'Security Policy: System edits, resets, and clearing can only be performed by System Admin.'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 @control_bp.route('/')
 def index():
@@ -194,8 +206,9 @@ def memo_generator():
 
 @control_bp.route('/api/admin/status')
 def admin_status():
-    is_admin = ('user_id' in session)
-    username = session.get('username', 'CNL Controller')
+    user = User.query.get(session.get('user_id')) if 'user_id' in session else None
+    is_admin = bool(user and user.is_admin())
+    username = user.username if user else 'Guest'
     return jsonify({"is_admin": is_admin, "username": username})
 
 @control_bp.route('/api/admin/login', methods=['POST'])
@@ -204,12 +217,19 @@ def api_admin_login():
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
     
-    valid_users = {"admin", "superadmin", "pcnl", "srdee", "sr_dee", "hwh_admin", "cli_admin", "cnl", "cnl_hwh"}
-    valid_passwords = {"12345", "pcnl123", "admin", "admin123", "hwhadmin", "admin@123", "pass", "password"}
+    # Query user database for admin
+    user = User.query.filter(
+        (User.username == username) | (User.mobile == username) | (User.pf_number == username)
+    ).first()
 
-    if (username.lower() in valid_users and password in valid_passwords) or 'user_id' in session:
-        return jsonify({"success": True, "message": "Authenticated successfully", "username": username or session.get('username', 'CNL Admin')})
-    return jsonify({"success": False, "detail": "Invalid credentials"}), 401
+    if user and user.check_password(password) and user.is_admin():
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['role'] = user.role
+        session['full_name'] = user.full_name
+        session['power_level'] = user.power_level
+        return jsonify({"success": True, "message": "Admin authenticated successfully", "username": user.username})
+    return jsonify({"success": False, "detail": "Invalid credentials or account is not System Administrator."}), 401
 
 @control_bp.route('/api/admin/logout', methods=['POST'])
 def api_admin_logout():
@@ -397,6 +417,7 @@ def upload_crew():
 
 
 @control_bp.route('/api/crew/clear-all', methods=['POST'])
+@admin_only_api_required
 def clear_all_crews():
     conn = get_connection()
     cur = conn.cursor()
@@ -412,6 +433,7 @@ def clear_all_crews():
 
 
 @control_bp.route('/api/crew/clear-lobby', methods=['POST'])
+@admin_only_api_required
 def clear_lobby_crews():
     data = request.get_json(silent=True) or request.form
     lobby = data.get('lobby', '').strip().upper()
@@ -431,6 +453,7 @@ def clear_lobby_crews():
 
 
 @control_bp.route('/api/crew/clear-clis', methods=['POST'])
+@admin_only_api_required
 def clear_cli_assignments():
     conn = get_connection()
     cur = conn.cursor()
@@ -446,6 +469,7 @@ def clear_cli_assignments():
 
 
 @control_bp.route('/api/crew/cleanup-duplicates', methods=['POST'])
+@admin_only_api_required
 def cleanup_duplicate_crews():
     conn = get_connection()
     cur = conn.cursor()
@@ -652,6 +676,7 @@ def update_availability(item_id):
 
 
 @control_bp.route('/api/availability/clear', methods=['POST'])
+@admin_only_api_required
 def clear_availability():
     conn = get_connection()
     cur = conn.cursor()

@@ -74,9 +74,10 @@ def seed():
             cnl_user.set_password('12345')
             db.session.add(cnl_user)
 
-        # Officers
+        # Officers (Hierarchy: Sr. DEE(OP) > DEE(OP) > AEE(OP) / AME(P))
         officers_info = [
             ('Sr. DEE(OP)/HWH', 'Sr. DEE(OP)', 'Mr. Arun Kumar Rana (IRSEE)', 'Senior Divisional Electrical Engineer (OP)', '9002022300', 'srdee.op.hwh@er.railnet.gov.in', 'OFF001'),
+            ('DEE(OP)/HWH', 'DEE(OP)', 'Mr. S. K. Pathak', 'Divisional Electrical Engineer (OP)', '9002022305', 'dee.op.hwh@er.railnet.gov.in', 'OFF004'),
             ('AEE(OP)/HWH', 'AEE(OP)', 'Mr. Sourav Nandi', 'Assistant Electrical Engineer (OP)', '9002022301', 'aee.op.hwh@er.railnet.gov.in', 'OFF002'),
             ('AME(P)/HWH', 'AME(P)', 'Mr. Viwshambhar Prasad', 'Assistant Mechanical Engineer (Power)', '9002022302', 'ame.p.hwh@er.railnet.gov.in', 'OFF003')
         ]
@@ -162,6 +163,40 @@ def seed():
                 db.session.add(crew)
                 db.session.flush()
             crew_objs.append(crew)
+
+        # 4b. Seed 24-Column CrewCounsellingRecords matching hwh-division-operation-dashboard schema
+        for crew, (mob, subrole, fname, cli_key, lcode, pf, hrms) in zip(crew_objs, crews_info):
+            rec = CrewCounsellingRecord.query.filter_by(crew_user_id=crew.id).first()
+            if not rec:
+                rec = CrewCounsellingRecord(
+                    crew_user_id=crew.id,
+                    crew_id_str=f"{lcode}{crew.id:04d}",
+                    cli_name=cli_objs[cli_key].full_name,
+                    crew_name=crew.full_name,
+                    crew_hq=lcode,
+                    cug=mob,
+                    designation=subrole,
+                    designation_since="15-01-2022",
+                    pf_no=pf,
+                    grade="A" if "LPM" in subrole or "MMAN" in subrole else "B",
+                    last_footplate=(date.today() - timedelta(days=22)).strftime("%d-%m-%Y"),
+                    technical_counselling=(date.today() - timedelta(days=18)).strftime("%d-%m-%Y"),
+                    safety_counselling=(date.today() - timedelta(days=12)).strftime("%d-%m-%Y"),
+                    counselling_verified_by=cli_objs[cli_key].full_name,
+                    last_spm_check=(date.today() - timedelta(days=25)).strftime("%d-%m-%Y"),
+                    last_cvvrs_check=(date.today() - timedelta(days=20)).strftime("%d-%m-%Y"),
+                    ba_fail_history="Nil",
+                    mobile_habit="Normal",
+                    spad_history="Nil",
+                    da_case="Nil",
+                    family_issue="Nil",
+                    health_issue="Nil",
+                    baby_below_6_months="No",
+                    accident_prone="No",
+                    remarks="Good road knowledge and attentive on footplate."
+                )
+                db.session.add(rec)
+        db.session.commit()
 
         # 5. Seed Officer's Desk Messages ("Officers Say")
         officer_says = [
@@ -310,8 +345,8 @@ def seed():
              "Caution Orders", "T/409 Caution Order, T/A 409 Nil Caution, T/B 409 Reminder Caution."),
 
             ("Chapter IV", "Working of Trains", "SR 4.50", "Sounding of Engine Whistle & Whistle Codes",
-             "Loco Pilots must sound whistle according to prescribed code: 'O' short whistle, '—' long whistle.",
-             "SR 4.50(a): 0-0 Passing stop signal at ON on proper authority; — — 0 Opening circuit breaker [DJ]; 0000 Accident / train cannot proceed; — continuous Approaching tunnel/cutting/W-L board.",
+             "Loco Pilots must sound whistle according to prescribed code: 'O' short whistle, 'â€”' long whistle.",
+             "SR 4.50(a): 0-0 Passing stop signal at ON on proper authority; â€” â€” 0 Opening circuit breaker [DJ]; 0000 Accident / train cannot proceed; â€” continuous Approaching tunnel/cutting/W-L board.",
              "Whistle Codes", "Whistle codes are mandatory for safety communication."),
 
             ("Chapter XVII", "Electrified Sections", "GR 17.07", "Tripping of Circuit Breakers at Neutral Sections",

@@ -4,10 +4,15 @@
 
 {% block content %}
 <div class="container-fluid px-4 py-4">
+
     <!-- SUPERVISOR BANNER -->
     <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
         <div>
-            <span class="badge bg-success mb-1 fs-6"><i class="fa-solid fa-clipboard-check me-1"></i> Supervisor Portal</span>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <span class="badge bg-success fs-6"><i class="fa-solid fa-clipboard-check me-1"></i> Supervisor Portal</span>
+                <span class="badge bg-primary text-white"><i class="fa-solid fa-layer-group me-1"></i> Power Level 2 &bull; CLI / CCC</span>
+                <span class="badge bg-dark text-warning"><i class="fa-solid fa-train me-1"></i> Howrah Division</span>
+            </div>
             <h3 class="fw-bold text-dark mb-0">{{ cli.full_name }}</h3>
             <span class="badge bg-primary fs-6">{{ cli.sub_role }}: {{ cli.username }}</span>
             {% if cli.lobby %}
@@ -19,154 +24,620 @@
                 <small class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.7rem;">Footplate KMA (Rule 1515)</small>
                 <span class="fs-6 fw-bold text-success">{{ total_footplate_km|round(1) }} KMs</span>
             </div>
-            <a href="{{ url_for('supervisor.new_counselling_topic') }}" class="btn btn-success btn-sm fw-bold shadow-sm d-flex align-items-center">
-                <i class="fa-solid fa-file-signature me-1"></i> Draft Counselling (GR & SR)
+            <a href="{{ url_for('supervisor.export_roster_excel') }}" class="btn btn-outline-success btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-file-excel me-1"></i> Export 24-Col Excel
             </a>
             <a href="{{ url_for('supervisor.counselling') }}" class="btn btn-danger btn-sm fw-bold shadow-sm d-flex align-items-center">
-                <i class="fa-solid fa-clipboard-user me-1"></i> Safety & Counselling Register
+                <i class="fa-solid fa-clipboard-user me-1"></i> Safety Register
             </a>
-            <a href="{{ url_for('supervisor.new_footplate') }}" class="btn btn-primary btn-sm fw-bold shadow-sm d-flex align-items-center">
-                <i class="fa-solid fa-file-pen me-1"></i> Log Footplate Inspection
+            <a href="{{ url_for('supervisor.new_counselling_topic') }}" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-file-signature me-1"></i> Draft Rule Topic
             </a>
-            <a href="{{ url_for('supervisor.instruct_crews') }}" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm d-flex align-items-center">
-                <i class="fa-solid fa-bullhorn me-1"></i> Instruct Assigned Crews
+            <a href="{{ url_for('supervisor.instruct_crews') }}" class="btn btn-primary btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-bullhorn me-1"></i> Instruct Squad
             </a>
+        </div>
+    </div>
+
+    <!-- SQUAD COMPLIANCE METRIC CARDS (Ported from hwh-division-operation-dashboard) -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Total Nominated Crews & Grading -->
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white border-start border-4 border-primary">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold small">Nominated Squad</div>
+                        <h2 class="fw-bold text-primary mb-0">{{ total_nominated }}</h2>
+                    </div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary fs-6 p-2"><i class="fa-solid fa-users"></i></span>
+                </div>
+                <div class="d-flex gap-1 align-items-center mt-2 small flex-wrap">
+                    <span class="badge bg-success">A: {{ grade_a_cnt }}</span>
+                    <span class="badge bg-primary">B: {{ grade_b_cnt }}</span>
+                    <span class="badge bg-danger">C: {{ grade_c_cnt }}</span>
+                    <span class="text-muted ms-auto">{{ graded_pct }}% graded</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Footplate Monitoring Status -->
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white border-start border-4 border-success">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold small">Footplate Status</div>
+                        <h5 class="fw-bold text-dark mb-0">90-Day Cycle</h5>
+                    </div>
+                    <span class="badge bg-success bg-opacity-10 text-success fs-6 p-2"><i class="fa-solid fa-route"></i></span>
+                </div>
+                <div class="d-flex gap-1 align-items-center mt-2 small">
+                    <span class="badge bg-success" title="Inspected within 75 days"><i class="fa-solid fa-check me-1"></i>{{ fp_compliant_cnt }} OK</span>
+                    <span class="badge bg-warning text-dark" title="75-90 days"><i class="fa-solid fa-clock me-1"></i>{{ fp_due_cnt }} Due</span>
+                    <span class="badge bg-danger" title=">90 days overdue"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ fp_overdue_cnt }} Overdue</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Safety Counselling Status -->
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white border-start border-4 border-warning">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold small">Safety Counselling</div>
+                        <h5 class="fw-bold text-dark mb-0">Monthly Status</h5>
+                    </div>
+                    <span class="badge bg-warning bg-opacity-10 text-warning fs-6 p-2"><i class="fa-solid fa-comments"></i></span>
+                </div>
+                <div class="d-flex gap-1 align-items-center mt-2 small">
+                    <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>{{ cs_compliant_cnt }} OK</span>
+                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>{{ cs_due_cnt }} Due</span>
+                    <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ cs_overdue_cnt }} Overdue</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Messages / Action Queue -->
+        <div class="col-xl-3 col-md-6 col-12">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white border-start border-4 border-danger">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold small">Crew Messages</div>
+                        <h2 class="fw-bold text-danger mb-0">{{ pending_messages|length }}</h2>
+                    </div>
+                    <span class="badge bg-danger bg-opacity-10 text-danger fs-6 p-2"><i class="fa-solid fa-envelope-open-text"></i></span>
+                </div>
+                <div class="text-muted small mt-2">
+                    {% if pending_messages|length > 0 %}
+                        <span class="text-danger fw-bold"><i class="fa-solid fa-circle-exclamation me-1"></i>Pending review</span>
+                    {% else %}
+                        <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>All queries addressed</span>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- PENDING CREW MESSAGES AWAITING CLI ACTION -->
+    {% if pending_messages %}
     <div class="rail-card p-4 mb-4">
         <div class="rail-card-header accent-gold mb-3">
             <span>
-                <i class="fa-solid fa-envelope-open-text text-warning me-2"></i> Messages from Running Staff (Awaiting CLI Review)
+                <i class="fa-solid fa-envelope-open-text text-warning me-2"></i> Messages from Running Staff (Awaiting CLI Action)
             </span>
             <span class="badge bg-danger">{{ pending_messages|length }} Pending Action</span>
         </div>
-
-        {% if pending_messages %}
-            <div class="row g-3">
-                {% for m in pending_messages %}
-                    <div class="col-lg-6">
-                        <div class="card border border-warning shadow-sm h-100">
-                            <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
-                                <strong class="text-dark">{{ m.subject }}</strong>
-                                <small class="text-muted">{{ m.created_at.strftime('%d-%b %H:%M') }}</small>
+        <div class="row g-3">
+            {% for m in pending_messages %}
+                <div class="col-lg-6">
+                    <div class="card border border-warning shadow-sm h-100">
+                        <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
+                            <strong class="text-dark">{{ m.subject }}</strong>
+                            <small class="text-muted">{{ m.created_at.strftime('%d-%b %H:%M') }}</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2 p-2 bg-light rounded small">
+                                <strong class="text-primary"><i class="fa-solid fa-user me-1"></i> From:</strong> {{ m.sender.full_name }} ({{ m.sender.sub_role }}) &bull; Mobile: <code>{{ m.sender.mobile }}</code>
                             </div>
-                            <div class="card-body">
-                                <div class="mb-2 p-2 bg-light rounded small">
-                                    <strong class="text-primary"><i class="fa-solid fa-user me-1"></i> From:</strong> {{ m.sender.full_name }} ({{ m.sender.sub_role }}) &bull; Mobile: <code>{{ m.sender.mobile }}</code>
+                            <p class="small text-secondary mb-3">{{ m.body }}</p>
+                            <form action="{{ url_for('supervisor.action_message', message_id=m.id) }}" method="POST" class="border-top pt-2">
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold text-dark">CLI Remarks / Recommendation:</label>
+                                    <textarea name="cli_remarks" class="form-control form-control-sm" rows="2" placeholder="Write guidance or remarks..." required></textarea>
                                 </div>
-                                <p class="small text-secondary mb-3">
-                                    {{ m.body }}
-                                </p>
-
-                                <!-- CLI ACTION FORM -->
-                                <form action="{{ url_for('supervisor.handle_message', message_id=m.id) }}" method="POST" class="border-top pt-2">
-                                    <div class="mb-2">
-                                        <label class="form-label small fw-bold text-dark">CLI Remarks / Recommendation:</label>
-                                        <textarea name="cli_remarks" class="form-control form-control-sm" rows="2" placeholder="Write guidance or remarks for escalation..." required></textarea>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" name="action" value="resolve" class="btn btn-outline-success btn-sm fw-bold flex-fill">
-                                            <i class="fa-solid fa-check me-1"></i> Resolve at CLI Level
-                                        </button>
-                                        <button type="submit" name="action" value="forward" class="btn btn-danger btn-sm fw-bold flex-fill">
-                                            <i class="fa-solid fa-forward me-1"></i> Forward to Officers
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" name="action" value="resolve" class="btn btn-outline-success btn-sm fw-bold flex-fill">
+                                        <i class="fa-solid fa-check me-1"></i> Resolve at CLI Level
+                                    </button>
+                                    <button type="submit" name="action" value="forward" class="btn btn-danger btn-sm fw-bold flex-fill">
+                                        <i class="fa-solid fa-forward me-1"></i> Forward to Officers
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="text-center py-4 text-muted">
-                <i class="fa-regular fa-circle-check fa-2x text-success mb-2 d-block"></i>
-                No pending crew messages. All crew requests are reviewed!
-            </div>
-        {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SEARCH & FILTER SQUAD ROSTER -->
+    <div class="card shadow-sm border-0 mb-3 bg-light">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ url_for('supervisor.dashboard') }}" class="row g-2 align-items-end">
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label small fw-bold text-muted mb-1">Search Squad Crew</label>
+                    <input type="text" name="q" class="form-control form-control-sm" placeholder="Crew Name / CMS ID / Mobile / PF..." value="{{ search_q }}">
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">Safety Grade</label>
+                    <select name="grade" class="form-select form-select-sm">
+                        <option value="ALL" {% if grade_filter == 'ALL' %}selected{% endif %}>All Grades</option>
+                        <option value="A" {% if grade_filter == 'A' %}selected{% endif %}>Grade A</option>
+                        <option value="B" {% if grade_filter == 'B' %}selected{% endif %}>Grade B</option>
+                        <option value="C" {% if grade_filter == 'C' %}selected{% endif %}>Grade C</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">HQ / Lobby</label>
+                    <select name="hq" class="form-select form-select-sm">
+                        <option value="ALL" {% if hq_filter == 'ALL' %}selected{% endif %}>All Lobbies</option>
+                        {% for l in lobbies %}
+                            <option value="{{ l.code }}" {% if hq_filter == l.code %}selected{% endif %}>{{ l.code }} - {{ l.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1">Compliance Status</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="ALL" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                        <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue (>90 Days)</option>
+                        <option value="due_soon" {% if status_filter == 'due_soon' %}selected{% endif %}>Due Soon (75-90 Days)</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm fw-bold flex-fill">
+                        <i class="fa-solid fa-filter me-1"></i> Filter
+                    </button>
+                    <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        Clear
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- NOMINATED CREW MEMBERS SQUAD -->
+    <!-- NOMINATED CREW MEMBERS SQUAD (Full 24 Roster Columns & Modal Actions) -->
     <div class="rail-card p-4 mb-4">
-        <div class="rail-card-header accent-blue mb-3">
-            <span>
-                <i class="fa-solid fa-users text-primary me-2"></i> Nominated Running Staff Squad ({{ my_crews|length }} Crews)
-            </span>
-            <small class="text-muted">Assigned for Footplate Monitoring, Technical Counselling & Safety Grading</small>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-users text-primary me-2"></i> Nominated Running Staff Squad ({{ squad_data|length }} Crews)
+                </h5>
+                <small class="text-muted">Interactive Roster matching Howrah Division 24-Column Operational Sheet</small>
+            </div>
+            <a href="{{ url_for('supervisor.export_roster_excel') }}" class="btn btn-success btn-sm fw-bold">
+                <i class="fa-solid fa-download me-1"></i> Excel (.xlsx)
+            </a>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover table-bordered align-middle small">
-                <thead class="table-light">
-                    <tr>
-                        <th>Crew Name</th>
-                        <th>Designation</th>
-                        <th>Mobile (Login ID)</th>
-                        <th>Safety Grade</th>
-                        <th>Last Footplate / Counselling</th>
-                        <th>Training Alerts</th>
+            <table class="table table-hover table-bordered align-middle small mb-0">
+                <thead class="table-dark">
+                    <tr class="text-nowrap text-center">
+                        <th>#</th>
+                        <th>Crew Details</th>
+                        <th>HQ</th>
+                        <th>Grade</th>
+                        <th>Last Footplate</th>
+                        <th>Safety Counselling</th>
+                        <th>SPM / CVVRS</th>
+                        <th>Risk Indicators</th>
+                        <th>Remarks</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for c in my_crews %}
-                        {% set crec = counselling_map.get(c.id) %}
+                    {% for item in squad_data %}
+                        {% set r = item.record %}
+                        {% set comp = item.compliance %}
+                        {% set u = item.user %}
                         <tr>
+                            <td class="text-center fw-bold">{{ loop.index }}</td>
                             <td>
-                                <strong class="text-dark">{{ c.full_name }}</strong>
-                                <small class="text-muted d-block">PF: {{ c.pf_number or 'N/A' }} | {{ c.lobby.code if c.lobby else 'HWH' }}</small>
+                                <strong class="text-dark">{{ r.crew_name or (u.full_name if u else 'N/A') }}</strong>
+                                <div class="small text-muted">
+                                    <span class="badge bg-primary me-1">{{ r.designation or (u.sub_role if u else 'ALP') }}</span>
+                                    ID: <code>{{ r.crew_id_str or (u.username if u else 'N/A') }}</code> | CUG: <code>{{ r.cug or (u.mobile if u else 'N/A') }}</code>
+                                </div>
                             </td>
-                            <td><span class="badge bg-primary">{{ c.sub_role }}</span></td>
-                            <td><code>{{ c.mobile }}</code></td>
-                            <td>
-                                {% if crec and crec.grade == 'A' %}
-                                    <span class="badge bg-success fs-6">Grade A</span>
-                                {% elif crec and crec.grade == 'B' %}
-                                    <span class="badge bg-primary fs-6">Grade B</span>
-                                {% elif crec and crec.grade == 'C' %}
-                                    <span class="badge bg-danger fs-6">Grade C</span>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border fw-bold">{{ r.crew_hq or (u.lobby.code if u and u.lobby else 'HWH') }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if r.grade == 'A' %}
+                                    <span class="badge bg-success fs-6">A</span>
+                                {% elif r.grade == 'B' %}
+                                    <span class="badge bg-primary fs-6">B</span>
+                                {% elif r.grade == 'C' %}
+                                    <span class="badge bg-danger fs-6">C</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Not Graded</span>
+                                    <span class="badge bg-secondary">A</span>
                                 {% endif %}
                             </td>
                             <td>
-                                {% if crec and crec.last_footplate and crec.last_footplate not in ['NA', '-'] %}
-                                    <div><small class="fw-bold text-success"><i class="fa-solid fa-route me-1"></i>FP:</small> {{ crec.last_footplate }}</div>
-                                {% endif %}
-                                {% if crec and crec.safety_counselling and crec.safety_counselling not in ['NA', '-'] %}
-                                    <div><small class="fw-bold text-primary"><i class="fa-solid fa-comments me-1"></i>Counsel:</small> {{ crec.safety_counselling }}</div>
-                                {% endif %}
-                                {% if not crec or (not crec.last_footplate and not crec.safety_counselling) %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% set alerts = c.training_records.all() %}
-                                {% set overdue_count = alerts | selectattr('status_info.status', 'equalto', 'OVERDUE') | list | length %}
-                                {% set due_count = alerts | selectattr('status_info.status', 'equalto', 'DUE_SOON') | list | length %}
-
-                                {% if overdue_count > 0 %}
-                                    <span class="badge bg-danger"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ overdue_count }} Overdue</span>
-                                {% elif due_count > 0 %}
-                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>{{ due_count }} Due Soon</span>
+                                {% if r.last_footplate and r.last_footplate not in ['NA', '-', ''] %}
+                                    <div class="fw-bold text-dark">{{ r.last_footplate }}</div>
+                                    {% if comp.fp_status == 'compliant' %}
+                                        <span class="badge bg-success text-white py-0.5" style="font-size:0.7rem;"><i class="fa-solid fa-check me-1"></i>OK</span>
+                                    {% elif comp.fp_status == 'due_soon' %}
+                                        <span class="badge bg-warning text-dark py-0.5" style="font-size:0.7rem;"><i class="fa-solid fa-clock me-1"></i>Due Soon</span>
+                                    {% else %}
+                                        <span class="badge bg-danger text-white py-0.5" style="font-size:0.7rem;"><i class="fa-solid fa-triangle-exclamation me-1"></i>Overdue</span>
+                                    {% endif %}
                                 {% else %}
-                                    <span class="badge bg-success">All Valid</span>
+                                    <span class="badge bg-danger text-white py-0.5" style="font-size:0.7rem;"><i class="fa-solid fa-triangle-exclamation me-1"></i>Overdue</span>
                                 {% endif %}
+                            </td>
+                            <td>
+                                {% if r.safety_counselling and r.safety_counselling not in ['NA', '-', ''] %}
+                                    <div class="fw-bold text-dark">{{ r.safety_counselling }}</div>
+                                    {% if comp.cs_status == 'compliant' %}
+                                        <span class="badge bg-success text-white py-0.5" style="font-size:0.7rem;"><i class="fa-solid fa-check me-1"></i>OK</span>
+                                    {% elif comp.cs_status == 'due_soon' %}
+                                        <span class="badge bg-warning text-dark py-0.5" style="font-size:0.7rem;"><i class="fa-solid fa-clock me-1"></i>Due Soon</span>
+                                    {% else %}
+                                        <span class="badge bg-danger text-white py-0.5" style="font-size:0.7rem;"><i class="fa-solid fa-triangle-exclamation me-1"></i>Overdue</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-danger text-white py-0.5" style="font-size:0.7rem;"><i class="fa-solid fa-triangle-exclamation me-1"></i>Overdue</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <span><i class="fa-solid fa-gauge-high text-muted me-1"></i>SPM: {{ r.last_spm_check or '-' }}</span><br>
+                                    <span><i class="fa-solid fa-video text-muted me-1"></i>CVVRS: {{ r.last_cvvrs_check or '-' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    BA: <span class="badge {% if r.ba_fail_history and r.ba_fail_history not in ['NA', 'Nil', 'No', '-'] %}bg-danger{% else %}bg-light text-muted border{% endif %}">{{ r.ba_fail_history or 'Nil' }}</span>
+                                    SPAD: <span class="badge {% if r.spad_history and r.spad_history not in ['NA', 'Nil', 'No', '-'] %}bg-danger{% else %}bg-light text-muted border{% endif %}">{{ r.spad_history or 'Nil' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <small class="text-secondary text-truncate d-inline-block" style="max-width: 140px;">
+                                    {{ r.remarks or 'Satisfactory' }}
+                                </small>
                             </td>
                             <td class="text-end text-nowrap">
-                                <a href="{{ url_for('supervisor.edit_crew_counselling', crew_user_id=c.id) }}" class="btn btn-outline-danger btn-sm py-1 me-1">
-                                    <i class="fa-solid fa-pen-to-square me-1"></i> Counselling Data
-                                </a>
-                                <a href="{{ url_for('supervisor.new_footplate') }}?crew_id={{ c.id }}" class="btn btn-outline-primary btn-sm py-1">
-                                    <i class="fa-solid fa-file-pen me-1"></i> Footplate
-                                </a>
+                                <div class="dropdown d-inline-block">
+                                    <button class="btn btn-outline-primary btn-sm dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
+                                        <i class="fa-solid fa-sliders me-1"></i> Actions
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#fpModal{{ r.id }}">
+                                                <i class="fa-solid fa-route text-success me-2"></i> Log Footplate Inspection
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#counselModal{{ r.id }}">
+                                                <i class="fa-solid fa-comments text-primary me-2"></i> Log Counselling Session
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#spmModal{{ r.id }}">
+                                                <i class="fa-solid fa-gauge-high text-warning me-2"></i> Log SPM / CVVRS Check
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#editModal{{ r.id }}">
+                                                <i class="fa-solid fa-pen-to-square text-danger me-2"></i> Edit 24-Field Bio-Data
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger fw-bold" href="{{ url_for('supervisor.export_crew_pdf', record_id=r.id) }}" target="_blank">
+                                                <i class="fa-solid fa-file-pdf me-2"></i> Download Bio-Data PDF
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
+
+                        <!-- MODAL: QUICK FOOTPLATE -->
+                        <div class="modal fade" id="fpModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form action="{{ url_for('supervisor.quick_footplate') }}" method="POST">
+                                        <div class="modal-header bg-success text-white">
+                                            <h6 class="modal-title fw-bold"><i class="fa-solid fa-route me-2"></i>Log Footplate: {{ r.crew_name }}</h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="crew_id" value="{{ u.id if u else '' }}">
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-6">
+                                                    <label class="form-label small fw-bold">Date of Inspection</label>
+                                                    <input type="date" name="inspection_date" class="form-control form-control-sm" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label small fw-bold">Safety Grading</label>
+                                                    <select name="grading" class="form-select form-select-sm">
+                                                        <option value="A" {% if r.grade == 'A' %}selected{% endif %}>Grade A</option>
+                                                        <option value="B" {% if r.grade == 'B' %}selected{% endif %}>Grade B</option>
+                                                        <option value="C" {% if r.grade == 'C' %}selected{% endif %}>Grade C</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-6">
+                                                    <label class="form-label small fw-bold">Train No.</label>
+                                                    <input type="text" name="train_no" class="form-control form-control-sm" placeholder="e.g. 12301" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label small fw-bold">Loco No.</label>
+                                                    <input type="text" name="loco_no" class="form-control form-control-sm" placeholder="e.g. 30256 WAP7" required>
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-6">
+                                                    <label class="form-label small fw-bold">From Station</label>
+                                                    <input type="text" name="from_station" class="form-control form-control-sm" placeholder="e.g. HWH" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label small fw-bold">To Station</label>
+                                                    <input type="text" name="to_station" class="form-control form-control-sm" placeholder="e.g. BWN" required>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label small fw-bold">Footplate KMA (km)</label>
+                                                <input type="number" step="0.1" name="footplate_km" class="form-control form-control-sm" placeholder="e.g. 106.5">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label small fw-bold">Counselling & Aspects Observed</label>
+                                                <textarea name="counselling_given" class="form-control form-control-sm" rows="2" placeholder="Signal calling, MPS adherence, regenerative braking..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-success btn-sm fw-bold">Save Footplate Inspection</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MODAL: QUICK COUNSELLING -->
+                        <div class="modal fade" id="counselModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form action="{{ url_for('supervisor.quick_counselling') }}" method="POST">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h6 class="modal-title fw-bold"><i class="fa-solid fa-comments me-2"></i>Log Counselling: {{ r.crew_name }}</h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="crew_id" value="{{ u.id if u else '' }}">
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-6">
+                                                    <label class="form-label small fw-bold">Counselling Date</label>
+                                                    <input type="date" name="counsel_date" class="form-control form-control-sm" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label small fw-bold">Category</label>
+                                                    <select name="counsel_type" class="form-select form-select-sm">
+                                                        <option value="SAFETY" selected>Safety Counselling</option>
+                                                        <option value="TECHNICAL">Technical Counselling</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label small fw-bold">Topic / Rule Reference</label>
+                                                <input type="text" name="topic" class="form-control form-control-sm" placeholder="e.g. SPAD Prevention & GR 3.61 Foggy Weather">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label small fw-bold">Detailed Advice & Crew Response</label>
+                                                <textarea name="remarks" class="form-control form-control-sm" rows="3" placeholder="Notes on understanding and crew counselling..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary btn-sm fw-bold">Save Counselling Record</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MODAL: QUICK SPM / CVVRS -->
+                        <div class="modal fade" id="spmModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-warning text-dark">
+                                        <h6 class="modal-title fw-bold"><i class="fa-solid fa-gauge-high me-2"></i>Log SPM / CVVRS Check: {{ r.crew_name }}</h6>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form action="{{ url_for('supervisor.quick_spm') }}" method="POST" class="border-bottom pb-3 mb-3">
+                                            <input type="hidden" name="crew_id" value="{{ u.id if u else '' }}">
+                                            <h6 class="fw-bold text-primary small mb-2"><i class="fa-solid fa-gauge me-1"></i>SPM Speedometer / Memory Freeze Check</h6>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-6">
+                                                    <label class="form-label small">SPM Check Date</label>
+                                                    <input type="date" name="spm_date" class="form-control form-control-sm" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label small">Speed Violation?</label>
+                                                    <select name="speed_viol" class="form-select form-select-sm">
+                                                        <option value="No" selected>No (Normal)</option>
+                                                        <option value="Yes">Yes (Speed Exceeded)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-6">
+                                                    <input type="text" name="train_no" class="form-control form-control-sm" placeholder="Train No.">
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="text" name="loco_no" class="form-control form-control-sm" placeholder="Loco No.">
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-sm fw-bold w-100">Update SPM Date</button>
+                                        </form>
+
+                                        <form action="{{ url_for('supervisor.quick_cvvrs') }}" method="POST">
+                                            <input type="hidden" name="crew_id" value="{{ u.id if u else '' }}">
+                                            <h6 class="fw-bold text-success small mb-2"><i class="fa-solid fa-video me-1"></i>CVVRS (Audio / Video Recording) Check</h6>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-6">
+                                                    <label class="form-label small">CVVRS Date</label>
+                                                    <input type="date" name="cvvrs_date" class="form-control form-control-sm" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label small">Irregularity Noted</label>
+                                                    <select name="irregularity" class="form-select form-select-sm">
+                                                        <option value="Nil" selected>Nil (Compliant)</option>
+                                                        <option value="Mobile Usage">Mobile Usage</option>
+                                                        <option value="Distraction">Distraction / Drowsy</option>
+                                                        <option value="No Whistle">Whistle Not Sounded</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-success btn-sm fw-bold w-100">Update CVVRS Date</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MODAL: EDIT 24-FIELD BIO-DATA -->
+                        <div class="modal fade" id="editModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <form action="{{ url_for('supervisor.quick_edit_crew') }}" method="POST">
+                                        <input type="hidden" name="record_id" value="{{ r.id }}">
+                                        <div class="modal-header bg-dark text-white">
+                                            <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i>Edit 24-Field Bio-Data: {{ r.crew_name }} ({{ r.crew_id_str }})</h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body small">
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">Crew Name</label>
+                                                    <input type="text" name="crew_name" class="form-control form-control-sm" value="{{ r.crew_name or '' }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">CUG Mobile</label>
+                                                    <input type="text" name="cug" class="form-control form-control-sm" value="{{ r.cug or '' }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">Designation</label>
+                                                    <input type="text" name="designation" class="form-control form-control-sm" value="{{ r.designation or '' }}">
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">Safety Grade</label>
+                                                    <select name="grade" class="form-select form-select-sm">
+                                                        <option value="A" {% if r.grade == 'A' %}selected{% endif %}>Grade A</option>
+                                                        <option value="B" {% if r.grade == 'B' %}selected{% endif %}>Grade B</option>
+                                                        <option value="C" {% if r.grade == 'C' %}selected{% endif %}>Grade C</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">Lobby / HQ</label>
+                                                    <input type="text" name="crew_hq" class="form-control form-control-sm" value="{{ r.crew_hq or '' }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">PF No.</label>
+                                                    <input type="text" name="pf_no" class="form-control form-control-sm" value="{{ r.pf_no or '' }}" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">Last Footplate</label>
+                                                    <input type="text" name="last_footplate" class="form-control form-control-sm" value="{{ r.last_footplate or '' }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">Technical Counselling</label>
+                                                    <input type="text" name="technical_counselling" class="form-control form-control-sm" value="{{ r.technical_counselling or '' }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold">Safety Counselling</label>
+                                                    <input type="text" name="safety_counselling" class="form-control form-control-sm" value="{{ r.safety_counselling or '' }}">
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Last SPM Check</label>
+                                                    <input type="text" name="last_spm_check" class="form-control form-control-sm" value="{{ r.last_spm_check or '' }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Last CVVRS Check</label>
+                                                    <input type="text" name="last_cvvrs_check" class="form-control form-control-sm" value="{{ r.last_cvvrs_check or '' }}">
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-3">
+                                                    <label class="form-label fw-bold">BA Fail History</label>
+                                                    <input type="text" name="ba_fail_history" class="form-control form-control-sm" value="{{ r.ba_fail_history or 'NA' }}">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label fw-bold">Mobile Habit</label>
+                                                    <input type="text" name="mobile_habit" class="form-control form-control-sm" value="{{ r.mobile_habit or 'NA' }}">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label fw-bold">SPAD History</label>
+                                                    <input type="text" name="spad_history" class="form-control form-control-sm" value="{{ r.spad_history or 'NA' }}">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label fw-bold">DA Case</label>
+                                                    <input type="text" name="da_case" class="form-control form-control-sm" value="{{ r.da_case or 'NA' }}">
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Family Issue</label>
+                                                    <input type="text" name="family_issue" class="form-control form-control-sm" value="{{ r.family_issue or 'NA' }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Health Issue</label>
+                                                    <input type="text" name="health_issue" class="form-control form-control-sm" value="{{ r.health_issue or 'NA' }}">
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Baby Below 6 Months</label>
+                                                    <input type="text" name="baby_below_6_months" class="form-control form-control-sm" value="{{ r.baby_below_6_months or 'No' }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Accident Prone</label>
+                                                    <input type="text" name="accident_prone" class="form-control form-control-sm" value="{{ r.accident_prone or 'No' }}">
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label fw-bold">Remarks / Special Observations</label>
+                                                <textarea name="remarks" class="form-control form-control-sm" rows="2">{{ r.remarks or '' }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary btn-sm fw-bold">Save All 24 Fields</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
                     {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">No crews currently mapped to this CLI. You can map crews via the Admin Console or Excel upload.</td>
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>
+                                No crew records match your active search or squad assignment.
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -174,13 +645,13 @@
         </div>
     </div>
 
-    <!-- RECENT FOOTPLATE INSPECTIONS -->
+    <!-- RECENT FOOTPLATE INSPECTIONS LOGGED -->
     <div class="rail-card p-4">
         <div class="rail-card-header mb-3">
             <span><i class="fa-solid fa-route text-success me-2"></i> Recent Footplate Inspections Logged by You</span>
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered align-middle small">
+            <table class="table table-bordered align-middle small mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Date</th>
@@ -196,7 +667,7 @@
                     {% for insp in recent_inspections %}
                         <tr>
                             <td>{{ insp.inspection_date.strftime('%d-%b-%Y') }}</td>
-                            <td><strong>{{ insp.inspected_crew.full_name }}</strong> ({{ insp.inspected_crew.sub_role }})</td>
+                            <td><strong>{{ insp.inspected_crew.full_name if insp.inspected_crew else 'Crew' }}</strong></td>
                             <td><code>{{ insp.train_no }}</code> / <code>{{ insp.loco_no }}</code></td>
                             <td>{{ insp.from_station }} &rarr; {{ insp.to_station }}</td>
                             <td><strong>{{ insp.footplate_km|round(1) if insp.footplate_km else '-' }}</strong></td>
@@ -205,7 +676,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="6" class="text-center py-3 text-muted">No footplate inspections recorded yet.</td>
+                            <td colspan="7" class="text-center py-3 text-muted">No footplate inspections recorded yet.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

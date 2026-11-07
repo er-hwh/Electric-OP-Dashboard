@@ -47,6 +47,10 @@ def dashboard():
     # Lobbies for filter
     lobbies = Lobby.query.order_by(Lobby.code).all()
 
+    # Divisional Officer Hierarchy list
+    officers_list = User.query.filter_by(role='officer', is_active=True).all()
+    officers_list = sorted(officers_list, key=lambda o: o.officer_rank)
+
     return render_template(
         'officer/dashboard.html',
         officer=officer,
@@ -57,7 +61,8 @@ def dashboard():
         overdue_trainings=overdue_trainings,
         due_soon_trainings=due_soon_trainings,
         recent_notices=recent_notices,
-        lobbies=lobbies
+        lobbies=lobbies,
+        officers_list=officers_list
     )
 
 @officer_bp.route('/broadcast', methods=['GET', 'POST'])
@@ -166,7 +171,7 @@ def new_counselling():
             proposed_by_id=officer.id,
             approved_by_id=officer.id,
             approval_date=datetime.utcnow(),
-            officer_signature_remarks=f"Directly approved and digitally signed by {officer.sub_role} ({officer.full_name})",
+            officer_signature_remarks=f"Directly approved and digitally signed by [{officer.officer_level_title}] {officer.sub_role} ({officer.full_name})",
             questions_json=questions_json
         )
         db.session.add(topic)
@@ -201,7 +206,7 @@ def approve_counselling(topic_id):
     signature_remarks = request.form.get('signature_remarks', '').strip()
 
     if not signature_remarks:
-        signature_remarks = f"Digitally endorsed and approved for Division-wide circulation by {officer.sub_role} {officer.full_name}"
+        signature_remarks = f"Digitally endorsed and approved for Division-wide circulation by [{officer.officer_level_title}] {officer.sub_role} {officer.full_name}"
 
     topic.status = 'APPROVED'
     topic.approved_by_id = officer.id
@@ -215,7 +220,7 @@ def approve_counselling(topic_id):
             sender_id=officer.id,
             recipient_id=topic.proposed_by_id,
             subject=f"[APPROVED & SIGNED] {topic.counselling_type.capitalize()} Counselling: {topic.title}",
-            body=f"Your proposed {topic.counselling_type} counselling topic referencing {topic.rule_reference} has been approved and digitally signed by {officer.sub_role} {officer.full_name}. Digital Endorsement: \"{signature_remarks}\". The topic is now live for Running Staff.",
+            body=f"Your proposed {topic.counselling_type} counselling topic referencing {topic.rule_reference} has been approved and digitally signed by [{officer.officer_level_title}] {officer.sub_role} {officer.full_name}. Digital Endorsement: \"{signature_remarks}\". The topic is now live for Running Staff.",
             message_type='OFFICER_DIRECT_CREW',
             status='DELIVERED',
             is_read=False

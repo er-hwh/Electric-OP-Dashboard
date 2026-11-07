@@ -142,6 +142,13 @@ def api_rule(rule_id):
 
 @elearning_bp.route('/api/rule/<int:rule_id>/video', methods=['POST'])
 def api_save_rule_video(rule_id):
+    # Strict Rule: Only Admin can edit system rules & learning media
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Admin login required to edit system rules.'}), 401
+    current_u = User.query.get(session['user_id'])
+    if not current_u or not current_u.is_admin():
+        return jsonify({'success': False, 'message': 'Security Policy: System edits can only be performed by System Admin.'}), 403
+
     rule = ELearningRule.query.get_or_404(rule_id)
     data = request.get_json() or {}
     raw_video = (data.get('video_url') or data.get('youtube_video_id') or '').strip()

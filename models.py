@@ -73,6 +73,85 @@ class User(db.Model):
     def is_control(self):
         return self.role == 'control' or self.sub_role in ['CNL', 'Control', 'Power Controller', 'TLC', 'Chief Power Controller', 'PCNL']
 
+    @property
+    def power_level(self):
+        """
+        Hierarchy of Power:
+        5: Admin (Highest - System Administration & System Edit)
+        4: Officer (Sr. DEE(OP) > DEE(OP) > AEE(OP) / AME(P))
+        3: CNL (Control / Power Controller / TLC)
+        2: CLI (Chief Loco Inspector & CCC Supervisor)
+        1: Crew (Running Staff - LPM, LPP, LPG, LPS, ALP)
+        0: Public / Guest
+        """
+        if self.is_admin():
+            return 5
+        elif self.is_officer():
+            return 4
+        elif self.is_control():
+            return 3
+        elif self.is_supervisor():
+            return 2
+        elif self.is_crew():
+            return 1
+        return 0
+
+    @property
+    def power_level_name(self):
+        if self.is_admin():
+            return "System Administrator (Level 5)"
+        elif self.is_officer():
+            return f"{self.officer_level_title} (Level 4)"
+        elif self.is_control():
+            return "Control / CNL (Level 3)"
+        elif self.is_supervisor():
+            return f"Supervisor / {self.sub_role or 'CLI'} (Level 2)"
+        elif self.is_crew():
+            return f"Running Staff / {self.sub_role or 'Crew'} (Level 1)"
+        return "Public User"
+
+    @property
+    def officer_rank(self):
+        """
+        Officer Hierarchy:
+        1: Sr. DEE(OP)/HWH (Branch Officer - Head of Branch)
+        2: DEE(OP)/HWH     (Divisional Electrical Engineer)
+        3: AEE(OP)/HWH     (Assistant Electrical Engineer)
+        4: AME(P)/HWH      (Assistant Mechanical Engineer - Power)
+        5: Other Officers
+        """
+        if not self.is_officer():
+            return 99
+        s = (self.sub_role or '').upper().replace(' ', '')
+        if 'SR.DEE' in s or 'SRDEE' in s:
+            return 1
+        elif 'DEE' in s:
+            return 2
+        elif 'AEE' in s:
+            return 3
+        elif 'AME' in s:
+            return 4
+        return 5
+
+    @property
+    def officer_level_title(self):
+        rank = self.officer_rank
+        if rank == 1:
+            return "Branch Officer (Head of Branch)"
+        elif rank == 2:
+            return "Divisional Officer"
+        elif rank in [3, 4]:
+            return "Assistant Officer"
+        return "Divisional Officer"
+
+    def is_senior_officer(self):
+        """Returns True if officer is Sr. DEE(OP) or DEE(OP)."""
+        return self.is_officer() and self.officer_rank <= 2
+
+    def can_edit_system(self):
+        """Strict Rule: Only Admin can perform system edits."""
+        return self.is_admin()
+
 
 class Notice(db.Model):
     __tablename__ = 'notices'

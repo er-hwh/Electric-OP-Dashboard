@@ -7,7 +7,11 @@
     <!-- OFFICER BANNER -->
     <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
         <div>
-            <span class="badge bg-danger mb-1 fs-6"><i class="fa-solid fa-shield-halved me-1"></i> Divisional Officer Portal</span>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <span class="badge bg-danger fs-6"><i class="fa-solid fa-shield-halved me-1"></i> Divisional Officer Portal</span>
+                <span class="badge bg-dark text-warning fw-bold fs-6"><i class="fa-solid fa-ranking-star me-1"></i> {{ officer.officer_level_title }}</span>
+                <span class="badge bg-secondary text-white fw-bold">Power Level 4</span>
+            </div>
             <h3 class="fw-bold text-dark mb-0">{{ officer.full_name }}</h3>
             <span class="badge bg-warning text-dark fw-bold fs-6">{{ officer.sub_role }}</span>
             <span class="text-muted ms-2">&bull; Howrah Division, Eastern Railway</span>
@@ -33,6 +37,39 @@
             <a href="{{ url_for('officer.training_monitor') }}" class="btn btn-outline-dark btn-sm fw-bold">
                 <i class="fa-solid fa-graduation-cap me-1"></i> Training Monitor
             </a>
+        </div>
+    </div>
+
+    <!-- DIVISIONAL OFFICER HIERARCHY STRUCTURE -->
+    <div class="rail-card shadow-sm p-3 mb-4 bg-light border-start border-4 border-warning">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-sitemap me-2 text-primary"></i> Officer Hierarchy & Command Structure (Electric Operation / HWH)
+            </h6>
+            <small class="text-muted"><i class="fa-solid fa-circle-check text-success me-1"></i>Official Power Hierarchy</small>
+        </div>
+        <div class="row g-2">
+            {% for off in officers_list %}
+            <div class="col-xl-3 col-md-6 col-12">
+                <div class="card h-100 p-2 border {% if off.id == officer.id %}border-primary bg-white shadow-sm{% else %}bg-transparent{% endif %}">
+                    <div class="d-flex align-items-start gap-2">
+                        <span class="badge {% if off.officer_rank == 1 %}bg-danger{% elif off.officer_rank == 2 %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} p-2">
+                            Rank {{ off.officer_rank }}
+                        </span>
+                        <div>
+                            <div class="fw-bold small text-dark mb-0">
+                                {{ off.sub_role }}
+                                {% if off.id == officer.id %}
+                                    <span class="badge bg-primary text-white ms-1">You</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted small" style="font-size: 0.8rem;">{{ off.full_name }}</div>
+                            <div class="badge bg-light text-secondary border small mt-1" style="font-size: 0.72rem;">{{ off.officer_level_title }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 

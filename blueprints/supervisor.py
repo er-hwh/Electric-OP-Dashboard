@@ -1,7 +1,11 @@
 import os
+import io
 import json
 from datetime import datetime, date, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session
+from flask import (
+    Blueprint, render_template, request, redirect, url_for, 
+    flash, current_app, session, send_file, jsonify
+)
 from werkzeug.utils import secure_filename
 from database import db
 from models import (
@@ -17,67 +21,563 @@ supervisor_bp = Blueprint('supervisor', __name__)
 def supervisor_protection():
     pass
 
+
+# ---------------------------------------------------------------------------
+# DATE PARSER & COMPLIANCE CALCULATOR (From hwh-division-operation-dashboard)
+# ---------------------------------------------------------------------------
+
+def parse_date_value(val):
+    if not val:
+        return None
+    if isinstance(val, (datetime, date)):
+        return val.date() if isinstance(val, datetime) else val
+    s = str(val).strip()
+    if not s or s.upper() in ('NA', 'N/A', '-', '#N/A', 'NONE', 'NIL', 'NULL', 'UNKNOWN', '0'):
+        return None
+    for fmt in [
+        "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d",
+        "%d.%m.%Y", "%d-%b-%Y", "%d-%B-%Y", "%d-%b-%y",
+        "%Y-%m-%d %H:%M:%S", "%d-%m-%Y %H:%M:%S"
+    ]:
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            pass
+    try:
+        f = float(s)
+        if f > 30000:
+            return (datetime(1899, 12, 30) + timedelta(days=f)).date()
+    except Exception:
+        pass
+    return None
+
+
+def compute_overdue_status(last_fp_raw, last_counsel_raw, next_pme_raw=None):
+    """
+    Overdue Calculation matching Indian Railways Electric Operation standards:
+    - Footplate: >90 days overdue, 75-90 days due soon, compliant <75 days
+    - Counselling: >90 days overdue, 75-90 days due soon, compliant <75 days
+    - PME / Medical: overdue if past due date, due soon if <= 30 days
+    """
+    today = date.today()
+    fp_date = parse_date_value(last_fp_raw)
+    cs_date = parse_date_value(last_counsel_raw)
+    pme_due = parse_date_value(next_pme_raw)
+
+    if not fp_date:
+        fp_status = "overdue"
+    else:
+        days = (today - fp_date).days
+        if days > 90:
+            fp_status = "overdue"
+        elif days >= 75:
+            fp_status = "due_soon"
+        else:
+            fp_status = "compliant"
+
+    if not cs_date:
+        cs_status = "overdue"
+    else:
+        days = (today - cs_date).days
+        if days > 90:
+            cs_status = "overdue"
+        elif days >= 75:
+            cs_status = "due_soon"
+        else:
+            cs_status = "compliant"
+
+    if not pme_due:
+        med_status = "compliant"
+    else:
+        days_remaining = (pme_due - today).days
+        if days_remaining < 0:
+            med_status = "overdue"
+        elif days_remaining <= 30:
+            med_status = "due_soon"
+        else:
+            med_status = "compliant"
+
+    return {"fp_status": fp_status, "cs_status": cs_status, "med_status": med_status}
+
+
+# ---------------------------------------------------------------------------
+# CLI DASHBOARD & SQUAD MONITORING (Ported from hwh-division-operation-dashboard)
+# ---------------------------------------------------------------------------
+
 @supervisor_bp.route('/')
 def dashboard():
     cli = User.query.get(session['user_id'])
-    
-    # Crews assigned to this CLI
+    search_q = request.args.get('q', '').strip()
+    grade_filter = request.args.get('grade', 'ALL').strip().upper()
+    hq_filter = request.args.get('hq', 'ALL').strip().upper()
+    status_filter = request.args.get('status', 'ALL').strip().lower()
+
+    # 1. Fetch assigned crew users
     if cli.sub_role == 'CLI':
         my_crews = User.query.filter_by(cli_id=cli.id, is_active=True).all()
         crew_ids = [c.id for c in my_crews]
-    else: # CCC can see all crews in their lobby
+    else:
         my_crews = User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).all()
         crew_ids = [c.id for c in my_crews]
 
-    # Map counselling records to my crews
-    counselling_map = {}
-    if my_crews:
-        crew_pfs = [c.pf_number for c in my_crews if c.pf_number]
-        crew_mobiles = [c.mobile for c in my_crews if c.mobile]
-        records = CrewCounsellingRecord.query.filter(
-            (CrewCounsellingRecord.crew_user_id.in_(crew_ids)) |
-            (CrewCounsellingRecord.crew_id_str.in_(crew_pfs)) |
-            (CrewCounsellingRecord.cug.in_(crew_mobiles))
-        ).all()
-        for r in records:
-            if r.crew_user_id and r.crew_user_id in crew_ids:
-                counselling_map[r.crew_user_id] = r
-            else:
-                for c in my_crews:
-                    if (c.pf_number and r.crew_id_str and c.pf_number.upper() == r.crew_id_str.upper()) or \
-                       (c.mobile and r.cug and c.mobile == r.cug):
-                        counselling_map[c.id] = r
-                        if not r.crew_user_id:
-                            r.crew_user_id = c.id
-                            db.session.commit()
+    # 2. Fetch 24-column counselling records for this CLI's squad or by CLI name match
+    crew_pfs = [c.pf_number for c in my_crews if c.pf_number]
+    crew_mobiles = [c.mobile for c in my_crews if c.mobile]
+    
+    rec_query = CrewCounsellingRecord.query.filter(
+        (CrewCounsellingRecord.crew_user_id.in_(crew_ids)) |
+        (CrewCounsellingRecord.crew_id_str.in_(crew_pfs)) |
+        (CrewCounsellingRecord.cug.in_(crew_mobiles)) |
+        (CrewCounsellingRecord.cli_name.ilike(f"%{cli.full_name}%")) |
+        (CrewCounsellingRecord.cli_name.ilike(f"%{cli.username}%"))
+    )
+    records = rec_query.all()
 
-    # Pending messages from crews
+    # Link records to User rows if not already linked
+    counselling_map = {}
+    for r in records:
+        if r.crew_user_id:
+            counselling_map[r.crew_user_id] = r
+        else:
+            for c in my_crews:
+                if (c.pf_number and r.crew_id_str and c.pf_number.upper() == r.crew_id_str.upper()) or \
+                   (c.mobile and r.cug and c.mobile == r.cug):
+                    r.crew_user_id = c.id
+                    counselling_map[c.id] = r
+                    db.session.commit()
+                    break
+
+    # 3. Build comprehensive squad data with live compliance statuses
+    squad_data = []
+    # If records exist in CrewCounsellingRecord, use them as primary source to show all 24 fields
+    processed_pfs = set()
+    for r in records:
+        comp = compute_overdue_status(r.last_footplate, r.safety_counselling, None)
+        linked_user = User.query.get(r.crew_user_id) if r.crew_user_id else None
+        
+        # Apply filters
+        if grade_filter != 'ALL' and (r.grade or '').upper() != grade_filter:
+            continue
+        if hq_filter != 'ALL' and (r.crew_hq or '').upper() != hq_filter:
+            continue
+        if status_filter == 'overdue' and comp['fp_status'] != 'overdue' and comp['cs_status'] != 'overdue':
+            continue
+        if status_filter == 'due_soon' and comp['fp_status'] != 'due_soon' and comp['cs_status'] != 'due_soon':
+            continue
+        if search_q:
+            q_lower = search_q.lower()
+            if q_lower not in (r.crew_name or '').lower() and \
+               q_lower not in (r.crew_id_str or '').lower() and \
+               q_lower not in (r.cug or '').lower() and \
+               q_lower not in (r.pf_no or '').lower():
+                continue
+
+        squad_data.append({
+            'record': r,
+            'user': linked_user,
+            'compliance': comp
+        })
+        if r.pf_no:
+            processed_pfs.add(r.pf_no)
+        if r.crew_id_str:
+            processed_pfs.add(r.crew_id_str)
+
+    # Also include any assigned crews not yet in CrewCounsellingRecord
+    for c in my_crews:
+        if (c.pf_number and c.pf_number in processed_pfs) or (c.username in processed_pfs):
+            continue
+        # Create virtual record
+        comp = compute_overdue_status(None, None, None)
+        squad_data.append({
+            'record': CrewCounsellingRecord(
+                crew_user_id=c.id,
+                crew_id_str=c.username,
+                crew_name=c.full_name,
+                crew_hq=c.lobby.code if c.lobby else 'HWH',
+                cug=c.mobile,
+                designation=c.sub_role,
+                pf_no=c.pf_number,
+                grade='A'
+            ),
+            'user': c,
+            'compliance': comp
+        })
+
+    # 4. Calculate Division & Squad Compliance Metrics
+    total_nominated = len(squad_data)
+    fp_compliant_cnt = sum(1 for item in squad_data if item['compliance']['fp_status'] == 'compliant')
+    fp_due_cnt = sum(1 for item in squad_data if item['compliance']['fp_status'] == 'due_soon')
+    fp_overdue_cnt = sum(1 for item in squad_data if item['compliance']['fp_status'] == 'overdue')
+
+    cs_compliant_cnt = sum(1 for item in squad_data if item['compliance']['cs_status'] == 'compliant')
+    cs_due_cnt = sum(1 for item in squad_data if item['compliance']['cs_status'] == 'due_soon')
+    cs_overdue_cnt = sum(1 for item in squad_data if item['compliance']['cs_status'] == 'overdue')
+
+    grade_a_cnt = sum(1 for item in squad_data if (item['record'].grade or '').upper() == 'A')
+    grade_b_cnt = sum(1 for item in squad_data if (item['record'].grade or '').upper() == 'B')
+    grade_c_cnt = sum(1 for item in squad_data if (item['record'].grade or '').upper() == 'C')
+    graded_cnt = grade_a_cnt + grade_b_cnt + grade_c_cnt
+    graded_pct = round((graded_cnt / total_nominated * 100), 1) if total_nominated > 0 else 0.0
+
+    # 5. Pending messages & Recent inspections
     pending_messages = Message.query.filter(
         Message.recipient_id == cli.id,
         Message.status == 'PENDING_CLI_REVIEW'
     ).order_by(Message.created_at.desc()).all()
 
-    # Recent inspections
-    recent_inspections = FootplateInspection.query.filter_by(cli_id=cli.id).order_by(FootplateInspection.inspection_date.desc()).limit(5).all()
+    recent_inspections = FootplateInspection.query.filter_by(cli_id=cli.id).order_by(FootplateInspection.inspection_date.desc()).limit(8).all()
     total_footplate_km = sum([insp.footplate_km or 0.0 for insp in FootplateInspection.query.filter_by(cli_id=cli.id).all()])
 
-    # Training alerts for my crews
-    today = date.today()
-    crew_training_alerts = TrainingRecord.query.filter(
-        TrainingRecord.crew_id.in_(crew_ids) if crew_ids else False,
-        TrainingRecord.due_date <= today + timedelta(days=30)
-    ).order_by(TrainingRecord.due_date.asc()).all()
+    lobbies = Lobby.query.order_by(Lobby.code).all()
 
     return render_template(
         'supervisor/dashboard.html',
         cli=cli,
+        squad_data=squad_data,
         my_crews=my_crews,
-        counselling_map=counselling_map,
+        total_nominated=total_nominated,
+        fp_compliant_cnt=fp_compliant_cnt,
+        fp_due_cnt=fp_due_cnt,
+        fp_overdue_cnt=fp_overdue_cnt,
+        cs_compliant_cnt=cs_compliant_cnt,
+        cs_due_cnt=cs_due_cnt,
+        cs_overdue_cnt=cs_overdue_cnt,
+        grade_a_cnt=grade_a_cnt,
+        grade_b_cnt=grade_b_cnt,
+        grade_c_cnt=grade_c_cnt,
+        graded_pct=graded_pct,
         pending_messages=pending_messages,
         recent_inspections=recent_inspections,
         total_footplate_km=total_footplate_km,
-        crew_training_alerts=crew_training_alerts
+        search_q=search_q,
+        grade_filter=grade_filter,
+        hq_filter=hq_filter,
+        status_filter=status_filter,
+        lobbies=lobbies
     )
+
+
+# ---------------------------------------------------------------------------
+# QUICK ACTION LOGGERS (Footplate, Counselling, SPM, CVVRS, Medical, Edit)
+# ---------------------------------------------------------------------------
+
+@supervisor_bp.route('/quick-footplate', methods=['POST'])
+def quick_footplate():
+    cli = User.query.get(session['user_id'])
+    crew_id_val = request.form.get('crew_id')
+    train_no = request.form.get('train_no', '').strip()
+    loco_no = request.form.get('loco_no', '').strip()
+    from_stn = request.form.get('from_station', '').strip()
+    to_stn = request.form.get('to_station', '').strip()
+    date_str = request.form.get('inspection_date', '').strip()
+    kma_str = request.form.get('footplate_km', '0').strip()
+    grading = request.form.get('grading', 'A').strip().upper()
+    counselling_given = request.form.get('counselling_given', '').strip()
+
+    try:
+        kma = float(kma_str) if kma_str else 0.0
+    except ValueError:
+        kma = 0.0
+
+    insp_date = parse_date_value(date_str) or date.today()
+
+    crew = User.query.get(int(crew_id_val)) if crew_id_val and crew_id_val.isdigit() else None
+    
+    # Create inspection row
+    insp = FootplateInspection(
+        cli_id=cli.id,
+        crew_id=crew.id if crew else None,
+        inspection_date=insp_date,
+        train_no=train_no,
+        loco_no=loco_no,
+        from_station=from_stn,
+        to_station=to_stn,
+        grading=grading,
+        footplate_km=kma,
+        counselling_given=counselling_given
+    )
+    db.session.add(insp)
+
+    # Sync to CrewCounsellingRecord
+    formatted_date = insp_date.strftime('%d-%m-%Y')
+    rec = None
+    if crew:
+        rec = CrewCounsellingRecord.query.filter(
+            (CrewCounsellingRecord.crew_user_id == crew.id) |
+            (CrewCounsellingRecord.crew_id_str == crew.pf_number) |
+            (CrewCounsellingRecord.cug == crew.mobile)
+        ).first()
+    if rec:
+        rec.last_footplate = formatted_date
+        rec.grade = grading
+        if counselling_given:
+            rec.safety_counselling = formatted_date
+            rec.remarks = counselling_given
+
+    db.session.commit()
+    flash(f"Footplate Inspection on Train {train_no} logged successfully. Last Footplate date updated to {formatted_date}.", "success")
+    return redirect(url_for('supervisor.dashboard'))
+
+
+@supervisor_bp.route('/quick-counselling', methods=['POST'])
+def quick_counselling():
+    cli = User.query.get(session['user_id'])
+    crew_id_val = request.form.get('crew_id')
+    counsel_date_str = request.form.get('counsel_date', '').strip()
+    topic = request.form.get('topic', '').strip()
+    remarks = request.form.get('remarks', '').strip()
+    counsel_type = request.form.get('counsel_type', 'SAFETY')
+
+    c_date = parse_date_value(counsel_date_str) or date.today()
+    formatted_date = c_date.strftime('%d-%m-%Y')
+
+    crew = User.query.get(int(crew_id_val)) if crew_id_val and crew_id_val.isdigit() else None
+    rec = None
+    if crew:
+        rec = CrewCounsellingRecord.query.filter(
+            (CrewCounsellingRecord.crew_user_id == crew.id) |
+            (CrewCounsellingRecord.crew_id_str == crew.pf_number) |
+            (CrewCounsellingRecord.cug == crew.mobile)
+        ).first()
+
+    if rec:
+        if counsel_type == 'TECHNICAL':
+            rec.technical_counselling = formatted_date
+        else:
+            rec.safety_counselling = formatted_date
+        rec.counselling_verified_by = cli.full_name
+        if remarks or topic:
+            rec.remarks = f"{topic}: {remarks}" if topic and remarks else (topic or remarks)
+        db.session.commit()
+        flash(f"{counsel_type.capitalize()} Counselling logged for {rec.crew_name}. Status marked compliant as of {formatted_date}.", "success")
+    else:
+        flash("Counselling session recorded.", "info")
+
+    return redirect(url_for('supervisor.dashboard'))
+
+
+@supervisor_bp.route('/quick-spm', methods=['POST'])
+def quick_spm():
+    crew_id_val = request.form.get('crew_id')
+    spm_date_str = request.form.get('spm_date', '').strip()
+    train_no = request.form.get('train_no', '').strip()
+    loco_no = request.form.get('loco_no', '').strip()
+    speed_viol = request.form.get('speed_viol', 'No').strip()
+    remarks = request.form.get('remarks', '').strip()
+
+    s_date = parse_date_value(spm_date_str) or date.today()
+    formatted_date = s_date.strftime('%d-%m-%Y')
+
+    crew = User.query.get(int(crew_id_val)) if crew_id_val and crew_id_val.isdigit() else None
+    rec = None
+    if crew:
+        rec = CrewCounsellingRecord.query.filter(
+            (CrewCounsellingRecord.crew_user_id == crew.id) |
+            (CrewCounsellingRecord.crew_id_str == crew.pf_number) |
+            (CrewCounsellingRecord.cug == crew.mobile)
+        ).first()
+
+    if rec:
+        rec.last_spm_check = formatted_date
+        if speed_viol == 'Yes':
+            rec.remarks = f"SPM Alert: Speed violation noted on {formatted_date} (Train {train_no}, Loco {loco_no})"
+        db.session.commit()
+        flash(f"SPM checking date updated to {formatted_date} for {rec.crew_name}.", "success")
+
+    return redirect(url_for('supervisor.dashboard'))
+
+
+@supervisor_bp.route('/quick-cvvrs', methods=['POST'])
+def quick_cvvrs():
+    crew_id_val = request.form.get('crew_id')
+    cvvrs_date_str = request.form.get('cvvrs_date', '').strip()
+    irregularity = request.form.get('irregularity', 'Nil').strip()
+
+    c_date = parse_date_value(cvvrs_date_str) or date.today()
+    formatted_date = c_date.strftime('%d-%m-%Y')
+
+    crew = User.query.get(int(crew_id_val)) if crew_id_val and crew_id_val.isdigit() else None
+    rec = None
+    if crew:
+        rec = CrewCounsellingRecord.query.filter(
+            (CrewCounsellingRecord.crew_user_id == crew.id) |
+            (CrewCounsellingRecord.crew_id_str == crew.pf_number) |
+            (CrewCounsellingRecord.cug == crew.mobile)
+        ).first()
+
+    if rec:
+        rec.last_cvvrs_check = formatted_date
+        if irregularity != 'Nil':
+            rec.mobile_habit = irregularity
+        db.session.commit()
+        flash(f"CVVRS checking date updated to {formatted_date} for {rec.crew_name}.", "success")
+
+    return redirect(url_for('supervisor.dashboard'))
+
+
+@supervisor_bp.route('/quick-edit-crew', methods=['POST'])
+def quick_edit_crew():
+    record_id = request.form.get('record_id')
+    rec = CrewCounsellingRecord.query.get_or_404(int(record_id))
+    
+    rec.crew_name = request.form.get('crew_name', rec.crew_name).strip()
+    rec.cug = request.form.get('cug', rec.cug).strip()
+    rec.designation = request.form.get('designation', rec.designation).strip()
+    rec.grade = request.form.get('grade', rec.grade).strip().upper()
+    rec.crew_hq = request.form.get('crew_hq', rec.crew_hq).strip().upper()
+    rec.last_footplate = request.form.get('last_footplate', rec.last_footplate).strip()
+    rec.technical_counselling = request.form.get('technical_counselling', rec.technical_counselling).strip()
+    rec.safety_counselling = request.form.get('safety_counselling', rec.safety_counselling).strip()
+    rec.last_spm_check = request.form.get('last_spm_check', rec.last_spm_check).strip()
+    rec.last_cvvrs_check = request.form.get('last_cvvrs_check', rec.last_cvvrs_check).strip()
+    rec.ba_fail_history = request.form.get('ba_fail_history', rec.ba_fail_history).strip()
+    rec.mobile_habit = request.form.get('mobile_habit', rec.mobile_habit).strip()
+    rec.spad_history = request.form.get('spad_history', rec.spad_history).strip()
+    rec.da_case = request.form.get('da_case', rec.da_case).strip()
+    rec.family_issue = request.form.get('family_issue', rec.family_issue).strip()
+    rec.health_issue = request.form.get('health_issue', rec.health_issue).strip()
+    rec.baby_below_6_months = request.form.get('baby_below_6_months', rec.baby_below_6_months).strip()
+    rec.accident_prone = request.form.get('accident_prone', rec.accident_prone).strip()
+    rec.remarks = request.form.get('remarks', rec.remarks).strip()
+
+    # Sync to User model if linked
+    if rec.crew_user:
+        if rec.cug:
+            rec.crew_user.mobile = rec.cug
+        if rec.designation:
+            rec.crew_user.sub_role = rec.designation
+        if rec.crew_name:
+            rec.crew_user.full_name = rec.crew_name
+
+    db.session.commit()
+    flash(f"24-field Bio-Data & Safety Record for {rec.crew_name} successfully updated!", "success")
+    return redirect(url_for('supervisor.dashboard'))
+
+
+# ---------------------------------------------------------------------------
+# EXPORTS: 24-COLUMN EXCEL ROSTER & CREW BIO-DATA PDF
+# ---------------------------------------------------------------------------
+
+@supervisor_bp.route('/export-roster-excel')
+def export_roster_excel():
+    cli = User.query.get(session['user_id'])
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+
+    # Query CLI's squad records
+    records = CrewCounsellingRecord.query.filter(
+        (CrewCounsellingRecord.cli_name.ilike(f"%{cli.full_name}%")) |
+        (CrewCounsellingRecord.cli_name.ilike(f"%{cli.username}%"))
+    ).all()
+
+    if not records:
+        records = CrewCounsellingRecord.query.limit(200).all()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "CLI Squad Roster"
+
+    headers = [
+        "Sl No.", "CLI", "CREW NAME", "CREW ID", "CREW HQ", "CUG", "DESG", "DESG SINCE",
+        "PF NO", "GRADE", "LAST FOOTPLATE", "TECHNICAL COUNSELLING", "SAFETY COUNSELLING",
+        "LAST SPM CHECKING DATE", "LAST CVVRS CHECKING DATE", "BA FAIL TEST HISTORY",
+        "Mobile habit", "SPAD HISTORY", "DA CASE", "FAMILY ISSUE", "HEALTH ISSUE",
+        "Baby below 6 month age", "Accident Prone", "Remarks"
+    ]
+    ws.append(headers)
+
+    header_fill = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
+    header_font = Font(name="Arial", size=10, bold=True, color="FFFFFF")
+    for col_idx in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    for i, r in enumerate(records, 1):
+        ws.append([
+            i, r.cli_name or cli.full_name, r.crew_name or '', r.crew_id_str or '', r.crew_hq or '',
+            r.cug or '', r.designation or '', r.designation_since or '', r.pf_no or '',
+            r.grade or 'A', r.last_footplate or '', r.technical_counselling or '',
+            r.safety_counselling or '', r.last_spm_check or '', r.last_cvvrs_check or '',
+            r.ba_fail_history or 'NA', r.mobile_habit or 'NA', r.spad_history or 'NA',
+            r.da_case or 'NA', r.family_issue or 'NA', r.health_issue or 'NA',
+            r.baby_below_6_months or 'No', r.accident_prone or 'No', r.remarks or ''
+        ])
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = min(max(max_len + 3, 11), 32)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f"CLI_{cli.username}_Squad_Roster.xlsx"
+    )
+
+
+@supervisor_bp.route('/crew/<int:record_id>/export-pdf')
+def export_crew_pdf(record_id):
+    rec = CrewCounsellingRecord.query.get_or_404(record_id)
+    crew_user = rec.crew_user or User.query.filter(
+        (User.username == rec.crew_id_str) | (User.mobile == rec.cug) | (User.pf_number == rec.pf_no)
+    ).first()
+    
+    inspections = FootplateInspection.query.filter_by(crew_id=crew_user.id).order_by(FootplateInspection.inspection_date.desc()).all() if crew_user else []
+
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER
+
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=28, rightMargin=28, topMargin=28, bottomMargin=28)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=13, leading=16, alignment=TA_CENTER, textColor=colors.HexColor('#0D47A1'))
+        elements.append(Paragraph("EASTERN RAILWAY &bull; HOWRAH DIVISION", title_style))
+        elements.append(Paragraph("ELECTRIC OPERATION DEPARTMENT &bull; RUNNING CREW BIO-DATA & SAFETY SHEET", styles['Normal']))
+        elements.append(Spacer(1, 10))
+
+        data = [
+            ["Crew Name:", rec.crew_name or 'N/A', "CMS Crew ID:", rec.crew_id_str or 'N/A'],
+            ["Designation:", rec.designation or 'ALP', "Lobby / HQ:", rec.crew_hq or 'HWH'],
+            ["CUG Mobile:", rec.cug or 'N/A', "PF No / HRMS:", rec.pf_no or 'N/A'],
+            ["Safety Grade:", rec.grade or 'A', "Nominated CLI:", rec.cli_name or 'CLI/HWH'],
+            ["Last Footplate:", rec.last_footplate or 'N/A', "Technical Counselling:", rec.technical_counselling or 'N/A'],
+            ["Safety Counselling:", rec.safety_counselling or 'N/A', "Verified By:", rec.counselling_verified_by or 'N/A'],
+            ["Last SPM Check:", rec.last_spm_check or 'N/A', "Last CVVRS Check:", rec.last_cvvrs_check or 'N/A'],
+            ["BA Fail History:", rec.ba_fail_history or 'Nil', "SPAD History:", rec.spad_history or 'Nil'],
+            ["Mobile Habit:", rec.mobile_habit or 'Normal', "DA Case:", rec.da_case or 'Nil'],
+            ["Family Issue:", rec.family_issue or 'Nil', "Health Issue:", rec.health_issue or 'Nil'],
+            ["Baby < 6 Months:", rec.baby_below_6_months or 'No', "Accident Prone:", rec.accident_prone or 'No'],
+            ["Safety Remarks:", Paragraph(rec.remarks or 'Satisfactory performance in section.', styles['Normal']), "", ""]
+        ]
+        t = Table(data, colWidths=[110, 160, 110, 160])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.whitesmoke),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+            ('FONTNAME', (2,0), (2,-1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 8.5),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
+            ('TOPPADDING', (0,0), (-1,-1), 3.5),
+        ]))
+        elements.append(t)
+        doc.build(elements)
+        buf.seek(0)
+        return send_file(buf, mimetype='application/pdf', as_attachment=True, download_name=f"BioData_{rec.crew_id_str}.pdf")
+    except Exception:
+        return render_template('crew/biodata_print.html', crew=crew_user, rec=rec, inspections=inspections)
 
 @supervisor_bp.route('/footplate/new', methods=['GET', 'POST'])
 def new_footplate():
@@ -232,9 +732,9 @@ def instruct_crews():
     return render_template('supervisor/instruct_crews.html', my_crews=my_crews)
 
 
-# ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 #  CREW SAFETY & COUNSELLING MANAGEMENT (CLI EXCLUSIVE EDIT)
-# ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @supervisor_bp.route('/counselling')
 def counselling():

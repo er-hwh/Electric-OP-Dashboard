@@ -1,5 +1,7 @@
-from datetime import datetime, date
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+import os
+import io
+from datetime import datetime, date, timedelta
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file
 from database import db
 from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, 
@@ -7,6 +9,7 @@ from models import (
     CrewCounsellingRecord
 )
 from blueprints.auth import role_required
+from blueprints.supervisor import compute_overdue_status, parse_date_value
 
 crew_bp = Blueprint('crew', __name__)
 
@@ -42,26 +45,131 @@ def dashboard():
     counselling_record = CrewCounsellingRecord.query.filter(
         (CrewCounsellingRecord.crew_user_id == crew.id) |
         (CrewCounsellingRecord.crew_id_str == crew.pf_number) |
-        (CrewCounsellingRecord.cug == crew.mobile)
+        (CrewCounsellingRecord.cug == crew.mobile) |
+        (CrewCounsellingRecord.crew_id_str == crew.username)
     ).first()
 
-    # 6. Messages & Replies
+    if not counselling_record:
+        # Create initial record for this crew
+        counselling_record = CrewCounsellingRecord(
+            crew_user_id=crew.id,
+            crew_id_str=crew.username,
+            crew_name=crew.full_name,
+            crew_hq=crew.lobby.code if crew.lobby else 'HWH',
+            cug=crew.mobile,
+            designation=crew.sub_role,
+            pf_no=crew.pf_number or '',
+            grade='A'
+        )
+        db.session.add(counselling_record)
+        db.session.commit()
+
+    # 6. Compliance Status
+    compliance = compute_overdue_status(
+        counselling_record.last_footplate,
+        counselling_record.safety_counselling,
+        None
+    )
+
+    # 7. Nominated CLI lookup
+    cli_user = crew.nominated_cli
+    if not cli_user and counselling_record.cli_name:
+        cli_user = User.query.filter(
+            (User.role == 'supervisor') & (User.full_name.ilike(f"%{counselling_record.cli_name}%"))
+        ).first()
+
+    # 8. Messages & Replies
     inbox = Message.query.filter_by(recipient_id=crew.id).order_by(Message.created_at.desc()).all()
     sent_messages = Message.query.filter_by(sender_id=crew.id).order_by(Message.created_at.desc()).all()
 
     return render_template(
         'crew/dashboard.html',
         crew=crew,
+        counselling_record=counselling_record,
+        compliance=compliance,
+        cli_user=cli_user,
         trainings=trainings,
         pending_notices=pending_notices,
         acked_notices=acked_notices,
         counselling_list=counselling_list,
         acked_counsel_ids=acked_counsel_ids,
         inspections=inspections,
-        counselling_record=counselling_record,
         inbox=inbox,
         sent_messages=sent_messages
     )
+
+
+@crew_bp.route('/update-profile', methods=['POST'])
+def update_profile():
+    crew = User.query.get(session['user_id'])
+    mobile = request.form.get('mobile', '').strip()
+    email = request.form.get('email', '').strip()
+    
+    if mobile:
+        crew.mobile = mobile
+        rec = CrewCounsellingRecord.query.filter_by(crew_user_id=crew.id).first()
+        if rec:
+            rec.cug = mobile
+    if email:
+        crew.email = email
+    db.session.commit()
+    flash('Your contact details have been successfully updated.', 'success')
+    return redirect(url_for('crew.dashboard'))
+
+
+@crew_bp.route('/export-pdf')
+def export_my_pdf():
+    crew = User.query.get(session['user_id'])
+    rec = CrewCounsellingRecord.query.filter_by(crew_user_id=crew.id).first()
+    inspections = FootplateInspection.query.filter_by(crew_id=crew.id).order_by(FootplateInspection.inspection_date.desc()).all()
+
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER
+
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=28, rightMargin=28, topMargin=28, bottomMargin=28)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=13, leading=16, alignment=TA_CENTER, textColor=colors.HexColor('#065f46'))
+        elements.append(Paragraph("EASTERN RAILWAY &bull; HOWRAH DIVISION", title_style))
+        elements.append(Paragraph("ELECTRIC OPERATION DEPARTMENT &bull; RUNNING CREW PERSONAL SAFETY & BIO-DATA SHEET", styles['Normal']))
+        elements.append(Spacer(1, 10))
+
+        data = [
+            ["Crew Name:", rec.crew_name if rec else crew.full_name, "CMS Crew ID:", rec.crew_id_str if rec else crew.username],
+            ["Designation:", rec.designation if rec else crew.sub_role, "Lobby / HQ:", rec.crew_hq if rec else (crew.lobby.code if crew.lobby else 'HWH')],
+            ["CUG Mobile:", rec.cug if rec else crew.mobile, "PF No / HRMS:", rec.pf_no if rec else (crew.pf_number or 'N/A')],
+            ["Safety Grade:", rec.grade if rec else 'A', "Nominated CLI:", rec.cli_name if rec else 'CLI/HWH'],
+            ["Last Footplate:", rec.last_footplate if rec else 'N/A', "Technical Counselling:", rec.technical_counselling if rec else 'N/A'],
+            ["Safety Counselling:", rec.safety_counselling if rec else 'N/A', "Verified By:", rec.counselling_verified_by if rec else 'N/A'],
+            ["Last SPM Check:", rec.last_spm_check if rec else 'N/A', "Last CVVRS Check:", rec.last_cvvrs_check if rec else 'N/A'],
+            ["BA Fail History:", rec.ba_fail_history if rec else 'Nil', "SPAD History:", rec.spad_history if rec else 'Nil'],
+            ["Mobile Habit:", rec.mobile_habit if rec else 'Normal', "DA Case:", rec.da_case if rec else 'Nil'],
+            ["Family Issue:", rec.family_issue if rec else 'Nil', "Health Issue:", rec.health_issue if rec else 'Nil'],
+            ["Baby < 6 Months:", rec.baby_below_6_months if rec else 'No', "Accident Prone:", rec.accident_prone if rec else 'No'],
+            ["Safety Remarks:", Paragraph(rec.remarks if (rec and rec.remarks) else 'Satisfactory performance in section.', styles['Normal']), "", ""]
+        ]
+        t = Table(data, colWidths=[110, 160, 110, 160])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.whitesmoke),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+            ('FONTNAME', (2,0), (2,-1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 8.5),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
+            ('TOPPADDING', (0,0), (-1,-1), 3.5),
+        ]))
+        elements.append(t)
+        doc.build(elements)
+        buf.seek(0)
+        return send_file(buf, mimetype='application/pdf', as_attachment=True, download_name=f"BioData_{crew.username}.pdf")
+    except Exception:
+        return render_template('crew/biodata_print.html', crew=crew, rec=rec, inspections=inspections)
 
 
 @crew_bp.route('/report-problem', methods=['POST'])

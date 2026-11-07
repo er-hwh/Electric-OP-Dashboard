@@ -46,9 +46,14 @@
                             <button class="btn btn-outline-light btn-sm dropdown-toggle fw-bold" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fa-solid fa-user-circle me-1 text-warning"></i>
                                 {{ current_user.full_name }}
-                                {% if current_user.sub_role %}
-                                    <span class="badge bg-warning text-dark ms-1">{{ current_user.sub_role }}</span>
-                                {% endif %}
+                                <span class="badge bg-warning text-dark ms-1">
+                                    {% if current_user.is_admin() %}Admin (L5)
+                                    {% elif current_user.is_officer() %}{{ current_user.sub_role }} (L4)
+                                    {% elif current_user.is_control() %}CNL (L3)
+                                    {% elif current_user.is_supervisor() %}{{ current_user.sub_role or 'CLI' }} (L2)
+                                    {% elif current_user.is_crew() %}{{ current_user.sub_role or 'Crew' }} (L1)
+                                    {% else %}{{ current_user.sub_role or current_user.role|title }}{% endif %}
+                                </span>
                                 {% if unread_count > 0 %}
                                     <span class="badge bg-danger ms-1">{{ unread_count }}</span>
                                 {% endif %}
@@ -56,7 +61,8 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userMenu">
                                 <li>
                                     <h6 class="dropdown-header text-primary fw-bold">
-                                        {{ current_user.role|upper }} - {{ current_user.username }}
+                                        {{ current_user.power_level_name }}
+                                        <br><span class="text-dark fw-normal small"><i class="fa-solid fa-id-badge me-1 text-muted"></i>{{ current_user.username }}</span>
                                         {% if current_user.lobby %}
                                             <br><small class="text-muted"><i class="fa-solid fa-house-chimney me-1"></i>Lobby: {{ current_user.lobby.code }}</small>
                                         {% endif %}
@@ -64,16 +70,22 @@
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 {% if current_user.is_admin() %}
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-gauge-high me-2 text-primary"></i>Admin Console</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Control Dashboard</a></li>
-                                {% elif current_user.is_control() %}
-                                    <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Control Dashboard</a></li>
-                                {% elif current_user.is_officer() %}
+                                    <li><a class="dropdown-item fw-bold text-danger" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>Admin Console (System Edit)</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Officer Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Control Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>Supervisor Console</a></li>
+                                {% elif current_user.is_officer() %}
+                                    <li><a class="dropdown-item fw-bold text-primary" href="{{ url_for('officer.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Officer Dashboard ({{ current_user.officer_level_title }})</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Control Live View</a></li>
+                                {% elif current_user.is_control() %}
+                                    <li><a class="dropdown-item fw-bold text-warning" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Control Dashboard (CNL)</a></li>
                                 {% elif current_user.is_supervisor() %}
-                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-primary"></i>Supervisor Dashboard</a></li>
+                                    <li><a class="dropdown-item fw-bold text-info" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>Supervisor Dashboard (CLI)</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.counselling') }}"><i class="fa-solid fa-clipboard-user me-2 text-danger"></i>Safety Register (24 Fields)</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.export_roster_excel') }}"><i class="fa-solid fa-file-excel me-2 text-success"></i>Export 24-Col Excel</a></li>
                                 {% elif current_user.is_crew() %}
-                                    <li><a class="dropdown-item" href="{{ url_for('crew.dashboard') }}"><i class="fa-solid fa-id-card me-2 text-primary"></i>Crew Dashboard</a></li>
+                                    <li><a class="dropdown-item fw-bold text-success" href="{{ url_for('crew.dashboard') }}"><i class="fa-solid fa-id-card me-2 text-success"></i>Crew Running Desk</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('crew.export_my_pdf') }}" target="_blank"><i class="fa-solid fa-file-pdf me-2 text-danger"></i>My Bio-Data PDF</a></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}"><i class="fa-solid fa-key me-2 text-warning"></i>Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
