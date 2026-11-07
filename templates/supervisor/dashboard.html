@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Supervisor Dashboard | Chief Loco Inspector Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- SUPERVISOR BANNER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <div>
+            <span class="badge bg-success mb-1 fs-6"><i class="fa-solid fa-clipboard-check me-1"></i> Supervisor Portal</span>
+            <h3 class="fw-bold text-dark mb-0">{{ cli.full_name }}</h3>
+            <span class="badge bg-primary fs-6">{{ cli.sub_role }}: {{ cli.username }}</span>
+            {% if cli.lobby %}
+                <span class="badge bg-light text-dark border ms-1"><i class="fa-solid fa-house-chimney me-1"></i>Lobby: {{ cli.lobby.code }} - {{ cli.lobby.name }}</span>
+            {% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+            <div class="p-2 bg-white rounded border shadow-sm text-end me-2">
+                <small class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.7rem;">Footplate KMA (Rule 1515)</small>
+                <span class="fs-6 fw-bold text-success">{{ total_footplate_km|round(1) }} KMs</span>
+            </div>
+            <a href="{{ url_for('supervisor.new_counselling_topic') }}" class="btn btn-success btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-file-signature me-1"></i> Draft Counselling (GR & SR)
+            </a>
+            <a href="{{ url_for('supervisor.counselling') }}" class="btn btn-danger btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-clipboard-user me-1"></i> Safety & Counselling Register
+            </a>
+            <a href="{{ url_for('supervisor.new_footplate') }}" class="btn btn-primary btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-file-pen me-1"></i> Log Footplate Inspection
+            </a>
+            <a href="{{ url_for('supervisor.instruct_crews') }}" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-bullhorn me-1"></i> Instruct Assigned Crews
+            </a>
+        </div>
+    </div>
+
+    <!-- PENDING CREW MESSAGES AWAITING CLI ACTION -->
+    <div class="rail-card p-4 mb-4">
+        <div class="rail-card-header accent-gold mb-3">
+            <span>
+                <i class="fa-solid fa-envelope-open-text text-warning me-2"></i> Messages from Running Staff (Awaiting CLI Review)
+            </span>
+            <span class="badge bg-danger">{{ pending_messages|length }} Pending Action</span>
+        </div>
+
+        {% if pending_messages %}
+            <div class="row g-3">
+                {% for m in pending_messages %}
+                    <div class="col-lg-6">
+                        <div class="card border border-warning shadow-sm h-100">
+                            <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
+                                <strong class="text-dark">{{ m.subject }}</strong>
+                                <small class="text-muted">{{ m.created_at.strftime('%d-%b %H:%M') }}</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2 p-2 bg-light rounded small">
+                                    <strong class="text-primary"><i class="fa-solid fa-user me-1"></i> From:</strong> {{ m.sender.full_name }} ({{ m.sender.sub_role }}) &bull; Mobile: <code>{{ m.sender.mobile }}</code>
+                                </div>
+                                <p class="small text-secondary mb-3">
+                                    {{ m.body }}
+                                </p>
+
+                                <!-- CLI ACTION FORM -->
+                                <form action="{{ url_for('supervisor.handle_message', message_id=m.id) }}" method="POST" class="border-top pt-2">
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold text-dark">CLI Remarks / Recommendation:</label>
+                                        <textarea name="cli_remarks" class="form-control form-control-sm" rows="2" placeholder="Write guidance or remarks for escalation..." required></textarea>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" name="action" value="resolve" class="btn btn-outline-success btn-sm fw-bold flex-fill">
+                                            <i class="fa-solid fa-check me-1"></i> Resolve at CLI Level
+                                        </button>
+                                        <button type="submit" name="action" value="forward" class="btn btn-danger btn-sm fw-bold flex-fill">
+                                            <i class="fa-solid fa-forward me-1"></i> Forward to Officers
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fa-regular fa-circle-check fa-2x text-success mb-2 d-block"></i>
+                No pending crew messages. All crew requests are reviewed!
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- NOMINATED CREW MEMBERS SQUAD -->
+    <div class="rail-card p-4 mb-4">
+        <div class="rail-card-header accent-blue mb-3">
+            <span>
+                <i class="fa-solid fa-users text-primary me-2"></i> Nominated Running Staff Squad ({{ my_crews|length }} Crews)
+            </span>
+            <small class="text-muted">Assigned for Footplate Monitoring, Technical Counselling & Safety Grading</small>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered align-middle small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Crew Name</th>
+                        <th>Designation</th>
+                        <th>Mobile (Login ID)</th>
+                        <th>Safety Grade</th>
+                        <th>Last Footplate / Counselling</th>
+                        <th>Training Alerts</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in my_crews %}
+                        {% set crec = counselling_map.get(c.id) %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark">{{ c.full_name }}</strong>
+                                <small class="text-muted d-block">PF: {{ c.pf_number or 'N/A' }} | {{ c.lobby.code if c.lobby else 'HWH' }}</small>
+                            </td>
+                            <td><span class="badge bg-primary">{{ c.sub_role }}</span></td>
+                            <td><code>{{ c.mobile }}</code></td>
+                            <td>
+                                {% if crec and crec.grade == 'A' %}
+                                    <span class="badge bg-success fs-6">Grade A</span>
+                                {% elif crec and crec.grade == 'B' %}
+                                    <span class="badge bg-primary fs-6">Grade B</span>
+                                {% elif crec and crec.grade == 'C' %}
+                                    <span class="badge bg-danger fs-6">Grade C</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Not Graded</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if crec and crec.last_footplate and crec.last_footplate not in ['NA', '-'] %}
+                                    <div><small class="fw-bold text-success"><i class="fa-solid fa-route me-1"></i>FP:</small> {{ crec.last_footplate }}</div>
+                                {% endif %}
+                                {% if crec and crec.safety_counselling and crec.safety_counselling not in ['NA', '-'] %}
+                                    <div><small class="fw-bold text-primary"><i class="fa-solid fa-comments me-1"></i>Counsel:</small> {{ crec.safety_counselling }}</div>
+                                {% endif %}
+                                {% if not crec or (not crec.last_footplate and not crec.safety_counselling) %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set alerts = c.training_records.all() %}
+                                {% set overdue_count = alerts | selectattr('status_info.status', 'equalto', 'OVERDUE') | list | length %}
+                                {% set due_count = alerts | selectattr('status_info.status', 'equalto', 'DUE_SOON') | list | length %}
+
+                                {% if overdue_count > 0 %}
+                                    <span class="badge bg-danger"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ overdue_count }} Overdue</span>
+                                {% elif due_count > 0 %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>{{ due_count }} Due Soon</span>
+                                {% else %}
+                                    <span class="badge bg-success">All Valid</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a href="{{ url_for('supervisor.edit_crew_counselling', crew_user_id=c.id) }}" class="btn btn-outline-danger btn-sm py-1 me-1">
+                                    <i class="fa-solid fa-pen-to-square me-1"></i> Counselling Data
+                                </a>
+                                <a href="{{ url_for('supervisor.new_footplate') }}?crew_id={{ c.id }}" class="btn btn-outline-primary btn-sm py-1">
+                                    <i class="fa-solid fa-file-pen me-1"></i> Footplate
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No crews currently mapped to this CLI. You can map crews via the Admin Console or Excel upload.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- RECENT FOOTPLATE INSPECTIONS -->
+    <div class="rail-card p-4">
+        <div class="rail-card-header mb-3">
+            <span><i class="fa-solid fa-route text-success me-2"></i> Recent Footplate Inspections Logged by You</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Crew Inspected</th>
+                        <th>Train No. / Loco No.</th>
+                        <th>Section (From - To)</th>
+                        <th>KM (KMA)</th>
+                        <th>Grade</th>
+                        <th>Counselling & Aspects Covered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for insp in recent_inspections %}
+                        <tr>
+                            <td>{{ insp.inspection_date.strftime('%d-%b-%Y') }}</td>
+                            <td><strong>{{ insp.inspected_crew.full_name }}</strong> ({{ insp.inspected_crew.sub_role }})</td>
+                            <td><code>{{ insp.train_no }}</code> / <code>{{ insp.loco_no }}</code></td>
+                            <td>{{ insp.from_station }} &rarr; {{ insp.to_station }}</td>
+                            <td><strong>{{ insp.footplate_km|round(1) if insp.footplate_km else '-' }}</strong></td>
+                            <td><span class="badge {% if insp.grading == 'A' %}bg-success{% elif insp.grading == 'B' %}bg-primary{% elif insp.grading == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6">{{ insp.grading }}</span></td>
+                            <td>{{ insp.counselling_given or insp.aspects_covered }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-3 text-muted">No footplate inspections recorded yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

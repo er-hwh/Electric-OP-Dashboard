@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us & Lobby Directory | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="rail-card p-4 mb-4">
+        <div class="border-bottom pb-3 mb-4">
+            <h3 class="fw-bold text-primary mb-1">
+                <i class="fa-solid fa-phone-volume text-warning me-2"></i> Contact Us & Lobby Communication Directory
+            </h3>
+            <p class="text-muted mb-0">Electric Operation Department &bull; DRM Office, Howrah &bull; Eastern Railway</p>
+        </div>
+
+        <!-- EMERGENCY CONTROLS -->
+        <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded mb-4">
+            <h5 class="fw-bold text-danger mb-2"><i class="fa-solid fa-headset me-2"></i> 24x7 Emergency Traction & Operational Controls:</h5>
+            <div class="row g-3 text-center">
+                <div class="col-md-4">
+                    <div class="p-2 bg-white rounded border shadow-sm">
+                        <strong class="text-dark">Traction Loco Control (TLC)</strong><br>
+                        <span class="fs-6 text-danger fw-bold"><i class="fa-solid fa-phone me-1"></i> 22328</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-2 bg-white rounded border shadow-sm">
+                        <strong class="text-dark">Power Control (PCNL)</strong><br>
+                        <span class="fs-6 text-danger fw-bold"><i class="fa-solid fa-phone me-1"></i> 22666 / 22667</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-2 bg-white rounded border">
+                        <strong class="text-dark">Chief Controller / Operating (DOM Control)</strong><br>
+                        <span class="fs-6 text-danger fw-bold"><i class="fa-solid fa-phone me-1"></i> 033-2660-0030</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DIVISIONAL OFFICERS DIRECTORY -->
+        <div class="mb-4">
+            <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                <i class="fa-solid fa-user-shield me-2 text-warning"></i> Divisional Officers Directory
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle small">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Designation</th>
+                            <th>Officer Name</th>
+                            <th>Office Location</th>
+                            <th>Railway Mobile</th>
+                            <th>Official Railnet Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-primary">Sr. DEE(OP)/HWH</td>
+                            <td>Mr. Arun Kumar Rana (IRSEE)</td>
+                            <td>DRM Building, 2nd Floor, Howrah</td>
+                            <td>9002022300</td>
+                            <td>srdee.op.hwh@er.railnet.gov.in</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">AEE(OP)/HWH</td>
+                            <td>Mr. Sourav Nandi</td>
+                            <td>DRM Building, 2nd Floor, Howrah</td>
+                            <td>9002022301</td>
+                            <td>aee.op.hwh@er.railnet.gov.in</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">AME(P)/HWH</td>
+                            <td>Mr. Viwshambhar Prasad</td>
+                            <td>DRM Building, 2nd Floor, Howrah</td>
+                            <td>9002022302</td>
+                            <td>ame.p.hwh@er.railnet.gov.in</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 11 LOBBIES DIRECTORY -->
+        <div>
+            <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                <i class="fa-solid fa-building-flag me-2 text-warning"></i> 11 Running Lobbies & Chief Crew Controllers (CCC)
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle small">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Lobby Code</th>
+                            <th>Lobby Name</th>
+                            <th>Chief Crew Controller (CCC) In-Charge</th>
+                            <th>Contact / Intercom</th>
+                            <th>Jurisdiction / Operation Profile</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in lobbies %}
+                            <tr>
+                                <td><span class="badge bg-primary fs-6">{{ l.code }}</span></td>
+                                <td class="fw-bold text-dark">{{ l.name }}</td>
+                                <td><i class="fa-solid fa-user-tie text-secondary me-1"></i>{{ l.ccc_name }}</td>
+                                <td><i class="fa-solid fa-phone text-muted me-1"></i>{{ l.phone }}</td>
+                                <td class="text-secondary">{{ l.description }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

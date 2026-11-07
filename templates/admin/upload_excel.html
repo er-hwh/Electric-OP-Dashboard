@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block title %}Excel Upload Centre — Admin{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Page Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:56px;height:56px;font-size:1.5rem;">
+          <i class="fas fa-file-excel"></i>
+        </div>
+        <div>
+          <h2 class="mb-0 fw-bold text-primary">Excel Upload Centre</h2>
+          <p class="mb-0 text-muted">Bulk import Crew, CLI and Counselling data from CMS / Master Excel sheets</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category=='success' else 'danger' if category=='danger' else 'warning' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Info Box -->
+  <div class="alert alert-info border-0 rounded-3 mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>How it works:</strong> Select the correct upload type, then choose one or more <code>.xlsx</code> / <code>.xls</code> files.
+    The system automatically detects CMS report header rows and imports data.
+    All imported crew and CLI accounts are <strong>pre-activated</strong> with default password <code>12345</code>.
+    You can select <strong>multiple files</strong> for the same upload type in one submission.
+  </div>
+
+  <!-- Upload Form -->
+  <div class="card shadow-sm border-0 mb-5">
+    <div class="card-header bg-primary text-white py-3">
+      <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Excel File(s)</h5>
+    </div>
+    <div class="card-body p-4">
+      <form method="POST" enctype="multipart/form-data" id="uploadForm">
+
+        <!-- Upload Type Selector -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold fs-6">Step 1 — Select Upload Type</label>
+          <div class="row g-3">
+
+            {% set types = [
+              ('crew_data',    'fas fa-id-card',    'bg-primary',   'Crew Data (CMS)',        'CMS Call Serve Report\nCols: CREW ID · CREW NAME · DESIGNATION · MOBILE NO · EMAIL · ADDRESS'),
+              ('crew_summary', 'fas fa-users',      'bg-success',   'Crew Summary / Bio',     'CMS Bio Summary\nCols: CREWID · HRMS · CADRE · DOB · PME · CLI Name · Grade · Vision'),
+              ('cli_biodata',  'fas fa-user-tie',   'bg-warning',   'CLI Bio Data',           'CMS CLI/TI Biodata\nCols: LI ID · NAME · HQ · DOB · DOA · DOP · EMP NO · MOBILE'),
+              ('counselling',  'fas fa-clipboard-list','bg-danger',  'Crew Counselling Master','Master Sheet\nCols: CLI · CREW ID · GRADE · FOOTPLATE · COUNSELLING dates · BA FAIL · SPAD · REMARKS'),
+              ('training',     'fas fa-graduation-cap','bg-info',    'Training Records',       'Custom Training Sheet\nCols: MOBILE · TRAINING TYPE · INSTITUTE · LAST DONE · DUE DATE'),
+            ] %}
+
+            {% for val, icon, color, title, desc in types %}
+            <div class="col-12 col-md-6 col-xl-4">
+              <label class="upload-type-card w-100 h-100" for="type_{{ val }}">
+                <input type="radio" name="upload_type" id="type_{{ val }}" value="{{ val }}"
+                       class="d-none upload-type-radio"
+                       {% if loop.first %}checked{% endif %}>
+                <div class="card border-2 h-100 type-card-inner" data-color="{{ color }}">
+                  <div class="card-body d-flex align-items-start gap-3 py-3">
+                    <div class="rounded-circle {{ color }} text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:44px;height:44px;font-size:1.1rem;">
+                      <i class="{{ icon }}"></i>
+                    </div>
+                    <div>
+                      <div class="fw-semibold">{{ title }}</div>
+                      <small class="text-muted" style="white-space:pre-line;line-height:1.4;">{{ desc }}</small>
+                    </div>
+                  </div>
+                </div>
+              </label>
+            </div>
+            {% endfor %}
+
+          </div>
+        </div>
+
+        <!-- File Picker -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold fs-6">Step 2 — Choose File(s)</label>
+          <div class="border-2 border-dashed rounded-3 p-4 text-center" id="dropZone"
+               style="border-color:#002244;cursor:pointer;transition:background .2s;">
+            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+            <p class="mb-2 fw-semibold">Drag & Drop Excel files here or click to browse</p>
+            <p class="text-muted small mb-3">Supports .xlsx and .xls — select multiple files at once (hold Ctrl)</p>
+            <input type="file" name="files" id="fileInput" multiple accept=".xlsx,.xls"
+                   class="d-none">
+            <button type="button" class="btn btn-outline-primary px-4"
+                    onclick="document.getElementById('fileInput').click()">
+              <i class="fas fa-folder-open me-2"></i>Browse Files
+            </button>
+          </div>
+          <!-- File list preview -->
+          <div id="fileList" class="mt-2"></div>
+        </div>
+
+        <!-- Submit -->
+        <div class="d-flex gap-3 flex-wrap">
+          <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
+            <i class="fas fa-upload me-2"></i>Upload & Import
+          </button>
+          <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-lg px-4">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Template Downloads -->
+  <div class="card shadow-sm border-0 mb-5">
+    <div class="card-header bg-secondary text-white py-3">
+      <h5 class="mb-0"><i class="fas fa-download me-2"></i>Download Sample Templates</h5>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-3">Download pre-filled sample templates to understand the expected column format for each upload type.</p>
+      <div class="row g-3">
+        {% for val, icon, color, title in [
+          ('crew_data',    'fas fa-id-card',         'btn-primary',  'Crew Data Template'),
+          ('crew_summary', 'fas fa-users',            'btn-success',  'Crew Summary Template'),
+          ('cli_biodata',  'fas fa-user-tie',         'btn-warning',  'CLI Bio Data Template'),
+          ('counselling',  'fas fa-clipboard-list',   'btn-danger',   'Counselling Template'),
+          ('training',     'fas fa-graduation-cap',   'btn-info',     'Training Records Template'),
+        ] %}
+        <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+          <a href="{{ url_for('admin.download_template', template_type=val) }}"
+             class="btn {{ icon.split()[0]|replace('fas','btn-outline-secondary') }} w-100 {{ color }} text-white border-0 py-2">
+            <i class="{{ icon }} me-1"></i><br>
+            <small>{{ title }}</small>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Counselling Records Quick View -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Counselling Records</h5>
+      <a href="{{ url_for('admin.counselling_records') }}" class="btn btn-light btn-sm">
+        <i class="fas fa-external-link-alt me-1"></i>View All
+      </a>
+    </div>
+    <div class="card-body">
+      <p class="text-muted">After uploading the Crew Counselling Master Sheet, click "View All" to browse, filter by HQ / CLI / Grade, and search crew counselling records.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Styles -->
+<style>
+.upload-type-card { cursor: pointer; }
+.type-card-inner  { border-color: #dee2e6 !important; transition: all .2s; }
+.upload-type-radio:checked + .type-card-inner {
+  border-color: #002244 !important;
+  background: #f0f4ff;
+  box-shadow: 0 0 0 3px rgba(0,34,68,.15);
+}
+.type-card-inner:hover { border-color: #002244 !important; }
+#dropZone.dragover { background: #e8f0fe !important; }
+.file-chip {
+  display:inline-flex; align-items:center; gap:.4rem;
+  background:#e9ecef; border-radius:2rem; padding:.2rem .75rem;
+  font-size:.82rem; margin:.2rem;
+}
+.file-chip .rm { cursor:pointer; color:#dc3545; }
+</style>
+
+<!-- Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  // Drag-and-drop
+  const zone = document.getElementById('dropZone');
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    mergeFiles(e.dataTransfer.files);
+  });
+
+  // File input change
+  const input = document.getElementById('fileInput');
+  input.addEventListener('change', () => mergeFiles(input.files));
+
+  let selectedFiles = [];
+
+  function mergeFiles(newFiles) {
+    for (let f of newFiles) {
+      if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
+    }
+    renderChips();
+  }
+
+  function renderChips() {
+    const list = document.getElementById('fileList');
+    if (selectedFiles.length === 0) { list.innerHTML = ''; return; }
+    let html = '<div class="mt-2">';
+    selectedFiles.forEach((f, i) => {
+      const size = (f.size / 1024).toFixed(1);
+      html += `<span class="file-chip"><i class="fas fa-file-excel text-success"></i>${f.name} <small class="text-muted">(${size} KB)</small><span class="rm" onclick="removeFile(${i})">✕</span></span>`;
+    });
+    html += `</div><div class="mt-1 text-muted small"><i class="fas fa-info-circle"></i> ${selectedFiles.length} file(s) selected</div>`;
+    list.innerHTML = html;
+    syncInputFiles();
+  }
+
+  window.removeFile = function(idx) {
+    selectedFiles.splice(idx, 1);
+    renderChips();
+  };
+
+  function syncInputFiles() {
+    const dt = new DataTransfer();
+    selectedFiles.forEach(f => dt.items.add(f));
+    input.files = dt.files;
+  }
+
+  // Submit validation
+  document.getElementById('uploadForm').addEventListener('submit', function (e) {
+    if (selectedFiles.length === 0) {
+      e.preventDefault();
+      alert('Please select at least one Excel file before uploading.');
+    }
+  });
+});
+</script>
+{% endblock %}

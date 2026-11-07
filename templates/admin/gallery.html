@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Photo Gallery Management — Admin{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center" style="width:56px;height:56px;font-size:1.5rem;">
+        <i class="fas fa-camera"></i>
+      </div>
+      <div>
+        <h2 class="mb-0 fw-bold text-primary">Photo Gallery Management</h2>
+        <p class="mb-0 text-muted">Upload locomotive pictures, lobby facilities, safety seminars, and add descriptions</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('public.gallery') }}" target="_blank" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-external-link-alt me-1"></i> View Public Gallery
+      </a>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+      <div class="alert alert-{{ cat }} alert-dismissible fade show">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <!-- UPLOAD FORM -->
+  <div class="card shadow-sm border-0 mb-5">
+    <div class="card-header bg-primary text-white py-3">
+      <h5 class="mb-0"><i class="fas fa-cloud-upload-alt me-2"></i>Upload New Photo to Gallery</h5>
+    </div>
+    <div class="card-body p-4">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Photo Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. WAP-7 Loco at Howrah Platform 8 / Safety Seminar 2026" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+            <select name="category" class="form-select" required>
+              <option value="Locomotives">Locomotives (WAP-7, WAG-9, WAP-5, WAG-12)</option>
+              <option value="Lobby Facilities">Running Lobby Facilities (HWH, BWN, RPH, etc.)</option>
+              <option value="Safety Seminars">Safety Seminars & SPAD Prevention</option>
+              <option value="Inspections">Footplate & Field Inspections</option>
+              <option value="Operations">Operations & Freight Corridors</option>
+              <option value="Staff Felicitations">Crew & Staff Felicitations</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Description / Caption</label>
+            <textarea name="caption" class="form-control" rows="3" placeholder="Provide a detailed description of the photo, location, occasion, and significance..."></textarea>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Select Photo File <span class="text-danger">*</span></label>
+            <input type="file" name="photo" class="form-control" accept="image/*" required id="photoInput">
+            <small class="text-muted">Supported formats: JPG, PNG, WEBP, GIF. High-resolution images recommended.</small>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+              <i class="fas fa-upload me-2"></i>Upload Photo
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- GALLERY ITEMS LIST -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fas fa-images me-2"></i>Published Photos in Gallery ({{ items|length }})</h5>
+    </div>
+    <div class="card-body p-4">
+      {% if items %}
+        <div class="row g-4">
+          {% for item in items %}
+            <div class="col-md-6 col-lg-4">
+              <div class="card h-100 border shadow-sm overflow-hidden">
+                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" 
+                     alt="{{ item.title }}" 
+                     class="card-img-top" 
+                     style="height: 200px; object-fit: cover;"
+                     onerror="this.src='https://placehold.co/400x200?text=Photo';">
+                <div class="card-body d-flex flex-column">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-primary">{{ item.category }}</span>
+                    <small class="text-muted">{{ item.created_at.strftime('%d-%b-%Y') }}</small>
+                  </div>
+                  <h6 class="fw-bold text-dark mb-1">{{ item.title }}</h6>
+                  <p class="small text-muted mb-3 flex-grow-1">{{ item.caption or 'No description provided.' }}</p>
+                  <div class="pt-2 border-top text-end">
+                    <form action="{{ url_for('admin.delete_gallery_item', item_id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this photo from the gallery?');">
+                      <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash-alt me-1"></i> Delete
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-camera-retro fa-3x mb-3 text-secondary d-block"></i>
+          <h5>No photos in gallery yet.</h5>
+          <p class="small">Use the upload form above to add your first divisional photograph with description.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

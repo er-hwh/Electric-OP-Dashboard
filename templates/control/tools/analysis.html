@@ -1,0 +1,695 @@
+﻿{% extends "control/base_control.html" %}
+
+{% block content %}
+
+<link rel="stylesheet" href="/static/css/analysis.css?v=3.0">
+
+<!-- DataTables -->
+<link rel="stylesheet"
+href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+
+<link rel="stylesheet"
+href="https://cdn.datatables.net/fixedheader/4.0.1/css/fixedHeader.dataTables.min.css">
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+
+<div class="card section-card mb-3">
+
+   <div class="card-body">
+
+       <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+
+           <div>
+
+               <h3 class="mb-1 text-primary">
+
+                   Zero Wheel Movement & Running KM Analysis Tool
+
+               </h3>
+
+           </div>
+
+           <div class="stats-line">
+
+               <span id="summaryText">
+
+                   Total Duty : 0 (Rows : 0)
+                   |
+                   Matches Found : 0 (Rows : 0)
+
+               </span>
+
+           </div>
+           <div style="display:none">
+               <span id="totalRows">0</span>
+               <span id="totalGroups">0</span>
+               <span id="includedGroups">0</span>
+               <span id="excludedGroups">0</span>
+               <span id="returnedRows">0</span>
+           </div>
+
+       </div>
+
+       <hr>
+
+       <div class="toolbar">
+
+           <div class="toolbar-left">
+
+               <input
+                   type="file"
+                   id="excelFile"
+                   class="form-control"
+                   accept=".xlsx,.xls">
+
+               <button
+                   class="btn btn-primary"
+                   id="btnAnalyze">
+
+                   <i class="bi bi-search"></i>
+                   Analyze
+
+               </button>
+
+               <button
+                   class="btn btn-secondary"
+                   id="btnClear">
+
+                   Clear
+
+               </button>
+
+           </div>
+
+            <div class="toolbar-center">
+
+                <ul
+                    class="nav nav-pills"
+                    id="analysisTabs">
+
+                    <li class="nav-item">
+
+                        <button
+                            class="nav-link active"
+                            id="overallTabBtn">
+
+                            Overall
+
+                        </button>
+
+                    </li>
+
+                    <li class="nav-item">
+
+                        <button
+                            class="nav-link"
+                            id="zeroWheelTabBtn">
+
+                            Zero Wheel Movement
+
+                        </button>
+
+                    </li>
+
+                    <li class="nav-item">
+
+                        <button
+                            class="nav-link"
+                            id="runningKmTabBtn">
+
+                            Running KM Analyzer
+
+                        </button>
+
+                    </li>
+
+                </ul>
+
+            </div>
+
+            <div class="toolbar-right">
+
+                <button
+                    class="btn btn-success"
+                    id="btnExport"
+                    disabled>
+
+                    <i class="bi bi-file-earmark-excel"></i>
+                    Excel
+
+                </button>
+
+                <button
+                    class="btn btn-warning"
+                    id="btnExportPdf"
+                    disabled>
+
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    PDF
+
+                </button>
+
+                <button
+                    class="btn btn-info text-white"
+                    id="btnCopy"
+                    disabled>
+
+                    <i class="bi bi-clipboard"></i>
+                    Copy
+
+                </button>
+
+            </div>
+
+       </div>
+
+   </div>
+
+</div>
+
+<!-- LOADING -->
+
+<div
+   class="alert alert-info"
+   id="loadingBox">
+
+   Processing Report...
+
+</div>
+
+<!-- RUNNING KM FILTER -->
+
+<div
+id="runningKmFilterPanel"
+class="card section-card mb-3"
+style="display:none;">
+
+<div class="card-body py-2 px-3">
+
+   <div class="d-flex align-items-center gap-2 flex-nowrap overflow-x-auto">
+
+       <!-- Running KM -->
+       <div
+           class="rounded py-2 px-2 d-flex align-items-center gap-2 flex-shrink-0"
+           style="
+               background:#eef7ff;
+               border:1px solid #b6d4fe;
+           ">
+
+           <span class="fw-bold text-primary small">
+               RUN KM
+           </span>
+
+           <div class="d-flex align-items-center gap-1">
+               <label class="mb-0 small fw-semibold">
+                   From
+               </label>
+
+               <input
+                   type="number"
+                   id="kmFrom"
+                   class="form-control form-control-sm text-center"
+                   value="0"
+                   style="width:58px;">
+           </div>
+
+           <div class="d-flex align-items-center gap-1">
+               <label class="mb-0 small fw-semibold">
+                   To
+               </label>
+
+               <input
+                   type="number"
+                   id="kmTo"
+                   class="form-control form-control-sm text-center"
+                   value="30"
+                   style="width:58px;">
+           </div>
+
+       </div>
+
+       <!-- Duty Hours -->
+       <div
+           class="rounded py-2 px-2 d-flex align-items-center gap-2 flex-shrink-0"
+           style="
+               background:#fff8e6;
+               border:1px solid #ffe69c;
+           ">
+
+           <span class="fw-bold text-warning small">
+               DUTY HRS
+           </span>
+
+           <div class="d-flex align-items-center gap-1 text-center">
+               <label class="mb-0 small fw-semibold">
+                   From
+               </label>
+
+               <input
+                   type="text"
+                   id="dutyFrom"
+                   class="form-control form-control-sm text-center"
+                   value="00:00"
+                   placeholder="HH:MM"
+                   style="width:62px;">
+           </div>
+
+           <div class="d-flex align-items-center gap-1">
+               <label class="mb-0 small fw-semibold">
+                   To
+               </label>
+
+               <input
+                   type="text"
+                   id="dutyTo"
+                   class="form-control form-control-sm text-center"
+                   value="23:59"
+                   placeholder="HH:MM"
+                   style="width:62px;">
+           </div>
+
+       </div>
+
+       <!-- Speed -->
+       <div
+           class="rounded py-2 px-2 d-flex align-items-center gap-2 flex-shrink-0"
+           style="
+               background:#f0fdf4;
+               border:1px solid #bbf7d0;
+           ">
+
+           <span class="fw-bold text-success small">
+               SPEED
+           </span>
+
+           <div class="d-flex align-items-center gap-1">
+               <label class="mb-0 small fw-semibold">
+                   Slab
+               </label>
+
+               <select
+                   id="speedSlabFilter"
+                   class="form-select form-select-sm"
+                   style="width:125px;">
+                   <option value="ALL" selected>All</option>
+                   <option value="<= 5">&lt;= 5 KMPH</option>
+                   <option value="05-08">05 - 08 KMPH</option>
+                   <option value="<= 8">&lt;= 8 (ALL)</option>
+                   <option value="08-10">08 - 10 KMPH</option>
+                   <option value="10-12">10 - 12 KMPH</option>
+                   <option value="12-15">12 - 15 KMPH</option>
+                   <option value="> 15">&gt; 15 KMPH</option>
+               </select>
+           </div>
+
+           <div class="d-flex align-items-center gap-1">
+               <label class="mb-0 small fw-semibold">
+                   From
+               </label>
+
+               <input
+                   type="number"
+                   id="speedFrom"
+                   class="form-control form-control-sm text-center"
+                   placeholder="Min"
+                   style="width:52px;">
+           </div>
+
+           <div class="d-flex align-items-center gap-1">
+               <label class="mb-0 small fw-semibold">
+                   To
+               </label>
+
+               <input
+                   type="number"
+                   id="speedTo"
+                   class="form-control form-control-sm text-center"
+                   placeholder="Max"
+                   style="width:52px;">
+           </div>
+
+       </div>
+
+       <!-- Buttons -->
+       <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
+
+           <button
+               class="btn btn-primary btn-sm px-3"
+               id="btnApplyKmFilter"
+               style="white-space:nowrap;">
+
+               <i class="bi bi-funnel-fill"></i>
+               Apply
+
+           </button>
+
+           <button
+               class="btn btn-outline-secondary btn-sm px-3"
+               id="btnResetKmFilter"
+               style="white-space:nowrap;">
+
+               <i class="bi bi-arrow-clockwise"></i>
+               Reset
+
+           </button>
+
+           <button
+               class="btn btn-info btn-sm px-3 text-white"
+               id="btnPreviewKm"
+               style="white-space:nowrap;">
+
+               <i class="bi bi-eye-fill"></i>
+               Preview
+
+           </button>
+
+       </div>
+
+   </div>
+
+</div>
+
+</div>
+
+<!-- DAILY SUMMARY SECTION (Visible in Overall Section) -->
+<div class="card section-card mb-3" id="dailySummarySection" style="display:none;">
+    <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="mb-0 text-primary fw-bold">
+                <i class="bi bi-calendar3 me-2"></i>Daily Summary
+            </h5>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" id="dsDateBadge">Date: -</span>
+            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" id="dsTotalBadge">Total Duties: 0</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle" id="dsAvgSpeedBadgeTop">Avg Speed: 0.0 KMPH</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-success btn-sm px-3" id="btnExportDailySummary" style="white-space:nowrap;">
+                <i class="bi bi-file-earmark-excel"></i> Export Summary
+            </button>
+            <button class="btn btn-outline-secondary btn-sm px-2" id="btnToggleDailySummary" title="Toggle Summary View">
+                <i class="bi bi-chevron-up" id="iconToggleDailySummary"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-3" id="dailySummaryBody">
+        <!-- KPI summary banner (5 columns) -->
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5 g-2 mb-3" id="dailySummaryKpiRow">
+            <div class="col">
+                <div class="p-2 border rounded text-center bg-light h-100 d-flex flex-column justify-content-center">
+                    <div class="text-muted small fw-semibold" style="font-size:0.75rem;">TOTAL DUTIES</div>
+                    <div class="fs-5 fw-bold text-dark" id="kpiTotalDuties">0</div>
+                    <div class="small text-muted" id="kpiTotalRows">(0 Rows)</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-2 border rounded text-center h-100 d-flex flex-column justify-content-center" style="background:#fff8e6; border-color:#ffe69c !important;">
+                    <div class="text-warning-emphasis small fw-semibold" style="font-size:0.75rem;">DUTY HRS AVG</div>
+                    <div class="fs-5 fw-bold text-warning-emphasis" id="kpiAvgDutyHrs">00:00</div>
+                    <div class="small text-muted" id="kpiMaxDutyHrs">Max: 00:00</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-2 border rounded text-center h-100 d-flex flex-column justify-content-center" style="background:#fef2f2; border-color:#fecaca !important;">
+                    <div class="text-danger small fw-semibold" style="font-size:0.75rem;">ZERO WHEEL (ZWM)</div>
+                    <div class="fs-5 fw-bold text-danger" id="kpiZwmCount">0</div>
+                    <div class="small text-muted" id="kpiZwmPct">0.0% of Total</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-2 border rounded text-center h-100 d-flex flex-column justify-content-center" style="background:#eff6ff; border-color:#bfdbfe !important;">
+                    <div class="text-primary small fw-semibold" style="font-size:0.75rem;">TOTAL KM RUN</div>
+                    <div class="fs-5 fw-bold text-primary" id="kpiTotalKm">0 KM</div>
+                    <div class="small text-muted" id="kpiRunningDutiesCount">0 Running Duties</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-2 border rounded text-center h-100 d-flex flex-column justify-content-center" style="background:#f0fdf4; border-color:#bbf7d0 !important;">
+                    <div class="text-success small fw-semibold" style="font-size:0.75rem;">AVERAGE SPEED</div>
+                    <div class="fs-5 fw-bold text-success" id="kpiAvgSpeedBig">0.0 KMPH</div>
+                    <div class="small text-muted" id="kpiAvgSpeedDuties">0 Duties</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 Tables Grid -->
+        <div class="row g-3">
+            <!-- 1. Duty Hours Wise Slab -->
+            <div class="col-xl-6 col-lg-6 col-md-12">
+                <div class="card h-100 border shadow-none">
+                    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                        <strong class="text-dark small">
+                            <i class="bi bi-clock-history text-warning me-1"></i> 1. Duty Hours Wise Slab
+                        </strong>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border" id="dsHrsSubBadge">Total: 0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover mb-0 text-center align-middle" style="font-size:0.875rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Duty Hours Slab</th>
+                                    <th>Duty Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dsDutyHoursTbody">
+                                <tr><td colspan="3" class="text-muted py-2">No data available</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. KM Run Table with Slab -->
+            <div class="col-xl-6 col-lg-6 col-md-12">
+                <div class="card h-100 border shadow-none">
+                    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                        <strong class="text-dark small">
+                            <i class="bi bi-geo-alt-fill text-primary me-1"></i> 2. KM Run Table (Slab Wise)
+                        </strong>
+                        <span class="badge bg-primary-subtle text-primary border" id="dsKmSubBadge">Total: 0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover mb-0 text-center align-middle" style="font-size:0.875rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>KM Run Slab</th>
+                                    <th>Duty Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dsKmRunTbody">
+                                <tr><td colspan="3" class="text-muted py-2">No data available</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Zero Wheel Movement Summary -->
+            <div class="col-xl-6 col-lg-6 col-md-12">
+                <div class="card h-100 border shadow-none">
+                    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                        <strong class="text-dark small">
+                            <i class="bi bi-slash-circle-fill text-danger me-1"></i> 3. Zero Wheel Movement (ZWM)
+                        </strong>
+                        <span class="badge bg-danger-subtle text-danger border" id="dsZwmSubBadge">ZWM: 0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover mb-0 text-center align-middle" style="font-size:0.875rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Movement Category</th>
+                                    <th>Duty Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dsZwmTbody">
+                                <tr><td colspan="3" class="text-muted py-2">No data available</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Speed Wise Summary -->
+            <div class="col-xl-6 col-lg-6 col-md-12">
+                <div class="card h-100 border shadow-none">
+                    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                        <strong class="text-dark small">
+                            <i class="bi bi-speedometer2 text-success me-1"></i> 4. Speed Wise Summary
+                        </strong>
+                        <span class="badge bg-success-subtle text-success border" id="dsSpeedSubBadge">Total: 0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover mb-0 text-center align-middle" style="font-size:0.875rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Speed Slab</th>
+                                    <th>Duty Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dsSpeedTbody">
+                                <tr><td colspan="3" class="text-muted py-2">No data available</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RESULT TABLE -->
+
+<div class="card section-card">
+
+   <div class="card-header">
+
+       <strong id="resultTitle">
+
+           Resultant Duties
+
+       </strong>
+
+   </div>
+
+   <div class="card-body">
+
+       <div class="table-responsive">
+
+           <table
+               id="resultTable"
+               class="display table table-bordered table-striped w-100">
+
+               <thead>
+
+                   <tr>
+
+                       <th>S.No.</th>
+                       <th>CREW ID</th>
+                       <th>NAME</th>
+                       <th>DESIG</th>
+                       <th>TOTAL DUTY</th>
+                       <th>SIGNON DATE</th>
+                       <th>SIGNON STTN</th>
+                       <th>DEPARTURE</th>
+                       <th>PDD</th>
+                       <th>ARRIVAL</th>
+                       <th>SIGNOFF DATE</th>
+                       <th>SIGNOFF STTN</th>
+                       <th>DUTY HRS</th>
+                       <th>DUTY TYPE</th>
+                       <th>TRAIN NO</th>
+                       <th>LOCO NO</th>
+                       <th>WHEEL MOVEMENT</th>
+                       <th>AVG SPEED</th>
+                       <th>ROUTE KM</th>
+                       <th>TOTAL KM</th>
+                       <th>M/K</th>
+                       <th>CTO</th>
+                       <th>CMO</th>
+                       <th>SECTION</th>
+                       <th>ROUTE NAME</th>
+                       <th>RUNNING KM</th>
+
+                   </tr>
+
+                   <tr class="filter-row">
+
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+                       <th></th>
+
+                   </tr>
+
+               </thead>
+
+               <tbody></tbody>
+
+           </table>
+
+       </div>
+
+   </div>
+
+</div>
+
+<!-- Summary Modal -->
+<div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="summaryModalLabel">Summary Report</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-primary" id="btnShowHrsSummary">Duty by Hrs Slab</button>
+            <button class="btn btn-secondary" id="btnShowDistanceSummary">Duty by Distance Run</button>
+            <button class="btn btn-secondary" id="btnShowSpeedSummary">Duty by Speed</button>
+            <button class="btn btn-success ms-auto" id="btnExportSummaryExcel"><i class="bi bi-file-earmark-excel"></i> Export Excel</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="summaryTable">
+                <thead id="summaryTableHead" class="table-dark">
+                </thead>
+                <tbody id="summaryTableBody">
+                </tbody>
+            </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- DataTables -->
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+
+<script src="https://cdn.datatables.net/fixedheader/4.0.1/js/dataTables.fixedHeader.min.js"></script>
+
+<!-- SheetJS -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script src="/static/js/analysis.js?v=3.0"></script>
+
+{% endblock %}

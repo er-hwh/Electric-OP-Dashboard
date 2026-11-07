@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Draft Safety Counselling Topic | Supervisor Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="rail-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <span class="badge bg-success mb-1 fs-6"><i class="fa-solid fa-file-signature me-1"></i> CLI Counselling Formulation</span>
+                        <h3 class="fw-bold text-dark mb-0">Draft Monthly / Special Safety Counselling</h3>
+                        <p class="text-muted small mb-0">Formulate rules-based safety counselling (GR & SR) for running staff assurance</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('supervisor.my_counselling_topics') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fa-solid fa-list me-1"></i> My Drafted Topics
+                        </a>
+                        <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-dark btn-sm">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 px-3 small mb-4">
+                    <i class="fa-solid fa-circle-info me-2"></i>
+                    <strong>Standard Railway Operating Procedure:</strong> As per Railway Board safety directives and Divisional practice, CLIs select and draft safety topics citing Eastern Railway <strong>General & Subsidiary Rules (GR & SR)</strong>. Once drafted with interactive comprehension questions, it is forwarded to the designated Officer (Sr. DEE(OP)/AEE(OP)/AME(P)) for review and digital signature before being published to Running Staff.
+                </div>
+
+                <form action="{{ url_for('supervisor.new_counselling_topic') }}" method="POST" enctype="multipart/form-data">
+                    <!-- SECTION 1: TOPIC METADATA -->
+                    <div class="card border-0 shadow-sm bg-light p-3 mb-4">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-layer-group text-primary me-2"></i> 1. Classification & Endorsing Officer
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Counselling Type <span class="text-danger">*</span></label>
+                                <select name="counselling_type" class="form-select" required>
+                                    <option value="MONTHLY" selected>Monthly Regular Counselling (মাসিক কাউন্সেলিং)</option>
+                                    <option value="SPECIAL">Special Safety Counselling / Safety Drive (বিশেষ কাউন্সেলিং)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Applicable Month & Year <span class="text-danger">*</span></label>
+                                <input type="text" name="month_year" class="form-control" value="{{ now().strftime('%B %Y') if now is defined else 'November 2026' }}" placeholder="e.g. November 2026" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">Submitting for Approval to Officer <span class="text-danger">*</span></label>
+                                <select name="officer_id" class="form-select" required>
+                                    {% for off in officers %}
+                                        <option value="{{ off.id }}" {% if 'Sr. DEE' in off.sub_role %}selected{% endif %}>
+                                            {{ off.sub_role }} ({{ off.full_name }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: TOPIC DETAILS & RULES -->
+                    <div class="card border-0 shadow-sm bg-light p-3 mb-4">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-book-bookmark text-success me-2"></i> 2. Subject, GR & SR Rules & Directive Content
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold small">Subject / Topic Title <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" placeholder="e.g. Observance of Aspect of Signals in Foggy Weather & Pre-warning Detonators" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small">GR & SR / Manual Reference <span class="text-danger">*</span></label>
+                                <input type="text" name="rule_reference" class="form-control" placeholder="e.g. GR 3.61, SR 3.61(d), SR 4.50" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold small">Safety Instructions & Detailed Counselling Points <span class="text-danger">*</span></label>
+                                <textarea name="content" class="form-control" rows="6" placeholder="Enter clear, bullet-point instructions for LP/ALP/Motorman covering duty before departure, on-run vigil, speed restriction, brake test, etc." required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold small">Real Incident / Unusual Occurrence Case Analysis & Learnings (Optional):</label>
+                                <textarea name="case_analysis" class="form-control" rows="4" placeholder="Detail any recent near-miss, SPAD, irregular shunting, or brake power deficit case with specific root causes and preventive steps..."></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Attach Supporting Document / Presentation / PDF (Optional):</label>
+                                <input type="file" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+                                <small class="text-muted">Upload circular, investigation report, or guideline chart if available.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: INTERACTIVE Q&A COMPREHENSION CHECK -->
+                    <div class="card border border-warning shadow-sm bg-white p-3 mb-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h6 class="fw-bold text-dark mb-0">
+                                <i class="fa-solid fa-spell-check text-warning me-2"></i> 3. Safety Comprehension Verification Questions (For Running Staff Online Assurance)
+                            </h6>
+                            <span class="badge bg-warning text-dark">Crew must score 100% to pass</span>
+                        </div>
+                        <p class="small text-muted mb-3">
+                            Running staff (LPM/LPP/MMAN/LPG/ALP) must answer these objective questions correctly to confirm they thoroughly read and understood the rules before logging digital assurance.
+                        </p>
+
+                        <!-- QUESTION 1 -->
+                        <div class="p-3 bg-light rounded border mb-3">
+                            <label class="form-label fw-bold text-primary small">Question 1 <span class="text-danger">*</span></label>
+                            <input type="text" name="q1_text" class="form-control mb-2" placeholder="e.g. What is the maximum speed permitted when passing an Automatic Stop Signal at 'ON' during daytime with clear view?" required>
+                            
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">A</span>
+                                        <input type="text" name="q1_opt1" class="form-control" placeholder="Option A (e.g. 15 kmph)" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">B</span>
+                                        <input type="text" name="q1_opt2" class="form-control" placeholder="Option B (e.g. 10 kmph)" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">C</span>
+                                        <input type="text" name="q1_opt3" class="form-control" placeholder="Option C (e.g. 25 kmph)">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">D</span>
+                                        <input type="text" name="q1_opt4" class="form-control" placeholder="Option D (e.g. Normal speed)">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <label class="small fw-bold text-success mb-0">Correct Option:</label>
+                                <select name="q1_correct" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="0">Option A</option>
+                                    <option value="1">Option B</option>
+                                    <option value="2">Option C</option>
+                                    <option value="3">Option D</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- QUESTION 2 -->
+                        <div class="p-3 bg-light rounded border mb-3">
+                            <label class="form-label fw-bold text-primary small">Question 2 (Optional)</label>
+                            <input type="text" name="q2_text" class="form-control mb-2" placeholder="e.g. Under SR 3.61, how many detonators must be placed by fog signalman?">
+                            
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">A</span>
+                                        <input type="text" name="q2_opt1" class="form-control" placeholder="Option A (e.g. 2 detonators, 10 metres apart)">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">B</span>
+                                        <input type="text" name="q2_opt2" class="form-control" placeholder="Option B (e.g. 1 detonator)">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">C</span>
+                                        <input type="text" name="q2_opt3" class="form-control" placeholder="Option C (e.g. 4 detonators)">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">D</span>
+                                        <input type="text" name="q2_opt4" class="form-control" placeholder="Option D (e.g. None)">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <label class="small fw-bold text-success mb-0">Correct Option:</label>
+                                <select name="q2_correct" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="0">Option A</option>
+                                    <option value="1">Option B</option>
+                                    <option value="2">Option C</option>
+                                    <option value="3">Option D</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- QUESTION 3 -->
+                        <div class="p-3 bg-light rounded border">
+                            <label class="form-label fw-bold text-primary small">Question 3 (Optional)</label>
+                            <input type="text" name="q3_text" class="form-control mb-2" placeholder="e.g. What is the prescribed action if BP pressure drops suddenly while running?">
+                            
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">A</span>
+                                        <input type="text" name="q3_opt1" class="form-control" placeholder="Option A">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">B</span>
+                                        <input type="text" name="q3_opt2" class="form-control" placeholder="Option B">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">C</span>
+                                        <input type="text" name="q3_opt3" class="form-control" placeholder="Option C">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">D</span>
+                                        <input type="text" name="q3_opt4" class="form-control" placeholder="Option D">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <label class="small fw-bold text-success mb-0">Correct Option:</label>
+                                <select name="q3_correct" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="0">Option A</option>
+                                    <option value="1">Option B</option>
+                                    <option value="2">Option C</option>
+                                    <option value="3">Option D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBMIT ACTIONS -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-secondary">
+                            <i class="fa-solid fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success fw-bold px-4 py-2 shadow-sm">
+                            <i class="fa-solid fa-paper-plane me-2"></i> Submit to Officer for Review & Digital Signature
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

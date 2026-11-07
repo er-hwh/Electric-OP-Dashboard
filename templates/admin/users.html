@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}User Management | Admin Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="rail-card p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="fa-solid fa-users-gear text-warning me-2"></i> User Directory & Profile Management
+                </h3>
+                <p class="text-muted mb-0">Officers, Chief Loco Inspectors, Chief Crew Controllers & Running Staff</p>
+            </div>
+            <div>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Admin Console
+                </a>
+                <button type="button" class="btn btn-warning btn-sm fw-bold me-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#createControlModal">
+                    <i class="fa-solid fa-headset me-1"></i> Generate CNL User
+                </button>
+                <a href="{{ url_for('admin.upload_excel') }}" class="btn btn-success btn-sm fw-bold">
+                    <i class="fa-solid fa-file-excel me-1"></i> Bulk Upload Excel
+                </a>
+            </div>
+        </div>
+
+        <!-- SEARCH & FILTER ROW -->
+        <form method="GET" action="{{ url_for('admin.users') }}" class="row g-2 mb-4">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name, mobile, PF number, username...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="role" class="form-select">
+                    <option value="ALL" {% if current_role == 'ALL' %}selected{% endif %}>All Roles</option>
+                    <option value="control" {% if current_role == 'control' %}selected{% endif %}>Control Staff (CNL)</option>
+                    <option value="officer" {% if current_role == 'officer' %}selected{% endif %}>Officers</option>
+                    <option value="supervisor" {% if current_role == 'supervisor' %}selected{% endif %}>Supervisors (CLI / CCC)</option>
+                    <option value="crew" {% if current_role == 'crew' %}selected{% endif %}>Running Staff (Crews)</option>
+                    <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Administrators</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="lobby" class="form-select">
+                    <option value="ALL" {% if current_lobby == 'ALL' %}selected{% endif %}>All Lobbies</option>
+                    {% for l in lobbies %}
+                        <option value="{{ l.id }}" {% if current_lobby == l.id|string %}selected{% endif %}>{{ l.code }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">
+                    <i class="fa-solid fa-filter me-1"></i> Apply Filter
+                </button>
+            </div>
+        </form>
+
+        <!-- USERS TABLE -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle small">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Staff Name</th>
+                        <th>Username / Mobile</th>
+                        <th>Role & Designation</th>
+                        <th>Lobby</th>
+                        <th>Nominated CLI</th>
+                        <th>Password Status</th>
+                        <th>Account</th>
+                        <th class="text-end" style="min-width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark">{{ u.full_name }}</strong>
+                                {% if u.pf_number %}
+                                    <br><small class="text-muted">PF: {{ u.pf_number }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <code>{{ u.username }}</code>
+                                {% if u.mobile and u.mobile != u.username %}
+                                    <br><small class="text-muted"><i class="fa-solid fa-phone me-1"></i>{{ u.mobile }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if u.role == 'officer' %}bg-danger{% elif u.role == 'supervisor' %}bg-success{% elif u.role == 'control' %}bg-warning text-dark{% elif u.role == 'admin' %}bg-dark{% else %}bg-primary{% endif %}">
+                                    {% if u.role == 'control' %}<i class="fa-solid fa-headset me-1"></i>{% endif %}
+                                    {{ u.sub_role or u.role|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if u.lobby %}
+                                    <span class="badge bg-light text-dark border">{{ u.lobby.code }} - {{ u.lobby.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">Divisional HQ</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_crew() %}
+                                    <form action="{{ url_for('admin.assign_cli', user_id=u.id) }}" method="POST" class="d-flex align-items-center gap-1">
+                                        <select name="cli_id" class="form-select form-select-sm" style="font-size: 0.75rem;" onchange="this.form.submit()">
+                                            <option value="">-- No CLI Assigned --</option>
+                                            {% for c in clis %}
+                                                <option value="{{ c.id }}" {% if u.cli_id == c.id %}selected{% endif %}>{{ c.full_name }} ({{ c.username }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.password_must_change %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-triangle-exclamation me-1"></i>Default (12345)</span>
+                                {% else %}
+                                    <span class="badge bg-success"><i class="fa-solid fa-lock me-1"></i>Changed / Secure</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form action="{{ url_for('admin.reset_password', user_id=u.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Reset password of {{ u.full_name }} to default 12345?');">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm py-1" title="Reset password to 12345">
+                                        <i class="fa-solid fa-key me-1"></i> Reset 12345
+                                    </button>
+                                </form>
+
+                                {% if u.username != 'admin' %}
+                                    <form action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to change account status?');">
+                                        {% if u.is_active %}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-1" title="Deactivate Account">
+                                                <i class="fa-solid fa-user-xmark"></i>
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-outline-success btn-sm py-1" title="Activate Account">
+                                                <i class="fa-solid fa-user-check"></i>
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">No users found matching criteria.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- GENERATE CONTROL / CNL USER MODAL -->
+<div class="modal fade" id="createControlModal" tabindex="-1" aria-labelledby="createControlModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="createControlModalLabel">
+                    <i class="fa-solid fa-headset text-warning me-2"></i> Generate Control (CNL) User
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin.create_control_user') }}" method="POST">
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Create an authorized Control user ID to access the <strong>Control Dashboard</strong> (Operational Tools suite). Default initial password is <code>12345</code>.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">CNL User ID / Username <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fa-solid fa-id-badge text-primary"></i></span>
+                            <input type="text" name="username" class="form-control" placeholder="e.g. CNL_HWH, TLC_HWH, PCNL_SHIFT_A" required>
+                        </div>
+                        <small class="text-muted">Must be unique. This ID will be used for Control login.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Controller Staff / Official Name <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fa-solid fa-user text-primary"></i></span>
+                            <input type="text" name="full_name" class="form-control" placeholder="e.g. Sri R. K. Sharma (TLC / HWH)" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Designation / Role</label>
+                            <select name="sub_role" class="form-select">
+                                <option value="CNL" selected>Power Controller (CNL)</option>
+                                <option value="Chief Power Controller">Chief Power Controller</option>
+                                <option value="TLC">Traction Loco Controller (TLC)</option>
+                                <option value="PCNL">PCNL Controller</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Lobby / Office Base</label>
+                            <select name="lobby_id" class="form-select">
+                                <option value="">Divisional HQ (HWH)</option>
+                                {% for l in lobbies %}
+                                    <option value="{{ l.id }}">{{ l.code }} - {{ l.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Mobile Number (Optional)</label>
+                            <input type="text" name="mobile" class="form-control" placeholder="e.g. 9830000000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Initial Password</label>
+                            <input type="text" name="password" class="form-control" value="12345" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning fw-bold text-dark px-4 shadow-sm">
+                        <i class="fa-solid fa-user-plus me-1"></i> Create CNL User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

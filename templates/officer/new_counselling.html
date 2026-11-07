@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Issue Safety Counselling Topic | Officer Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="rail-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <span class="badge bg-danger mb-1 fs-6"><i class="fa-solid fa-stamp me-1"></i> Executive Direct Issue</span>
+                        <h4 class="fw-bold text-dark mb-0">Publish & Digitally Endorse Safety Counselling Topic</h4>
+                        <small class="text-muted">Issued by {{ officer.sub_role }} ({{ officer.full_name }}) with digital signature for Running Staff</small>
+                    </div>
+                    <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+                    </a>
+                </div>
+
+                <form method="POST" action="{{ url_for('officer.new_counselling') }}" enctype="multipart/form-data">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Counselling Classification <span class="text-danger">*</span></label>
+                            <select name="counselling_type" class="form-select" required>
+                                <option value="MONTHLY" selected>Monthly Regular Counselling (মাসিক কাউন্সেলিং)</option>
+                                <option value="SPECIAL">Special Safety Counselling / Safety Drive (বিশেষ কাউন্সেলিং)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Applicable Month & Year <span class="text-danger">*</span></label>
+                            <input type="text" name="month_year" class="form-control" value="October 2026" placeholder="e.g. November 2026" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Subject / Topic Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Prevention of SPAD at Diverging Routes & Observance of Caution Orders" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">General & Subsidiary Rules Reference (GR & SR) <span class="text-danger">*</span></label>
+                        <input type="text" name="rule_reference" class="form-control" placeholder="e.g. GR 3.78, SR 3.83, GR 9.02, SR 4.50" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Safety Points & Instructions for Crews <span class="text-danger">*</span></label>
+                        <textarea name="content" class="form-control" rows="5" placeholder="Enter bullet points on precautions to be taken by LP, Motorman, and ALP..." required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Case Study / Unusual Occurrence Analysis (Optional):</label>
+                        <textarea name="case_analysis" class="form-control" rows="4" placeholder="Detail an accident or near-miss case study, root cause, and how running staff must avoid repetition..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-dark">Attach Case Report / Circular / PPT (PDF/Image)</label>
+                        <input type="file" name="attachment" class="form-control" accept=".pdf, .png, .jpg, .jpeg">
+                    </div>
+
+                    <!-- INTERACTIVE COMPREHENSION QUESTIONS -->
+                    <div class="card border border-warning shadow-sm bg-white p-3 mb-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h6 class="fw-bold text-dark mb-0">
+                                <i class="fa-solid fa-spell-check text-warning me-2"></i> Running Staff Comprehension Verification Questions
+                            </h6>
+                            <span class="badge bg-warning text-dark">Optional (Recommended)</span>
+                        </div>
+                        <p class="small text-muted mb-3">
+                            Running staff must answer these questions with 100% score to complete digital assurance.
+                        </p>
+
+                        <!-- Q1 -->
+                        <div class="p-3 bg-light rounded border mb-3">
+                            <label class="form-label fw-bold text-primary small">Question 1</label>
+                            <input type="text" name="q1_text" class="form-control mb-2" placeholder="e.g. What is the maximum speed when approaching a stop signal displaying danger?">
+                            <div class="row g-2">
+                                <div class="col-md-6"><input type="text" name="q1_opt1" class="form-control form-control-sm" placeholder="Option A"></div>
+                                <div class="col-md-6"><input type="text" name="q1_opt2" class="form-control form-control-sm" placeholder="Option B"></div>
+                                <div class="col-md-6"><input type="text" name="q1_opt3" class="form-control form-control-sm" placeholder="Option C"></div>
+                                <div class="col-md-6"><input type="text" name="q1_opt4" class="form-control form-control-sm" placeholder="Option D"></div>
+                            </div>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <label class="small fw-bold text-success mb-0">Correct Option:</label>
+                                <select name="q1_correct" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="0">Option A</option>
+                                    <option value="1">Option B</option>
+                                    <option value="2">Option C</option>
+                                    <option value="3">Option D</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Q2 -->
+                        <div class="p-3 bg-light rounded border">
+                            <label class="form-label fw-bold text-primary small">Question 2</label>
+                            <input type="text" name="q2_text" class="form-control mb-2" placeholder="e.g. What is the minimum continuous rest required at headquarters?">
+                            <div class="row g-2">
+                                <div class="col-md-6"><input type="text" name="q2_opt1" class="form-control form-control-sm" placeholder="Option A"></div>
+                                <div class="col-md-6"><input type="text" name="q2_opt2" class="form-control form-control-sm" placeholder="Option B"></div>
+                                <div class="col-md-6"><input type="text" name="q2_opt3" class="form-control form-control-sm" placeholder="Option C"></div>
+                                <div class="col-md-6"><input type="text" name="q2_opt4" class="form-control form-control-sm" placeholder="Option D"></div>
+                            </div>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <label class="small fw-bold text-success mb-0">Correct Option:</label>
+                                <select name="q2_correct" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="0">Option A</option>
+                                    <option value="1">Option B</option>
+                                    <option value="2">Option C</option>
+                                    <option value="3">Option D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg fs-6 fw-bold shadow-sm">
+                            <i class="fa-solid fa-stamp me-1"></i> Issue & Digitally Endorse Topic
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Crew Registration | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="rail-card shadow-lg p-4">
+                <div class="border-bottom pb-3 mb-4 text-center">
+                    <h4 class="fw-bold text-primary mb-1">
+                        <i class="fa-solid fa-user-plus text-warning me-2"></i> Running Staff Registration
+                    </h4>
+                    <p class="text-muted small mb-0">Electric Operation Department &bull; Howrah Division</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="full_name" class="form-control" placeholder="Enter Full Name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Mobile Number (Login ID) <span class="text-danger">*</span></label>
+                            <input type="text" name="mobile" maxlength="10" class="form-control" placeholder="10-digit Mobile No." required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Designation <span class="text-danger">*</span></label>
+                            <select name="designation" class="form-select" required>
+                                <option value="">-- Select Designation --</option>
+                                <option value="LPM">Loco Pilot Mail/Express (LPM)</option>
+                                <option value="LPP">Loco Pilot Passenger (LPP)</option>
+                                <option value="MMAN">Motorman (MMAN - Suburban)</option>
+                                <option value="LPG">Loco Pilot Goods (LPG)</option>
+                                <option value="LPS-II">Sr. Loco Pilot Shunter (LPS-II)</option>
+                                <option value="LPS-I">Loco Pilot Shunter (LPS-I)</option>
+                                <option value="Sr. ALP">Senior Assistant Loco Pilot (Sr. ALP)</option>
+                                <option value="ALP">Assistant Loco Pilot (ALP)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Base Running Lobby <span class="text-danger">*</span></label>
+                            <select name="lobby_id" class="form-select" required>
+                                <option value="">-- Select Running Lobby --</option>
+                                {% for l in lobbies %}
+                                    <option value="{{ l.id }}">{{ l.code }} - {{ l.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">PF / Staff Number</label>
+                            <input type="text" name="pf_number" class="form-control" placeholder="e.g. 50201234567">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">HRMS ID</label>
+                            <input type="text" name="hrms_id" class="form-control" placeholder="e.g. ABCDEF">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small">Nominated Chief Loco Inspector (CLI)</label>
+                            <select name="cli_id" class="form-select">
+                                <option value="">-- Select Assigned CLI (if known) --</option>
+                                {% for c in clis %}
+                                    <option value="{{ c.id }}">{{ c.full_name }} ({{ c.username }}{% if c.lobby %} - {{ c.lobby.code }}{% endif %})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text small">Your CLI conducts periodic footplate monitoring and safety counselling.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Password</label>
+                            <input type="password" name="password" class="form-control" value="12345" required>
+                            <div class="form-text small">Default: <code>12345</code> (You will be asked to change it upon first login).</div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg fs-6 fw-bold">
+                            <i class="fa-solid fa-check-circle me-1"></i> Complete Registration
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <span class="small text-muted">Already registered?</span>
+                        <a href="{{ url_for('auth.login') }}" class="small fw-bold text-primary text-decoration-none ms-1">
+                            Sign In Here &rarr;
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

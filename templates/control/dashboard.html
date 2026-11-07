@@ -1,0 +1,244 @@
+{% extends "control/base_control.html" %}
+
+{% block title %}Control Dashboard | Operational Tools Hub{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+    <!-- HERO GREETING BANNER -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 text-white overflow-hidden" style="background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);">
+        <div class="card-body p-4 p-md-5 d-flex flex-wrap justify-content-between align-items-center gap-4">
+            <div>
+                <div class="d-inline-flex align-items-center gap-2 bg-white bg-opacity-10 border border-white border-opacity-20 px-3 py-1 rounded-pill small mb-3">
+                    <span class="d-inline-block bg-success rounded-circle" style="width: 8px; height: 8px;"></span>
+                    <span>Electric Operation Control Active</span>
+                </div>
+                <h2 class="fw-bold mb-1">
+                    Control Dashboard &bull; Howrah Division
+                </h2>
+                <p class="text-white-50 mb-0" style="max-width: 650px;">
+                    Centralized Operational Tools Suite for Chief Power Controllers (PCNL), Traction Loco Controllers (TLC), and Operational Supervisors.
+                </p>
+            </div>
+            <div class="text-md-end">
+                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fs-6 fw-bold shadow-sm">
+                    <i class="fa-solid fa-headset me-1"></i> Logged in as: {{ session.get('username') }}
+                </span>
+                <div class="text-white-50 small mt-2">
+                    {{ session.get('full_name') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPERATIONAL TOOLS CARDS GRID -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-dark mb-0">
+            <i class="bi bi-tools text-warning me-2"></i> Operational Tools (9 Active Submenus)
+        </h5>
+        <span class="badge bg-light text-muted border px-2.5 py-1.5 rounded-pill small">
+            Directly ported from HWH Division Operation Dashboard
+        </span>
+    </div>
+
+    <div class="row g-3">
+        <!-- 1. Crew & CLI Master Upload -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-primary" style="background-color: #eff6ff;">
+                            <i class="bi bi-people-fill fs-3"></i>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small">Master Data</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Crew & CLI Master Upload</h5>
+                    <p class="text-muted small mb-4">
+                        Upload & maintain CMS crew master sheets, manage CLI nominations, clear lobbies, and view division-wide breakdowns across HWH, ASN, MLDT & SDAH.
+                    </p>
+                    <a href="{{ url_for('control.crew_upload') }}" class="btn btn-outline-primary btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Availability Management -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-success" style="background-color: #f0fdf4;">
+                            <i class="bi bi-person-check fs-3"></i>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small">Real-time</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Availability Management</h5>
+                    <p class="text-muted small mb-4">
+                        Dynamic crew availability tracking, slot filtering, duty hours status updates (Leave, Training, Sick, Book Up, etc.), and fast search.
+                    </p>
+                    <a href="{{ url_for('control.availability_management') }}" class="btn btn-outline-success btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Duty Hours Count -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-info" style="background-color: #f0f9ff;">
+                            <i class="bi bi-calculator fs-3"></i>
+                        </div>
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1 rounded-pill small">Analysis</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Duty Hours Count</h5>
+                    <p class="text-muted small mb-4">
+                        Import Continuous Working Hours report, filter by sign-off date ranges, duty slabs (>9h, >11h, >14h), and download summary registers.
+                    </p>
+                    <a href="{{ url_for('control.duty_hours_count') }}" class="btn btn-outline-info btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. ZWM & Run Km Analyser -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-warning" style="background-color: #fffbeb;">
+                            <i class="bi bi-arrow-left-right fs-3"></i>
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1 rounded-pill small">Excel Engine</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">ZWM & Run Km Analyser</h5>
+                    <p class="text-muted small mb-4">
+                        Client-side instant analytics for Zone-Wise Mileage (ZWM) and Running Kilometers with automated aggregation, charts, and Excel export.
+                    </p>
+                    <a href="{{ url_for('control.analysis') }}" class="btn btn-outline-warning text-dark btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Long Hours Converter -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-secondary" style="background-color: #f8fafc;">
+                            <i class="bi bi-clock-history fs-3 text-primary"></i>
+                        </div>
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1 rounded-pill small">Converter</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Long Hours Converter</h5>
+                    <p class="text-muted small mb-4">
+                        Convert raw CMS exports into structured Long Hours sheets and generate all-in-one crew duty report registers with custom column selectors.
+                    </p>
+                    <a href="{{ url_for('control.long_hours') }}" class="btn btn-outline-secondary btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Long Hours Analysis -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-danger" style="background-color: #fef2f2;">
+                            <i class="bi bi-bar-chart-line fs-3"></i>
+                        </div>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill small">Intelligence</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Long Hours Analysis</h5>
+                    <p class="text-muted small mb-4">
+                        Multi-dimensional analysis of long hours (>9h, >11h, >14h) across sections, scenario simulations, monthly distribution, and trends.
+                    </p>
+                    <a href="{{ url_for('control.long_hours_analysis') }}" class="btn btn-outline-danger btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Gradient Register -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-primary" style="background-color: #eff6ff;">
+                            <i class="bi bi-compass fs-3"></i>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small">Track Data</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Gradient Register</h5>
+                    <p class="text-muted small mb-4">
+                        Interactive railway track gradient profiles, section search, elevation charts, slope data (rise/fall), and Excel/PDF report export.
+                    </p>
+                    <a href="{{ url_for('control.gradient') }}" class="btn btn-outline-primary btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Unusual Report -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-danger" style="background-color: #fff1f2;">
+                            <i class="bi bi-exclamation-triangle fs-3 text-danger"></i>
+                        </div>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill small">Incident Desk</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Unusual Report</h5>
+                    <p class="text-muted small mb-4">
+                        Live format engine for railway unusual occurrences, failure logs, memo generation, WhatsApp broadcast styling, and PDF drafting.
+                    </p>
+                    <a href="{{ url_for('control.unusual_report') }}" class="btn btn-outline-danger btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. Control Memo -->
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 p-3 text-info" style="background-color: #f0fdfa;">
+                            <i class="bi bi-file-earmark-text fs-3 text-teal"></i>
+                        </div>
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1 rounded-pill small">Memo Studio</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Control Memo Studio</h5>
+                    <p class="text-muted small mb-4">
+                        PCNL / TLC operational memo generator with live multi-slip preview (1, 2, 3, or 4 slips per page), clean layouts, and image capture.
+                    </p>
+                    <a href="{{ url_for('control.memo_generator') }}" class="btn btn-outline-dark btn-sm fw-bold w-100 rounded-pill">
+                        Launch Tool <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important;
+}
+</style>
+{% endblock %}

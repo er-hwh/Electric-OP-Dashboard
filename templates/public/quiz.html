@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}GR & SR Chapter-Wise Safety Quiz | Electric OP Howrah{% endblock %}
+
+{% block extra_css %}
+<style>
+    .quiz-card {
+        transition: all 0.25s ease-in-out;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+    }
+    .quiz-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .option-label {
+        display: block;
+        padding: 0.75rem 1rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+    .option-label:hover {
+        background-color: #f8fafc;
+        border-color: #94a3b8;
+    }
+    .option-label.selected {
+        border-color: #0284c7;
+        background-color: #f0f9ff;
+    }
+    .option-label.correct-choice {
+        border-color: #16a34a !important;
+        background-color: #f0fdf4 !important;
+        color: #166534 !important;
+        font-weight: 600;
+    }
+    .option-label.wrong-choice {
+        border-color: #dc2626 !important;
+        background-color: #fef2f2 !important;
+        color: #991b1b !important;
+    }
+    .option-letter-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background-color: #e2e8f0;
+        color: #334155;
+        font-weight: bold;
+        font-size: 0.8rem;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+    .option-label.selected .option-letter-badge {
+        background-color: #0284c7;
+        color: #ffffff;
+    }
+    .option-label.correct-choice .option-letter-badge {
+        background-color: #16a34a;
+        color: #ffffff;
+    }
+    .option-label.wrong-choice .option-letter-badge {
+        background-color: #dc2626;
+        color: #ffffff;
+    }
+    .chapter-pill {
+        white-space: nowrap;
+        font-size: 0.82rem;
+        padding: 0.4rem 0.85rem;
+        border-radius: 20px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .chapter-pill:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+    .chapter-pill.active {
+        background: #1e3a8a;
+        border-color: #1e3a8a;
+        color: #ffffff !important;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(30, 58, 138, 0.3);
+    }
+    .chapter-pills-scroll {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        scrollbar-width: thin;
+    }
+    .chapter-pills-scroll::-webkit-scrollbar {
+        height: 5px;
+    }
+    .chapter-pills-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-3">
+    <!-- TOP BANNER -->
+    <div class="rail-card p-3 p-md-4 mb-3 shadow-sm border-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-warning text-dark fw-bold px-2 py-1">
+                        <i class="fa-solid fa-graduation-cap me-1"></i> Running Staff Competency Hub
+                    </span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
+                        18 GR & SR Chapters
+                    </span>
+                </div>
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="fa-solid fa-award text-warning me-2"></i> General & Subsidiary Rules (GR & SR) Safety Quiz
+                </h3>
+                <p class="text-muted mb-0 small">
+                    Interactive chapter-by-chapter self-evaluation bank for Loco Pilots, ALPs, Guards, and Running Staff of Howrah Division.
+                </p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <a href="{{ url_for('elearning.index') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa-solid fa-book-bookmark me-1"></i> Digital Rule Book
+                </a>
+                <a href="{{ url_for('elearning.troubleshooting') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-wrench me-1"></i> Loco Troubleshooting
+                </a>
+            </div>
+        </div>
+
+        <hr class="my-3 text-muted opacity-25">
+
+        <!-- CONTROLS & CHAPTER SELECTOR -->
+        <div class="row g-3 align-items-center">
+            <!-- MODE TOGGLE -->
+            <div class="col-lg-4 col-md-5">
+                <label class="form-label small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
+                    <i class="fa-solid fa-sliders text-primary"></i> Assessment Mode:
+                </label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="quizMode" id="modePractice" value="practice" checked autocomplete="off" onchange="changeMode('practice')">
+                    <label class="btn btn-outline-primary btn-sm fw-bold py-1.5" for="modePractice">
+                        <i class="fa-solid fa-bolt me-1 text-warning"></i> Practice Mode
+                        <small class="d-block text-muted" style="font-size: 0.68rem; font-weight: normal;">Instant Answers & Rule Notes</small>
+                    </label>
+
+                    <input type="radio" class="btn-check" name="quizMode" id="modeExam" value="exam" autocomplete="off" onchange="changeMode('exam')">
+                    <label class="btn btn-outline-primary btn-sm fw-bold py-1.5" for="modeExam">
+                        <i class="fa-solid fa-clipboard-check me-1"></i> Exam Mode
+                        <small class="d-block text-muted" style="font-size: 0.68rem; font-weight: normal;">Score Calculated at End</small>
+                    </label>
+                </div>
+            </div>
+
+            <!-- CHAPTER DROPDOWN -->
+            <div class="col-lg-5 col-md-7">
+                <label class="form-label small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
+                    <i class="fa-solid fa-book-open text-primary"></i> Select GR & SR Chapter / Section:
+                </label>
+                <select class="form-select form-select-sm" id="chapterSelect" onchange="selectChapter(this.value)">
+                    <option value="ALL" {% if selected_chapter == 'ALL' %}selected{% endif %}>
+                        All Chapters & Sections (Comprehensive Test - {{ total_quiz_count }} Questions)
+                    </option>
+                    {% for c in chapters %}
+                        <option value="{{ c.chapter_no }}" {% if selected_chapter == c.chapter_no %}selected{% endif %}>
+                            {{ c.chapter_no }}: {{ c.chapter_title }} ({{ c.count }} Questions)
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- QUICK STATS -->
+            <div class="col-lg-3 col-12 text-lg-end">
+                <span class="text-muted small d-block">Available Questions:</span>
+                <span class="badge bg-dark fs-6 py-1 px-3" id="activeQuestionsBadge">
+                    <span id="activeCountDisplay">{{ quizzes|length }}</span> Questions
+                </span>
+            </div>
+        </div>
+
+        <!-- HORIZONTAL CHAPTER FILTER PILLS -->
+        <div class="mt-3 pt-2 border-top">
+            <div class="chapter-pills-scroll" id="chapterPillsContainer">
+                <button type="button" class="chapter-pill {% if selected_chapter == 'ALL' %}active{% endif %}" onclick="selectChapter('ALL')">
+                    <i class="fa-solid fa-layer-group me-1"></i> All Sections ({{ total_quiz_count }})
+                </button>
+                {% for c in chapters %}
+                    <button type="button" 
+                            class="chapter-pill {% if selected_chapter == c.chapter_no %}active{% endif %}" 
+                            data-chap-id="{{ c.chapter_no }}" 
+                            onclick="selectChapter('{{ c.chapter_no }}')">
+                        {{ c.chapter_no }} ({{ c.count }})
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- EXAM MODE SUBMIT BAR (STICKY) -->
+    <div id="examStickyBar" class="rail-card p-3 mb-3 bg-light border-primary d-none shadow-sm">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-stopwatch text-danger"></i>
+                    <span>Mock Exam in Progress</span>
+                </h6>
+                <small class="text-muted" id="examProgressText">Answered 0 of {{ quizzes|length }} questions</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetQuiz()">
+                    <i class="fa-solid fa-arrow-rotate-left me-1"></i> Reset
+                </button>
+                <button type="button" class="btn btn-primary px-4 fw-bold btn-sm" onclick="submitExam()">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Submit Exam & View Score
+                </button>
+            </div>
+        </div>
+        <div class="progress mt-2" style="height: 6px;">
+            <div class="progress-bar bg-success" id="examProgressBar" role="progressbar" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- EXAM RESULT SUMMARY CARD -->
+    <div id="examResultCard" class="rail-card p-4 mb-4 border-success d-none shadow">
+        <div class="row align-items-center g-3">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                        <i class="fa-solid fa-trophy fs-2"></i>
+                    </div>
+                    <div>
+                        <span class="badge bg-success mb-1" id="examGradeBadge">ASSESSMENT COMPLETE</span>
+                        <h4 class="fw-bold text-dark mb-0" id="examScoreText">Score: 0 / 0 (0%)</h4>
+                        <p class="text-muted small mb-0" id="examRemarksText">Review your answers below with complete official rule references.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="retakeExam()">
+                    <i class="fa-solid fa-rotate me-1"></i> Retake
+                </button>
+                <a href="#questionsListContainer" class="btn btn-success btn-sm">
+                    <i class="fa-solid fa-list-check me-1"></i> Review Questions
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN QUESTIONS LIST CONTAINER -->
+    <div id="questionsListContainer">
+        <!-- Rendered dynamically by JavaScript to support instant filtering without page reload -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load full quiz dataset from backend
+const ALL_QUIZZES = {{ all_quizzes_json | safe }};
+let currentChapter = "{{ selected_chapter }}";
+let currentMode = "practice"; // 'practice' or 'exam'
+let userAnswers = {}; // { questionId: selectedIndex }
+let isExamSubmitted = false;
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    renderQuestions();
+    updatePillHighlight();
+});
+
+// Switch practice vs exam mode
+function changeMode(mode) {
+    currentMode = mode;
+    isExamSubmitted = false;
+    userAnswers = {};
+    
+    const stickyBar = document.getElementById('examStickyBar');
+    const resultCard = document.getElementById('examResultCard');
+    
+    if (mode === 'exam') {
+        stickyBar.classList.remove('d-none');
+        updateExamProgress();
+    } else {
+        stickyBar.classList.add('d-none');
+        resultCard.classList.add('d-none');
+    }
+    renderQuestions();
+}
+
+// Filter by chapter
+function selectChapter(chapterNo) {
+    currentChapter = chapterNo;
+    userAnswers = {};
+    isExamSubmitted = false;
+    
+    // Update dropdown
+    document.getElementById('chapterSelect').value = chapterNo;
+    
+    // Update pills
+    updatePillHighlight();
+    
+    // Update URL query parameter without reload
+    const url = new URL(window.location);
+    if (chapterNo === 'ALL') {
+        url.searchParams.delete('chapter');
+    } else {
+        url.searchParams.set('chapter', chapterNo);
+    }
+    window.history.pushState({}, '', url);
+    
+    // Hide exam results if open
+    document.getElementById('examResultCard').classList.add('d-none');
+    
+    // Render filtered questions
+    renderQuestions();
+    
+    if (currentMode === 'exam') {
+        updateExamProgress();
+    }
+}
+
+function updatePillHighlight() {
+    const pills = document.querySelectorAll('.chapter-pill');
+    pills.forEach(pill => {
+        const pillChap = pill.getAttribute('data-chap-id') || 'ALL';
+        if (pillChap.toUpperCase() === currentChapter.toUpperCase()) {
+            pill.classList.add('active');
+            pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } else {
+            pill.classList.remove('active');
+        }
+    });
+}
+
+// Get filtered quizzes
+function getFilteredQuizzes() {
+    if (!currentChapter || currentChapter.toUpperCase() === 'ALL') {
+        return ALL_QUIZZES;
+    }
+    return ALL_QUIZZES.filter(q => q.chapter_no && q.chapter_no.toUpperCase() === currentChapter.toUpperCase());
+}
+
+// Render questions into DOM
+function renderQuestions() {
+    const container = document.getElementById('questionsListContainer');
+    const list = getFilteredQuizzes();
+    
+    document.getElementById('activeCountDisplay').textContent = list.length;
+    
+    if (list.length === 0) {
+        container.innerHTML = `
+            <div class="rail-card p-5 text-center text-muted">
+                <i class="fa-solid fa-circle-question fs-1 mb-3 text-warning"></i>
+                <h5 class="fw-bold">No questions found for this chapter</h5>
+                <p class="small mb-3">Please choose another chapter from the menu above.</p>
+                <button class="btn btn-outline-primary btn-sm" onclick="selectChapter('ALL')">View All Chapters</button>
+            </div>
+        `;
+        return;
+    }
+    
+    const letters = ['A', 'B', 'C', 'D'];
+    let html = '';
+    
+    list.forEach((q, qIndex) => {
+        const selectedIdx = userAnswers[q.id];
+        const isAnswered = selectedIdx !== undefined;
+        const isCorrect = isAnswered && selectedIdx === q.correct_index;
+        
+        let difficultyBadgeClass = 'bg-secondary';
+        if (q.difficulty === 'Basic') difficultyBadgeClass = 'bg-info text-dark';
+        if (q.difficulty === 'Intermediate') difficultyBadgeClass = 'bg-primary';
+        if (q.difficulty === 'Advanced') difficultyBadgeClass = 'bg-danger';
+
+        html += `
+            <div class="rail-card quiz-card p-3 p-md-4 mb-3" id="card-${q.id}">
+                <!-- CARD HEADER -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                    <div class="d-flex flex-wrap align-items-center gap-1.5">
+                        <span class="badge bg-light text-dark border fw-bold">
+                            Q${qIndex + 1} of ${list.length}
+                        </span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">
+                            ${q.chapter_no}: ${q.chapter_title}
+                        </span>
+                        <span class="badge bg-warning text-dark fw-bold">
+                            <i class="fa-solid fa-scale-balanced me-1"></i>${q.rule_ref}
+                        </span>
+                        <span class="badge ${difficultyBadgeClass}">
+                            ${q.difficulty || 'Intermediate'}
+                        </span>
+                    </div>
+                    <div>
+                        <a href="/elearning/?rule=${encodeURIComponent(q.rule_ref.split('&')[0].trim())}" target="_blank" class="text-decoration-none small text-muted hover-primary" title="Open Rule Book">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Read Rule
+                        </a>
+                    </div>
+                </div>
+
+                <!-- QUESTION TEXT -->
+                <h6 class="fw-bold text-dark mt-2 mb-3" style="line-height: 1.5; font-size: 1.02rem;">
+                    ${q.question}
+                </h6>
+
+                <!-- OPTIONS -->
+                <div class="options-container">
+        `;
+
+        q.options.forEach((opt, optIdx) => {
+            let labelClass = 'option-label';
+            const isThisSelected = selectedIdx === optIdx;
+            
+            if (isThisSelected) {
+                labelClass += ' selected';
+            }
+            
+            // In Practice Mode OR if Exam is submitted, show color highlights
+            if ((currentMode === 'practice' && isAnswered) || (currentMode === 'exam' && isExamSubmitted)) {
+                if (optIdx === q.correct_index) {
+                    labelClass += ' correct-choice';
+                } else if (isThisSelected && !isCorrect) {
+                    labelClass += ' wrong-choice';
+                }
+            }
+
+            const disabledAttr = (currentMode === 'practice' && isAnswered) || isExamSubmitted ? 'disabled' : '';
+
+            html += `
+                <label class="${labelClass}" for="opt-${q.id}-${optIdx}" onclick="selectOption('${q.id}', ${optIdx})">
+                    <div class="d-flex align-items-center">
+                        <span class="option-letter-badge">${letters[optIdx]}</span>
+                        <input class="form-check-input d-none" type="radio" name="radio-${q.id}" id="opt-${q.id}-${optIdx}" value="${optIdx}" ${isThisSelected ? 'checked' : ''} ${disabledAttr}>
+                        <span class="flex-grow-1">${opt}</span>
+                        ${(currentMode === 'practice' && isAnswered) || isExamSubmitted ? (
+                            optIdx === q.correct_index ? '<i class="fa-solid fa-circle-check text-success ms-2 fs-5"></i>' : (
+                                isThisSelected ? '<i class="fa-solid fa-circle-xmark text-danger ms-2 fs-5"></i>' : ''
+                            )
+                        ) : ''}
+                    </div>
+                </label>
+            `;
+        });
+
+        html += `</div>`; // end options-container
+
+        // EXPLANATION / FEEDBACK CONTAINER
+        const showExplanation = (currentMode === 'practice' && isAnswered) || (currentMode === 'exam' && isExamSubmitted);
+        if (showExplanation) {
+            const alertClass = isCorrect ? 'alert-success' : 'alert-info';
+            html += `
+                <div class="alert ${alertClass} mt-3 mb-0 p-3 rounded small">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fa-solid ${isCorrect ? 'fa-circle-check text-success' : 'fa-circle-info text-primary'} mt-0.5 fs-5"></i>
+                        <div class="w-100">
+                            <div class="fw-bold mb-1">
+                                ${isCorrect ? 'Correct! Well done.' : `<strong>Note:</strong> Correct answer is <strong>Option ${letters[q.correct_index]}: ${q.options[q.correct_index]}</strong>`}
+                            </div>
+                            <div class="text-secondary mb-1">
+                                ${q.explanation}
+                            </div>
+                            <div class="fw-bold text-dark mt-1">
+                                <i class="fa-solid fa-book-bookmark text-warning me-1"></i> Reference: ${q.rule_ref}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += `</div>`; // end quiz-card
+    });
+
+    container.innerHTML = html;
+}
+
+// User selects an option
+function selectOption(qId, optIdx) {
+    if (currentMode === 'practice' && userAnswers[qId] !== undefined) {
+        return; // already answered in practice mode
+    }
+    if (isExamSubmitted) return;
+
+    userAnswers[qId] = optIdx;
+
+    if (currentMode === 'practice') {
+        renderQuestions();
+    } else {
+        // Exam mode: update UI selection without revealing right/wrong
+        const card = document.getElementById(`card-${qId}`);
+        if (card) {
+            card.querySelectorAll('.option-label').forEach((lbl, idx) => {
+                if (idx === optIdx) {
+                    lbl.classList.add('selected');
+                } else {
+                    lbl.classList.remove('selected');
+                }
+            });
+        }
+        updateExamProgress();
+    }
+}
+
+// Update exam sticky progress bar
+function updateExamProgress() {
+    const list = getFilteredQuizzes();
+    const total = list.length;
+    let answered = 0;
+    
+    list.forEach(q => {
+        if (userAnswers[q.id] !== undefined) answered++;
+    });
+
+    const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+    document.getElementById('examProgressText').textContent = `Answered ${answered} of ${total} questions (${pct}%)`;
+    document.getElementById('examProgressBar').style.width = `${pct}%`;
+}
+
+// Submit mock exam
+function submitExam() {
+    const list = getFilteredQuizzes();
+    const total = list.length;
+    let answered = 0;
+    let correct = 0;
+
+    list.forEach(q => {
+        const ans = userAnswers[q.id];
+        if (ans !== undefined) {
+            answered++;
+            if (ans === q.correct_index) correct++;
+        }
+    });
+
+    if (answered < total) {
+        if (!confirm(`You have answered ${answered} of ${total} questions. Are you sure you want to submit now?`)) {
+            return;
+        }
+    }
+
+    isExamSubmitted = true;
+    const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    // Show summary card
+    const resultCard = document.getElementById('examResultCard');
+    resultCard.classList.remove('d-none');
+    
+    document.getElementById('examScoreText').textContent = `Score: ${correct} / ${total} (${scorePct}%)`;
+    
+    const gradeBadge = document.getElementById('examGradeBadge');
+    const remarks = document.getElementById('examRemarksText');
+    
+    if (scorePct >= 80) {
+        gradeBadge.className = 'badge bg-success mb-1';
+        gradeBadge.textContent = 'SAFETY COMPETENCY: GRADE A+ (OUTSTANDING)';
+        remarks.textContent = 'Excellent operational comprehension of Eastern Railway GR & SR provisions.';
+    } else if (scorePct >= 60) {
+        gradeBadge.className = 'badge bg-primary mb-1';
+        gradeBadge.textContent = 'SAFETY COMPETENCY: GRADE B (COMPETENT)';
+        remarks.textContent = 'Good knowledge of safety rules. Review incorrect answers below for complete proficiency.';
+    } else {
+        gradeBadge.className = 'badge bg-danger mb-1';
+        gradeBadge.textContent = 'SAFETY COMPETENCY: NEEDS REVIEW';
+        remarks.textContent = 'Refresher counselling recommended. Carefully study the rule citations and explanations below.';
+    }
+
+    // Hide sticky bar and re-render with answers and explanations revealed
+    document.getElementById('examStickyBar').classList.add('d-none');
+    renderQuestions();
+    
+    // Scroll smoothly to results card
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Reset current quiz
+function resetQuiz() {
+    userAnswers = {};
+    isExamSubmitted = false;
+    document.getElementById('examResultCard').classList.add('d-none');
+    if (currentMode === 'exam') {
+        document.getElementById('examStickyBar').classList.remove('d-none');
+        updateExamProgress();
+    }
+    renderQuestions();
+}
+
+function retakeExam() {
+    resetQuiz();
+}
+</script>
+{% endblock %}

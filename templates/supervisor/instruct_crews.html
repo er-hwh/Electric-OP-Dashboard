@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Instruct Assigned Crews | CLI Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="rail-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1 fs-6"><i class="fa-solid fa-bullhorn me-1"></i> CLI Instructions</span>
+                        <h4 class="fw-bold text-dark mb-0">Issue Instructions to Nominated Crews</h4>
+                        <small class="text-muted">Transmit safety alerts or individual guidance to your assigned running staff squad</small>
+                    </div>
+                    <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+                    </a>
+                </div>
+
+                <form method="POST" action="{{ url_for('supervisor.instruct_crews') }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Send Instruction To: <span class="text-danger">*</span></label>
+                        <select name="target" class="form-select" required>
+                            <option value="ALL">📢 All My Assigned Crews (Squad Broadcast - {{ my_crews|length }} Crews)</option>
+                            <optgroup label="Individual Crew Member">
+                                {% for c in my_crews %}
+                                    <option value="{{ c.id }}">{{ c.full_name }} ({{ c.sub_role }}) - Mob: {{ c.mobile }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Subject / Instruction Topic <span class="text-danger">*</span></label>
+                        <input type="text" name="subject" class="form-control" placeholder="e.g. Caution Order Observance in Dankuni - Barddhaman Section" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-dark">Instruction Content <span class="text-danger">*</span></label>
+                        <textarea name="body" class="form-control" rows="5" placeholder="Enter detailed technical advice, safety caution, or guidance..." required></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning btn-lg fs-6 fw-bold text-dark shadow-sm">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Transmit Instructions
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

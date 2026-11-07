@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Notices & Results | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="rail-card p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="fa-solid fa-newspaper text-warning me-2"></i> Departmental Notices, Circulars & Results
+                </h3>
+                <p class="text-muted mb-0">Official notifications for Electric Operations, Running Staff and Lobby Supervisors</p>
+            </div>
+            {% if current_user and current_user.is_officer() %}
+                <a href="{{ url_for('officer.broadcast') }}" class="btn btn-primary btn-sm fw-bold">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Post New Notice
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- CATEGORY PILLS -->
+        <div class="mb-4">
+            <div class="btn-group flex-wrap" role="group">
+                <a href="{{ url_for('public.notices', category='ALL') }}" class="btn btn-sm {% if current_category == 'ALL' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %}">All Categories</a>
+                <a href="{{ url_for('public.notices', category='Notice') }}" class="btn btn-sm {% if current_category == 'Notice' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %}">Notices</a>
+                <a href="{{ url_for('public.notices', category='Circular') }}" class="btn btn-sm {% if current_category == 'Circular' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %}">Circulars</a>
+                <a href="{{ url_for('public.notices', category='Safety Drive') }}" class="btn btn-sm {% if current_category == 'Safety Drive' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %}">Safety Drives</a>
+                <a href="{{ url_for('public.notices', category='Seniority') }}" class="btn btn-sm {% if current_category == 'Seniority' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %}">Seniority Lists</a>
+                <a href="{{ url_for('public.notices', category='Result') }}" class="btn btn-sm {% if current_category == 'Result' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %}">Results & Selections</a>
+            </div>
+        </div>
+
+        <!-- NOTICES LIST -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 130px;">Date</th>
+                        <th style="width: 140px;">Category</th>
+                        <th>Subject & Overview</th>
+                        <th style="width: 160px;">Target & Issuer</th>
+                        <th style="width: 180px;" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for n in notices %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold text-dark">{{ n.created_at.strftime('%d-%b-%Y') }}</span><br>
+                                <small class="text-muted">{{ n.created_at.strftime('%H:%M') }}</small>
+                            </td>
+                            <td>
+                                <span class="badge {% if n.category == 'Safety Drive' %}bg-danger{% elif n.category == 'Result' %}bg-success{% elif n.category == 'Seniority' %}bg-info text-dark{% else %}bg-primary{% endif %}">
+                                    {{ n.category }}
+                                </span>
+                                {% if n.is_urgent %}
+                                    <span class="badge bg-danger">URGENT</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark fs-6">{{ n.title }}</div>
+                                <div class="small text-secondary mt-1">{{ n.content }}</div>
+                            </td>
+                            <td>
+                                <small class="d-block text-muted">Audience: <strong>{{ n.target_audience }}</strong></small>
+                                <small class="d-block text-muted">By: <strong>{{ n.publisher.sub_role if n.publisher else 'HQ' }}</strong></small>
+                                {% if n.target_lobby %}
+                                    <span class="badge bg-light text-dark border">{{ n.target_lobby.code }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if n.file_path %}
+                                    <a href="{{ url_for('static', filename='uploads/' + n.file_path) }}" target="_blank" class="btn btn-sm btn-outline-danger me-1">
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                    </a>
+                                {% endif %}
+
+                                {% if current_user and current_user.is_crew() %}
+                                    <form action="{{ url_for('crew.acknowledge_notice', notice_id=n.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success fw-bold" title="Electronic Assurance Register">
+                                            <i class="fa-solid fa-check"></i> Acknowledge
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No notices found in this category.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

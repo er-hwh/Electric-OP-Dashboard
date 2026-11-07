@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Counselling Approvals & Digital Endorsements | Officer Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <div>
+            <span class="badge bg-danger mb-1 fs-6"><i class="fa-solid fa-stamp me-1"></i> Divisional Executive Authority</span>
+            <h3 class="fw-bold text-dark mb-0">Safety Counselling Approvals & Digital Signatures</h3>
+            <p class="text-muted small mb-0">Review CLI-drafted Monthly & Special counselling topics referencing GR & SR before publishing to Running Staff</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('officer.new_counselling') }}" class="btn btn-success btn-sm fw-bold">
+                <i class="fa-solid fa-plus-circle me-1"></i> Issue Direct Topic
+            </a>
+            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-dark btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- PENDING PROPOSALS SECTION -->
+    <div class="rail-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+            <h5 class="fw-bold text-danger mb-0">
+                <i class="fa-solid fa-clock-rotate-left me-2"></i> Pending Proposals Awaiting Digital Endorsement ({{ pending_topics|length }})
+            </h5>
+            {% if pending_topics %}
+                <span class="badge bg-warning text-dark fs-6">{{ pending_topics|length }} Action Required</span>
+            {% else %}
+                <span class="badge bg-success fs-6"><i class="fa-solid fa-check me-1"></i> All Caught Up</span>
+            {% endif %}
+        </div>
+
+        {% if pending_topics %}
+            <div class="row g-4">
+                {% for topic in pending_topics %}
+                    <div class="col-12">
+                        <div class="card border border-warning shadow-sm">
+                            <div class="card-header bg-warning bg-opacity-10 d-flex flex-wrap justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge {% if topic.counselling_type == 'SPECIAL' %}bg-danger{% else %}bg-primary{% endif %} me-2">
+                                        {{ topic.counselling_type }} COUNSELLING
+                                    </span>
+                                    <span class="badge bg-dark me-2">{{ topic.month_year }}</span>
+                                    {% if topic.rule_reference %}
+                                        <span class="badge bg-warning text-dark border"><i class="fa-solid fa-book-bookmark me-1"></i>{{ topic.rule_reference }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="fa-regular fa-clock me-1"></i> Submitted: {{ topic.created_at.strftime('%d-%b-%Y %H:%M') if topic.created_at else '-' }}
+                                </div>
+                            </div>
+
+                            <div class="card-body">
+                                <h4 class="card-title fw-bold text-dark mb-2">{{ topic.title }}</h4>
+                                
+                                <div class="mb-3 p-2 bg-light rounded small border">
+                                    <strong class="text-primary"><i class="fa-solid fa-user-pen me-1"></i> Drafted By:</strong>
+                                    {{ topic.proposer.full_name if topic.proposer else 'Chief Loco Inspector' }} ({{ topic.proposer.sub_role if topic.proposer else 'CLI' }})
+                                    {% if topic.proposer and topic.proposer.lobby %}
+                                        &bull; Lobby: <strong>{{ topic.proposer.lobby.code }}</strong>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-lg-7">
+                                        <h6 class="fw-bold text-success small mb-1"><i class="fa-solid fa-list-check me-1"></i> Counselling Directives & Instructions:</h6>
+                                        <div class="p-3 bg-light rounded border small text-secondary" style="white-space: pre-line; max-height: 250px; overflow-y: auto;">
+                                            {{ topic.content }}
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-5">
+                                        {% if topic.case_analysis %}
+                                            <h6 class="fw-bold text-danger small mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i> Case Study / Learning:</h6>
+                                            <div class="p-3 bg-light rounded border border-danger small text-dark mb-2" style="white-space: pre-line; max-height: 150px; overflow-y: auto;">
+                                                {{ topic.case_analysis }}
+                                            </div>
+                                        {% endif %}
+
+                                        {% if topic.file_path %}
+                                            <div class="mb-2">
+                                                <a href="{{ url_for('static', filename='uploads/' + topic.file_path) }}" target="_blank" class="btn btn-sm btn-outline-danger w-100">
+                                                    <i class="fa-solid fa-file-pdf me-1"></i> View Attached Document
+                                                </a>
+                                            </div>
+                                        {% endif %}
+
+                                        <!-- QUESTIONS PREVIEW -->
+                                        {% set q_list = topic.get_questions() %}
+                                        {% if q_list %}
+                                            <div class="p-2 rounded bg-white border mt-2">
+                                                <h6 class="fw-bold text-dark small mb-1"><i class="fa-solid fa-spell-check text-warning me-1"></i> Crew Verification Questions ({{ q_list|length }}):</h6>
+                                                <ol class="small text-muted ps-3 mb-0">
+                                                    {% for q in q_list %}
+                                                        <li class="mb-1">
+                                                            <strong>{{ q.q }}</strong>
+                                                            <div class="text-success" style="font-size: 0.75rem;">
+                                                                &bull; Correct Ans: {{ q.options[q.answer] if q.answer < q.options|length else 'N/A' }}
+                                                            </div>
+                                                        </li>
+                                                    {% endfor %}
+                                                </ol>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- ACTION FORMS: APPROVE / REJECT -->
+                                <div class="p-3 rounded bg-light border-top d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                                    <form action="{{ url_for('officer.approve_counselling', topic_id=topic.id) }}" method="POST" class="d-flex flex-grow-1 me-md-3 gap-2">
+                                        <input type="text" name="signature_remarks" class="form-control form-control-sm" placeholder="Digital Endorsement Remarks (e.g. Approved and signed for Howrah Division circulation)" value="Digitally endorsed and approved for Division-wide circulation by {{ officer.sub_role }} {{ officer.full_name }}">
+                                        <button type="submit" class="btn btn-success btn-sm fw-bold px-3 text-nowrap shadow-sm">
+                                            <i class="fa-solid fa-signature me-1"></i> Approve & Digitally Sign
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ url_for('officer.reject_counselling', topic_id=topic.id) }}" method="POST" class="d-flex gap-2">
+                                        <input type="text" name="signature_remarks" class="form-control form-control-sm" placeholder="Revision reason..." style="max-width: 200px;">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm text-nowrap" onclick="return confirm('Return this topic to CLI for revision?');">
+                                            <i class="fa-solid fa-rotate-left me-1"></i> Return for Revision
+                                        </button>
+                                    </form>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fa-solid fa-circle-check text-success fs-1 mb-2 d-block"></i>
+                <p class="mb-0">There are no pending safety counselling proposals awaiting your digital signature at this time.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- RECENTLY ENDORSED TOPICS -->
+    <div class="rail-card p-4">
+        <div class="border-bottom pb-2 mb-3">
+            <h5 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-certificate text-success me-2"></i> Recently Endorsed & Approved Counselling Topics
+            </h5>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 130px;">Month / Type</th>
+                        <th>Subject Title & Rule</th>
+                        <th style="width: 140px;">Status</th>
+                        <th style="width: 220px;">Digital Signature & Endorsement</th>
+                        <th style="width: 120px;">Approval Date</th>
+                        <th style="width: 100px;">Assurance</th>
+                        <th style="width: 90px;" class="text-center">View</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in recent_approved %}
+                        <tr>
+                            <td>
+                                <span class="badge {% if item.counselling_type == 'SPECIAL' %}bg-danger{% else %}bg-primary{% endif %} mb-1 d-block">
+                                    {{ item.counselling_type }}
+                                </span>
+                                <small class="text-muted fw-bold">{{ item.month_year }}</small>
+                            </td>
+                            <td>
+                                <strong class="text-dark d-block">{{ item.title }}</strong>
+                                {% if item.rule_reference %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-book-bookmark me-1"></i>{{ item.rule_reference }}</span>
+                                {% endif %}
+                                <div class="small text-muted mt-1">
+                                    Proposed by: <strong>{{ item.proposer.full_name if item.proposer else 'Officer' }}</strong>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.status == 'APPROVED' %}
+                                    <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> APPROVED</span>
+                                {% else %}
+                                    <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i> RETURNED</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.approver %}
+                                    <strong class="text-success small d-block"><i class="fa-solid fa-stamp me-1"></i>{{ item.approver.sub_role }}</strong>
+                                    <small class="text-muted">{{ item.approver.full_name }}</small>
+                                    {% if item.officer_signature_remarks %}
+                                        <div class="small text-secondary fst-italic mt-1" style="font-size: 0.75rem;">
+                                            "{{ item.officer_signature_remarks }}"
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ item.approval_date.strftime('%d-%b-%Y') if item.approval_date else item.topic_date.strftime('%d-%b-%Y') }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="fa-solid fa-user-check me-1"></i>{{ item.acknowledgements.count() }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('public.counselling_detail', topic_id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No endorsed topics yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

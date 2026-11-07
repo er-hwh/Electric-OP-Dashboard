@@ -1,0 +1,1227 @@
+﻿{% extends "control/base_control.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Title -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Crew Master Upload & Dashboard</h2>
+            <p class="text-muted mb-0">Maintain and verify the single source of truth for the crew database.</p>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+            <span class="d-inline-block bg-success rounded-circle me-1" style="width: 8px; height: 8px;"></span>
+            MySQL Connected
+        </span>
+    </div>
+
+    <!-- Super Admin Lock / Verification Banner -->
+    <div id="crew-admin-lock-banner" class="alert alert-warning border border-warning shadow-sm mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-shield-lock-fill text-warning fs-2"></i>
+            <div>
+                <h6 class="fw-bold mb-0 text-dark">Super Admin Authorization Required</h6>
+                <div class="small text-muted">All Crew data uploading, CLI master uploading, and database clear operations must strictly be done by Super Admin only.</div>
+            </div>
+        </div>
+        <button class="btn btn-warning text-dark fw-bold px-3 py-1.5 shadow-sm rounded-pill" onclick="showLoginModal()">
+            <i class="bi bi-shield-lock-fill me-1"></i> Super Admin Login
+        </button>
+    </div>
+
+    <div id="crew-admin-active-banner" class="alert alert-success border border-success shadow-sm mb-4 d-none justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check text-success fs-3"></i>
+            <div>
+                <h6 class="fw-bold mb-0 text-success">Super Admin Access Active</h6>
+                <div class="small text-muted">You are logged in with full administrative privileges to upload Crew Excel, import CLI master, and execute database clearing.</div>
+            </div>
+        </div>
+        <span class="badge bg-success px-3 py-2 rounded-pill"><i class="bi bi-check2-circle me-1"></i>Admin Verified</span>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Total Crew Records</h6>
+                    <div class="fs-3 fw-bold text-dark" id="stat-total-crew">0</div>
+                    <div class="text-muted small mt-1">On-Roll Crew Master database</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Last Upload Date</h6>
+                    <div class="fs-6 fw-bold text-dark text-truncate py-1" id="stat-last-upload-date">-</div>
+                    <div class="text-muted small mt-1">Timestamp of latest import</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Last Uploaded By</h6>
+                    <div class="fs-5 fw-bold text-dark py-1 text-truncate" id="stat-last-uploaded-by">-</div>
+                    <div class="text-muted small mt-1">Username audit log</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-warning border-4 h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Total CLI Count</h6>
+                    <div class="fs-3 fw-bold text-dark" id="stat-total-cli">0</div>
+                    <div class="text-muted small mt-1">Chief Loco Inspectors active</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Division-Wise Data Breakdown Panel -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-diagram-3-fill me-2 text-primary"></i>Division-Wise Crew Master & CLI Breakdown</h6>
+                    <span class="badge bg-primary-subtle text-primary border px-3 py-1.5 rounded-pill fw-semibold">4 Divisions | 59 Official Lobbies</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3" id="divisional-stats-grid">
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded border border-primary border-2 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-primary fs-6"><i class="bi bi-geo-alt-fill me-1"></i>HWH DIVISION</span>
+                                    <span class="badge bg-primary">14 Lobbies</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mt-2 border-top pt-2">
+                                    <span>Total Crew:</span>
+                                    <strong class="text-dark fs-5" id="stat-hwh-crew">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mt-1">
+                                    <span>CLI Count:</span>
+                                    <strong class="text-dark fs-6" id="stat-hwh-cli">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded border border-success border-2 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-success fs-6"><i class="bi bi-geo-alt-fill me-1"></i>ASN DIVISION</span>
+                                    <span class="badge bg-success">11 Lobbies</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mt-2 border-top pt-2">
+                                    <span>Total Crew:</span>
+                                    <strong class="text-dark fs-5" id="stat-asn-crew">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mt-1">
+                                    <span>CLI Count:</span>
+                                    <strong class="text-dark fs-6" id="stat-asn-cli">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded border border-warning border-2 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-dark fs-6"><i class="bi bi-geo-alt-fill me-1 text-warning"></i>MLDT DIVISION</span>
+                                    <span class="badge bg-warning text-dark">13 Lobbies</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mt-2 border-top pt-2">
+                                    <span>Total Crew:</span>
+                                    <strong class="text-dark fs-5" id="stat-mldt-crew">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mt-1">
+                                    <span>CLI Count:</span>
+                                    <strong class="text-dark fs-6" id="stat-mldt-cli">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded border border-info border-2 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-info fs-6"><i class="bi bi-geo-alt-fill me-1"></i>SDAH DIVISION</span>
+                                    <span class="badge bg-info text-dark">21 Lobbies</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mt-2 border-top pt-2">
+                                    <span>Total Crew:</span>
+                                    <strong class="text-dark fs-5" id="stat-sdah-crew">0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted mt-1">
+                                    <span>CLI Count:</span>
+                                    <strong class="text-dark fs-6" id="stat-sdah-cli">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Panel split grid -->
+    <div class="row g-4">
+        
+        <!-- Left: Upload & Admin Management Interface -->
+        <div class="col-lg-6">
+            <!-- 1. Inline Super Admin Login Panel (Shown when NOT logged in as Super Admin) -->
+            <div id="crew-admin-login-card" class="card shadow-sm border-0 border-top border-warning border-4 h-100">
+                <div class="card-body p-4 d-flex flex-column justify-content-center">
+                    <div class="text-center mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle mb-3" style="width: 72px; height: 72px;">
+                            <i class="bi bi-shield-lock-fill fs-1 text-dark"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-1">Super Admin Authentication</h4>
+                        <p class="text-muted small mb-0">Crew & CLI Master upload and database clearing are restricted to Super Admin.</p>
+                    </div>
+
+                    <div id="inlineLoginError" class="alert alert-danger py-2 px-3 small d-none mb-3"></div>
+
+                    <form id="inlineAdminLoginForm" onsubmit="handleInlineAdminLogin(event)" class="mx-auto w-100" style="max-width: 420px;">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark small">Super Admin Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-person-fill"></i></span>
+                                <input type="text" class="form-control" id="inlineAdminUsername" placeholder="e.g. admin / superadmin / pcnl" required autocomplete="username">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark small">Super Admin Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-key-fill"></i></span>
+                                <input type="password" class="form-control" id="inlineAdminPassword" placeholder="Enter Super Admin password" required autocomplete="current-password">
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-warning text-dark fw-bold py-2.5 shadow-sm" id="btnInlineLogin">
+                                <i class="bi bi-shield-lock-fill me-1"></i> Authenticate as Super Admin
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Logged-in admins can upload Crew Excel, CLI Master, and execute division data clearing.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Unlocked Upload & Data Management Panel (Shown when Super Admin is Active) -->
+            <div id="crew-admin-upload-card" class="card shadow-sm border-0 border-top border-primary border-4 h-100 d-none">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div>
+                            <h4 class="fw-bold text-dark mb-0">Upload Crew Raw Data</h4>
+                            <span class="text-muted small">Single source of truth for all division crew members</span>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap align-items-center">
+                            <!-- Direct Clear All Crew Data button -->
+                            <button class="btn btn-sm btn-danger fw-bold text-white shadow-sm" id="btn-clear-all-crews" onclick="clearAllCrewData()" title="Wipe entire crew database">
+                                <i class="bi bi-trash-fill me-1"></i> Clear All Crew Data
+                            </button>
+
+                            <!-- Clear All Options Dropdown -->
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-danger dropdown-toggle fw-bold shadow-sm" type="button" id="clearOptionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-sliders2-vertical me-1"></i> Clear All Options
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="clearOptionsDropdown" style="min-width: 290px;">
+                                    <li><h6 class="dropdown-header text-uppercase fw-bold text-danger"><i class="bi bi-people-fill me-1"></i>Crew Data Clearing</h6></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger fw-bold py-2" href="#" onclick="clearAllCrewData(); return false;">
+                                            <i class="bi bi-trash3-fill me-2"></i>Clear ALL Crew Data (Entire DB)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item fw-semibold py-2" href="#" data-bs-toggle="modal" data-bs-target="#clearLobbyModal">
+                                            <i class="bi bi-diagram-3-fill me-2 text-warning"></i>Clear Crew (Division / Lobby-Wise)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item fw-semibold py-2" href="#" onclick="cleanupDuplicates(); return false;">
+                                            <i class="bi bi-eraser-fill me-2 text-primary"></i>Remove Duplicate Crew Records
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header text-uppercase fw-bold text-primary"><i class="bi bi-person-badge-fill me-1"></i>CLI Master Clearing</h6></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger fw-bold py-2" href="#" onclick="clearAllCliData(); return false;">
+                                            <i class="bi bi-person-x-fill me-2"></i>Clear ALL CLI Master Records
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item fw-semibold py-2" href="#" data-bs-toggle="modal" data-bs-target="#clearCliModal">
+                                            <i class="bi bi-building me-2 text-info"></i>Clear CLI Master (Division / Lobby-Wise)
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Quick Access Modal Buttons -->
+                            <button class="btn btn-sm btn-outline-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#clearLobbyModal" title="Delete crew by specific division or lobby">
+                                <i class="bi bi-funnel-fill me-1"></i> Clear by Lobby
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary fw-bold" data-bs-toggle="modal" data-bs-target="#clearCliModal" title="Clear nominated CLI records">
+                                <i class="bi bi-person-x me-1"></i> Clear CLI
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary fw-bold" id="cleanup-duplicates-btn" onclick="cleanupDuplicates()" title="Deduplicate crew by mobile">
+                                <i class="bi bi-eraser me-1"></i> Deduplicate
+                            </button>
+                            <button class="btn btn-sm btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadCliModal">
+                                <i class="bi bi-person-badge-fill me-1"></i> Upload CLI Master
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Drag and Drop Box -->
+                    <div class="upload-zone border border-2 border-dashed rounded-3 p-5 text-center bg-light position-relative" id="upload-zone" style="cursor: pointer; transition: all 0.25s ease;">
+                        <input type="file" id="file-input" class="d-none" accept=".xlsx, .xls" multiple>
+                        <div id="upload-zone-unlocked">
+                            <i class="bi bi-cloud-arrow-up-fill text-primary" style="font-size: 3.5rem;"></i>
+                            <h5 class="fw-bold text-dark mt-3 mb-2">Drag & drop your Excel files here</h5>
+                            <p class="text-muted small mb-4">Select single or multiple Excel files (.xlsx / .xls) containing CREWID</p>
+                            <button class="btn btn-outline-primary px-4 fw-semibold" id="select-file-btn">Choose Excel Files</button>
+                        </div>
+                    </div>
+
+                    <!-- Files List Container (appears when files are selected) -->
+                    <div id="file-list-container" class="mt-4" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-secondary mb-0 small text-uppercase">Selected Files</h6>
+                            <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none fw-semibold p-0" id="clear-all-btn">Clear All</button>
+                        </div>
+                        <div id="file-items-wrapper" class="d-flex flex-column gap-2" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                            <!-- Items populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="mt-4">
+                        <button class="btn btn-primary w-100 py-2.5 fs-5 fw-bold" id="upload-btn" disabled>
+                            Validate & Upload Data
+                        </button>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-container mt-4" id="progress-container" style="display: none;">
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress-fill" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2 small text-muted">
+                            <span id="progress-text">Uploading files...</span>
+                            <span id="progress-percent">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Result Summary Box -->
+                    <div class="summary-container alert mt-4 mb-0" id="summary-container" style="display: none;">
+                        <h5 class="alert-heading fw-bold d-flex align-items-center gap-2" id="summary-header">
+                            <!-- Populated in JS -->
+                        </h5>
+                        <hr class="my-3">
+                        <div class="row g-2 text-center" id="summary-grid" style="display: none;">
+                            <div class="col-4">
+                                <div class="bg-white rounded p-2 border">
+                                    <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.7rem;">Total Rows</div>
+                                    <div class="fs-5 fw-bold text-dark" id="summary-total-rows">0</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-white rounded p-2 border">
+                                    <div class="text-success small text-uppercase fw-semibold" style="font-size: 0.7rem;">New Inserted</div>
+                                    <div class="fs-5 fw-bold text-success" id="summary-inserted">0</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-white rounded p-2 border">
+                                    <div class="text-primary small text-uppercase fw-semibold" style="font-size: 0.7rem;">Updated</div>
+                                    <div class="fs-5 fw-bold text-primary" id="summary-updated">0</div>
+                                </div>
+                            </div>
+                            <div class="col-4 mt-2">
+                                <div class="bg-white rounded p-2 border">
+                                    <div class="text-warning small text-uppercase fw-semibold" style="font-size: 0.7rem;">Duplicates</div>
+                                    <div class="fs-5 fw-bold text-warning" id="summary-duplicates">0</div>
+                                </div>
+                            </div>
+                            <div class="col-4 mt-2">
+                                <div class="bg-white rounded p-2 border">
+                                    <div class="text-danger small text-uppercase fw-semibold" style="font-size: 0.7rem;">Failed</div>
+                                    <div class="fs-5 fw-bold text-danger" id="summary-failed">0</div>
+                                </div>
+                            </div>
+                            <div class="col-4 mt-2">
+                                <div class="bg-white rounded p-2 border">
+                                    <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.7rem;">Time</div>
+                                    <div class="fs-5 fw-bold text-dark" id="summary-time">0s</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded p-3 border mt-3 text-center" id="summary-footer" style="display: none;">
+                            <div class="text-uppercase text-muted fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">Current Crew Master Count</div>
+                            <div class="fs-2 fw-bold text-primary" id="summary-final-count">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Audit Logs -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4 d-flex flex-column" style="max-height: 600px;">
+                    <h4 class="fw-bold text-dark mb-4">Upload Audit History</h4>
+                    <div class="table-responsive flex-grow-1" style="overflow-y: auto;">
+                        <table class="table table-hover border align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>File Name</th>
+                                    <th>Rows</th>
+                                    <th class="text-success">New</th>
+                                    <th class="text-primary">Updated</th>
+                                    <th class="text-danger">Failed</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                        Retrieving history logs...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .upload-zone.dragover {
+        border-color: var(--bs-primary) !important;
+        background-color: rgba(13, 110, 253, 0.05) !important;
+        box-shadow: 0 0 15px rgba(13, 110, 253, 0.1);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Elements
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const selectFileBtn = document.getElementById('select-file-btn');
+        const fileListContainer = document.getElementById('file-list-container');
+        const fileItemsWrapper = document.getElementById('file-items-wrapper');
+        const clearAllBtn = document.getElementById('clear-all-btn');
+        const uploadBtn = document.getElementById('upload-btn');
+        const progressContainer = document.getElementById('progress-container');
+        const progressFill = document.getElementById('progress-fill');
+        const progressPercent = document.getElementById('progress-percent');
+        const progressText = document.getElementById('progress-text');
+        
+        const summaryContainer = document.getElementById('summary-container');
+        const summaryHeader = document.getElementById('summary-header');
+        const summaryGrid = document.getElementById('summary-grid');
+        const summaryFooter = document.getElementById('summary-footer');
+        
+        const summaryTotalRows = document.getElementById('summary-total-rows');
+        const summaryInserted = document.getElementById('summary-inserted');
+        const summaryUpdated = document.getElementById('summary-updated');
+        const summaryDuplicates = document.getElementById('summary-duplicates');
+        const summaryFailed = document.getElementById('summary-failed');
+        const summaryFinalCount = document.getElementById('summary-final-count');
+        const summaryTime = document.getElementById('summary-time');
+        
+        const historyTableBody = document.getElementById('history-table-body');
+        
+        // Cards
+        const statTotalCrew = document.getElementById('stat-total-crew');
+        const statLastUploadDate = document.getElementById('stat-last-upload-date');
+        const statLastUploadedBy = document.getElementById('stat-last-uploaded-by');
+        const statTotalCli = document.getElementById('stat-total-cli');
+
+        let selectedFiles = [];
+        let isUploading = false;
+
+        // Fetch Stats
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/crew/stats');
+                const data = await res.json();
+                
+                statTotalCrew.textContent = (data.total_crew || 0).toLocaleString();
+                statTotalCli.textContent = (data.total_cli || 0).toLocaleString();
+                
+                if (data.last_upload_date && data.last_upload_date !== 'No uploads yet') {
+                    const date = new Date(data.last_upload_date);
+                    statLastUploadDate.textContent = date.toLocaleString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                } else {
+                    statLastUploadDate.textContent = data.last_upload_date;
+                }
+                statLastUploadedBy.textContent = data.last_uploaded_by || 'N/A';
+
+                if (data.divisions) {
+                    const hwh = data.divisions.HWH || { crew: 0, cli: 0 };
+                    const asn = data.divisions.ASN || { crew: 0, cli: 0 };
+                    const mldt = data.divisions.MLDT || { crew: 0, cli: 0 };
+                    const sdah = data.divisions.SDAH || { crew: 0, cli: 0 };
+
+                    document.getElementById('stat-hwh-crew').textContent = (hwh.crew || 0).toLocaleString();
+                    document.getElementById('stat-hwh-cli').textContent = (hwh.cli || 0).toLocaleString();
+
+                    document.getElementById('stat-asn-crew').textContent = (asn.crew || 0).toLocaleString();
+                    document.getElementById('stat-asn-cli').textContent = (asn.cli || 0).toLocaleString();
+
+                    document.getElementById('stat-mldt-crew').textContent = (mldt.crew || 0).toLocaleString();
+                    document.getElementById('stat-mldt-cli').textContent = (mldt.cli || 0).toLocaleString();
+
+                    document.getElementById('stat-sdah-crew').textContent = (sdah.crew || 0).toLocaleString();
+                    document.getElementById('stat-sdah-cli').textContent = (sdah.cli || 0).toLocaleString();
+                }
+            } catch (err) {
+                console.error("Error fetching stats:", err);
+            }
+        }
+
+        // Fetch History
+        async function fetchHistory() {
+            try {
+                const res = await fetch('/api/crew/history');
+                const data = await res.json();
+                
+                historyTableBody.innerHTML = '';
+                if (data.length === 0) {
+                    historyTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No uploads logged yet.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                data.forEach(item => {
+                    const date = new Date(item.timestamp).toLocaleString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td class="fw-bold">${item.username}</td>
+                        <td title="${item.file_name}" style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.file_name}</td>
+                        <td>${item.total_rows.toLocaleString()}</td>
+                        <td class="text-success fw-bold">${item.inserted_count.toLocaleString()}</td>
+                        <td class="text-primary fw-semibold">${item.updated_count.toLocaleString()}</td>
+                        <td class="${item.failed_count > 0 ? 'text-danger fw-bold' : 'text-muted'}">${item.failed_count.toLocaleString()}</td>
+                    `;
+                    historyTableBody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Error fetching history:", err);
+            }
+        }
+
+        // Apply UI state based on admin status
+        function applyAdminUI() {
+            const lockBanner = document.getElementById('crew-admin-lock-banner');
+            const activeBanner = document.getElementById('crew-admin-active-banner');
+            const loginCard = document.getElementById('crew-admin-login-card');
+            const uploadCard = document.getElementById('crew-admin-upload-card');
+
+            if (window.isAdmin) {
+                if (lockBanner) lockBanner.classList.add('d-none');
+                if (activeBanner) {
+                    activeBanner.classList.remove('d-none');
+                    activeBanner.classList.add('d-flex');
+                }
+                if (loginCard) loginCard.classList.add('d-none');
+                if (uploadCard) uploadCard.classList.remove('d-none');
+            } else {
+                if (lockBanner) lockBanner.classList.remove('d-none');
+                if (activeBanner) {
+                    activeBanner.classList.add('d-none');
+                    activeBanner.classList.remove('d-flex');
+                }
+                if (loginCard) loginCard.classList.remove('d-none');
+                if (uploadCard) uploadCard.classList.add('d-none');
+            }
+        }
+        applyAdminUI();
+        window.addEventListener('adminAuthChanged', applyAdminUI);
+
+        // Setup File listeners
+        selectFileBtn.addEventListener('click', () => {
+            if (!window.isAdmin) {
+                showLoginModal();
+                return;
+            }
+            fileInput.click();
+        });
+
+        uploadZone.addEventListener('click', (e) => {
+            if (!window.isAdmin) {
+                showLoginModal();
+                return;
+            }
+            if (e.target.id === 'select-file-btn' || e.target.closest('#select-file-btn')) return;
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFileSelection(e.target.files);
+        });
+
+        // Drag/Drop Listeners
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.isAdmin) {
+                    uploadZone.classList.add('dragover');
+                }
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('dragover');
+            }, false);
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            if (!window.isAdmin) {
+                showLoginModal();
+                return;
+            }
+            handleFileSelection(e.dataTransfer.files);
+        });
+
+        function handleFileSelection(filesList) {
+            if (!window.isAdmin) {
+                showLoginModal();
+                alert("Super Admin login required to upload crew data.");
+                return;
+            }
+            if (!filesList || filesList.length === 0) return;
+            
+            for (let i = 0; i < filesList.length; i++) {
+                const file = filesList[i];
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext !== 'xlsx' && ext !== 'xls') {
+                    alert(`Skipped '${file.name}': Only Excel files (.xlsx / .xls) are allowed.`);
+                    continue;
+                }
+                
+                // Prevent duplicate files in the selection
+                const isDup = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+                if (!isDup) {
+                    selectedFiles.push(file);
+                }
+            }
+            
+            renderFileList();
+            
+            // Hide summary & progress
+            summaryContainer.style.display = 'none';
+            progressContainer.style.display = 'none';
+        }
+
+        function renderFileList() {
+            fileItemsWrapper.innerHTML = '';
+            
+            if (selectedFiles.length === 0) {
+                fileListContainer.style.display = 'none';
+                uploadBtn.setAttribute('disabled', 'true');
+                return;
+            }
+            
+            selectedFiles.forEach((file, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'd-flex align-items-center justify-content-between border rounded p-2 bg-body-tertiary';
+                itemDiv.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        <i class="bi bi-file-earmark-excel-fill text-success fs-4 flex-shrink-0"></i>
+                        <div class="overflow-hidden">
+                            <div class="fw-semibold text-dark text-truncate small" title="${file.name}">${file.name}</div>
+                            <div class="text-muted" style="font-size: 0.72rem;">${formatBytes(file.size)}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1 rounded-circle" data-index="${index}" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-trash3-fill"></i>
+                    </button>
+                `;
+                
+                // Add event listener to trash button
+                itemDiv.querySelector('button').addEventListener('click', (e) => {
+                    const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+                    removeFile(idx);
+                });
+                
+                fileItemsWrapper.appendChild(itemDiv);
+            });
+            
+            fileListContainer.style.display = 'block';
+            uploadBtn.removeAttribute('disabled');
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        clearAllBtn.addEventListener('click', () => {
+            clearSelection();
+        });
+
+        function clearSelection() {
+            selectedFiles = [];
+            fileInput.value = '';
+            renderFileList();
+            progressContainer.style.display = 'none';
+        }
+
+        // Upload Action
+        uploadBtn.addEventListener('click', () => {
+            if (selectedFiles.length === 0 || isUploading) return;
+            
+            isUploading = true;
+            uploadBtn.setAttribute('disabled', 'true');
+            clearAllBtn.style.setProperty('display', 'none', 'important');
+            
+            // Disable delete trash buttons during upload
+            document.querySelectorAll('#file-items-wrapper button').forEach(b => b.setAttribute('disabled', 'true'));
+            
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressPercent.textContent = '0%';
+            progressText.textContent = 'Uploading files to server...';
+            
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file); // Use 'files' plural to match backend List[UploadFile]
+            });
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/crew/upload', true);
+            
+            // Progress Listener
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    // Cap visual bar at 90% until backend returns
+                    const capPct = Math.min(pct, 90);
+                    progressFill.style.width = `${capPct}%`;
+                    progressPercent.textContent = `${capPct}%`;
+                    if (capPct === 90) {
+                        progressText.textContent = 'Parsing spreadsheets and bulk upserting MySQL database...';
+                    }
+                }
+            });
+            
+            // Load completion
+            xhr.onload = function() {
+                isUploading = false;
+                clearAllBtn.style.setProperty('display', 'block', 'important');
+                
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        progressFill.style.width = '100%';
+                        progressPercent.textContent = '100%';
+                        progressText.textContent = 'Database processing completed!';
+                        
+                        showUploadSuccess(response.summary);
+                        fetchStats();
+                        fetchHistory();
+                        clearSelection();
+                    } else {
+                        showUploadError(response.detail || 'Server encountered an error processing records.');
+                    }
+                } else {
+                    let err = 'An error occurred during raw data upload.';
+                    try {
+                        const parsed = JSON.parse(xhr.responseText);
+                        err = parsed.detail || err;
+                    } catch(e) {}
+                    showUploadError(err);
+                }
+            };
+            
+            // Connection errors
+            xhr.onerror = function() {
+                isUploading = false;
+                clearAllBtn.style.setProperty('display', 'block', 'important');
+                showUploadError('Connection/Network error during upload.');
+            };
+            
+            xhr.send(formData);
+        });
+
+        function showUploadSuccess(summary) {
+            summaryContainer.className = 'summary-container alert alert-success mt-4 mb-0';
+            summaryHeader.innerHTML = `<i class="bi bi-check-circle-fill text-success fs-5"></i> Upload Success!`;
+            
+            summaryTotalRows.textContent = summary.total_rows.toLocaleString();
+            summaryInserted.textContent = summary.inserted.toLocaleString();
+            summaryUpdated.textContent = summary.updated.toLocaleString();
+            summaryDuplicates.textContent = summary.duplicates_ignored.toLocaleString();
+            summaryFailed.textContent = summary.failed.toLocaleString();
+            summaryFinalCount.textContent = summary.final_count.toLocaleString();
+            summaryTime.textContent = `${summary.time_seconds}s`;
+            
+            summaryGrid.style.setProperty('display', 'flex', 'important');
+            summaryFooter.style.setProperty('display', 'block', 'important');
+            summaryContainer.style.setProperty('display', 'block', 'important');
+        }
+
+        function showUploadError(message) {
+            progressContainer.style.setProperty('display', 'none', 'important');
+            uploadBtn.removeAttribute('disabled');
+            
+            summaryContainer.className = 'summary-container alert alert-danger mt-4 mb-0';
+            summaryHeader.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i> Upload Failed`;
+            
+            // Overwrite grid body with error string
+            summaryGrid.style.setProperty('display', 'none', 'important');
+            summaryFooter.style.setProperty('display', 'none', 'important');
+            
+            const errP = document.createElement('p');
+            errP.className = 'mb-0 mt-2 small text-dark';
+            errP.textContent = message;
+            
+            // Clean old error paragraphs
+            const oldP = summaryContainer.querySelector('p');
+            if (oldP) oldP.remove();
+            summaryContainer.appendChild(errP);
+            
+            summaryContainer.style.setProperty('display', 'block', 'important');
+        }
+
+        // Helper
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = 2;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // Load init
+        fetchStats();
+        fetchHistory();
+    });
+
+    // Handle Inline Super Admin Login on Crew Upload page
+    async function handleInlineAdminLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('inlineAdminUsername').value;
+        const password = document.getElementById('inlineAdminPassword').value;
+        const errorEl = document.getElementById('inlineLoginError');
+        const submitBtn = document.getElementById('btnInlineLogin');
+
+        if (errorEl) errorEl.classList.add('d-none');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Authenticating...';
+        }
+
+        try {
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                window.isAdmin = true;
+                window.adminUsername = data.username || username || "Super Admin";
+                if (typeof updateAuthUI === 'function') {
+                    updateAuthUI();
+                } else {
+                    window.dispatchEvent(new CustomEvent('adminAuthChanged', { detail: { isAdmin: true } }));
+                }
+            } else {
+                if (errorEl) {
+                    errorEl.textContent = data.detail || "Invalid Super Admin credentials. Please try again.";
+                    errorEl.classList.remove('d-none');
+                }
+            }
+        } catch (err) {
+            if (errorEl) {
+                errorEl.textContent = "Network error: " + err.message;
+                errorEl.classList.remove('d-none');
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-shield-lock-fill me-1"></i> Authenticate as Super Admin';
+            }
+        }
+    }
+
+    // Clear All Crew Data (Entire Database across all lobbies)
+    async function clearAllCrewData() {
+        if (!window.isAdmin) {
+            showLoginModal();
+            return;
+        }
+        
+        const confirmText = prompt("CRITICAL ACTION: You are about to DELETE ALL CREW DATA across all divisions and lobbies.\n\nType 'DELETE ALL' to confirm:");
+        if (confirmText !== "DELETE ALL") {
+            if (confirmText !== null) alert("Action cancelled. You must type 'DELETE ALL' exactly to confirm.");
+            return;
+        }
+
+        const btn = document.getElementById('btn-clear-all-crews');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Clearing All...';
+        }
+
+        try {
+            const response = await fetch('/api/crew/clear-all', { method: 'POST' });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                alert(data.message || "All crew data successfully cleared!");
+                location.reload();
+            } else {
+                alert("Error: " + (data.detail || "Failed to clear all crew data."));
+            }
+        } catch (err) {
+            alert("Network error: " + err.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        }
+    }
+
+    // Clear All CLI Master Data (Entire Database across all divisions)
+    async function clearAllCliData() {
+        if (!window.isAdmin) {
+            showLoginModal();
+            return;
+        }
+
+        const confirmText = prompt("CRITICAL ACTION: You are about to DELETE ALL CLI MASTER DATA and nominations across all divisions.\n\nType 'DELETE ALL' to confirm:");
+        if (confirmText !== "DELETE ALL") {
+            if (confirmText !== null) alert("Action cancelled. You must type 'DELETE ALL' exactly to confirm.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('target', 'ALL');
+
+        try {
+            const response = await fetch('/api/crew/clear-clis', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                alert(data.message || "All CLI master data cleared!");
+                location.reload();
+            } else {
+                alert("Error: " + (data.detail || data.message || "Failed to clear CLI data."));
+            }
+        } catch (err) {
+            alert("Network error: " + err.message);
+        }
+    }
+
+    // Global function for the cleanup duplicates button
+    async function cleanupDuplicates() {
+        if (!window.isAdmin) {
+            showLoginModal();
+            return;
+        }
+        if(!confirm("Are you sure you want to remove duplicate crew records based on mobile numbers? This will keep only the most recently updated record for each mobile number.")) return;
+        
+        const btn = document.getElementById('cleanup-duplicates-btn');
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Cleaning...';
+            btn.disabled = true;
+        }
+
+        try {
+            const response = await fetch('/api/crew/cleanup-duplicates', {
+                method: 'POST'
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                alert(`Cleanup successful! Deleted ${data.deleted_count} duplicate records.`);
+                location.reload();
+            } else {
+                alert(data.detail || "Error cleaning up duplicates.");
+            }
+        } catch (error) {
+            alert("Network error while trying to clean up duplicates.");
+        } finally {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+    }
+
+    function loadClearLobbyOptions() {
+        const select = document.getElementById('clearLobbySelect');
+        const cliSelect = document.getElementById('clearCliSelect');
+        
+        const divLobbies = {
+            "HWH": ["AZ", "BDC", "BHP", "BWN", "DKAE", "HWH", "KURV", "KWAE", "NDAE", "NHT", "PKR", "RPH", "SNT", "TAK"],
+            "ASN": ["ASN", "DGHR", "DSEY", "DUMK", "JSME", "MDP", "PAN", "PAW", "RNG", "STN", "UDL"],
+            "MLDT": ["APJG", "BGP", "BHW", "CLG", "GALE", "GODA", "HSDA", "JMP", "MGLE", "MLDT", "RJL", "SBG", "TDLE"],
+            "SDAH": ["BNJ", "BPC", "BT", "CG", "DDJ", "DH", "GEDE", "HNB", "KNJ", "KOAA", "KORR", "KRP", "LKPR", "MJT", "NH", "NMKA", "RHA", "SDAH", "SDAS", "SPR", "STB"]
+        };
+
+        let html = '<option value="ALL">ALL DIVISIONS & LOBBIES (ENTIRE DATABASE)</option>';
+        html += '<optgroup label="âš¡ Whole Division Data Deletion">';
+        html += '<option value="DIVISION:HWH">HWH DIVISION (ALL 14 LOBBIES)</option>';
+        html += '<option value="DIVISION:ASN">ASN DIVISION (ALL 11 LOBBIES)</option>';
+        html += '<option value="DIVISION:MLDT">MLDT DIVISION (ALL 13 LOBBIES)</option>';
+        html += '<option value="DIVISION:SDAH">SDAH DIVISION (ALL 21 LOBBIES)</option>';
+        html += '</optgroup>';
+
+        for (const [div, lobs] of Object.entries(divLobbies)) {
+            html += `<optgroup label="ðŸ“ ${div} Division Lobbies">`;
+            lobs.forEach(lob => {
+                html += `<option value="${lob}">${lob} Lobby (${div} Division)</option>`;
+            });
+            html += '</optgroup>';
+        }
+
+        if (select) select.innerHTML = html;
+        if (cliSelect) cliSelect.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadClearLobbyOptions);
+
+    async function submitClearLobby() {
+        if (!window.isAdmin) {
+            showLoginModal();
+            return;
+        }
+
+        const lobbySelect = document.getElementById('clearLobbySelect');
+        const lobby = lobbySelect.value;
+        const selectedText = lobbySelect.options[lobbySelect.selectedIndex].text;
+        
+        if (!confirm(`Are you sure you want to delete crew records for [${selectedText}]? This action cannot be undone.`)) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('lobby', lobby);
+
+        try {
+            const response = await fetch('/api/crew/clear-lobby', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.detail || 'Deletion failed.'));
+            }
+        } catch (err) {
+            alert('Failed to delete crew records: ' + err.message);
+        }
+    }
+
+    async function submitClearCli() {
+        if (!window.isAdmin) {
+            showLoginModal();
+            return;
+        }
+
+        const cliSelect = document.getElementById('clearCliSelect');
+        const target = cliSelect ? cliSelect.value : 'ALL';
+        const selectedText = cliSelect ? cliSelect.options[cliSelect.selectedIndex].text : 'Selected Target';
+
+        if (!confirm(`Are you sure you want to clear CLI Master records for [${selectedText}]? This action cannot be undone.`)) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('target', target);
+
+        try {
+            const response = await fetch('/api/crew/clear-clis', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.detail || data.message || 'CLI Clear failed.'));
+            }
+        } catch (err) {
+            alert('Failed to clear CLI records: ' + err.message);
+        }
+    }
+
+    async function submitCliMaster(e) {
+        e.preventDefault();
+        if (!window.isAdmin) {
+            showLoginModal();
+            return;
+        }
+        const btn = document.getElementById('upload-cli-btn');
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Uploading...';
+            btn.disabled = true;
+        }
+
+        const data = new FormData(e.target);
+        try {
+            const resp = await fetch('/api/crew/upload-cli', {
+                method: 'POST',
+                body: data
+            });
+            const res = await resp.json();
+            if (resp.ok && res.success) {
+                alert(res.message);
+                location.reload();
+            } else {
+                alert('Error: ' + (res.detail || 'CLI Upload failed.'));
+            }
+        } catch (err) {
+            alert('CLI Upload failed: ' + err.message);
+        } finally {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+    }
+</script>
+
+<!-- Clear Crew (Division & Lobby-Wise) Modal -->
+<div class="modal fade" id="clearLobbyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-trash3-fill me-2"></i>Clear Crew (Division / Lobby-Wise)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning py-2 px-3 small mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Select a Whole Division, Specific Lobby, or ALL Divisions to delete crew records.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Select Division / Lobby</label>
+                    <select class="form-select" id="clearLobbySelect">
+                        <option value="ALL">ALL DIVISIONS & LOBBIES (ENTIRE CREW DATABASE)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger fw-bold" onclick="submitClearLobby()">
+                    <i class="bi bi-trash me-1"></i>Confirm Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear CLI Master (Division & Lobby-Wise) Modal -->
+<div class="modal fade" id="clearCliModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-x-fill me-2"></i>Clear CLI Master (Division / Lobby-Wise)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning py-2 px-3 small mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Select a Whole Division or Specific Lobby to clear nominated CLI Master records.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Select Division / Lobby for CLI Clearing</label>
+                    <select class="form-select" id="clearCliSelect">
+                        <option value="ALL">ALL DIVISIONS & LOBBIES (ENTIRE CLI DATABASE)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger fw-bold" onclick="submitClearCli()">
+                    <i class="bi bi-trash me-1"></i>Clear CLI Master
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload CLI Master Modal -->
+<div class="modal fade" id="uploadCliModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-badge-fill me-2"></i>Upload CLI Master Excel</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="uploadCliForm" onsubmit="submitCliMaster(event)">
+                <div class="modal-body">
+                    <div class="alert alert-primary py-2.5 px-3 small mb-3">
+                        <div class="fw-bold mb-1"><i class="bi bi-info-circle-fill me-1"></i>Default Import Format & Instructions:</div>
+                        <ul class="mb-1 ps-3">
+                            <li><strong>Supported Headers:</strong> <code>Division</code>, <code>CLI ID</code>, <code>CLI Name</code>, <code>Designation</code>, <code>Lobby</code>, <code>Mobile Number</code>, <code>Email ID</code>, <code>PF Number</code></li>
+                            <li><strong>Division & Lobby Support:</strong> Supports <code>HWH</code> (14 Lobbies), <code>ASN</code> (11 Lobbies), <code>MLDT</code> (13 Lobbies), and <code>SDAH</code> (21 Lobbies).</li>
+                            <li><strong>Default Credentials:</strong> Imported CLIs are initialized with default password <code>12345</code>.</li>
+                        </ul>
+                        <div class="mt-2 text-center">
+                            <a href="/cli-dashboard/api/admin/download-cli-template" class="btn btn-sm btn-light border text-primary fw-bold">
+                                <i class="bi bi-download me-1"></i>Download Official CLI Master Import Template (.xlsx)
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select CLI Excel File (.xlsx / .csv)</label>
+                        <input type="file" class="form-control" name="file" accept=".xlsx, .xls, .csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold" id="upload-cli-btn">
+                        <i class="bi bi-upload me-1"></i>Upload CLI Master
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

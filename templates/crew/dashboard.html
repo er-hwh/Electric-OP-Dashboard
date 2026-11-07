@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Crew Desk | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+    <!-- CREW HEADER & NOMINATED CLI INFO -->
+    <div class="rail-card p-4 mb-4">
+        <div class="row align-items-center">
+            <div class="col-lg-7 col-md-12 mb-3 mb-lg-0">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 75px; height: 75px; font-size: 2rem; border: 3px solid var(--ir-gold);">
+                        <i class="fa-solid fa-id-badge"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-0">{{ crew.full_name }}</h4>
+                        <span class="badge bg-danger fs-6 me-1">{{ crew.sub_role }}</span>
+                        {% if crew.lobby %}
+                            <span class="badge bg-primary fs-6"><i class="fa-solid fa-house-chimney me-1"></i>Lobby: {{ crew.lobby.code }} - {{ crew.lobby.name }}</span>
+                        {% endif %}
+                        <div class="small text-muted mt-1">
+                            Mobile: <code>{{ crew.mobile }}</code> | PF No: <strong>{{ crew.pf_number or 'N/A' }}</strong> | HRMS ID: <strong>{{ crew.hrms_id or 'N/A' }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5 col-md-12">
+                <div class="p-3 bg-light rounded border border-start border-4 border-warning">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-uppercase fw-bold text-muted"><i class="fa-solid fa-user-tie me-1 text-warning"></i> Nominated Chief Loco Inspector</small>
+                        <a href="#problemReportCard" class="btn btn-warning btn-sm text-dark fw-bold">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Report / Comment
+                        </a>
+                    </div>
+                    {% if crew.nominated_cli %}
+                        <h6 class="fw-bold text-dark mb-0">{{ crew.nominated_cli.full_name }}</h6>
+                        <small class="text-secondary">CLI ID: <code>{{ crew.nominated_cli.username }}</code> &bull; Mobile: {{ crew.nominated_cli.mobile or 'N/A' }}</small>
+                    {% else %}
+                        <span class="text-danger small fw-bold">No CLI assigned yet. Please contact Lobby CCC.</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW: MY SAFETY & COUNSELLING PROFILE (READ-ONLY FOR CREW) -->
+    <div class="rail-card p-4 mb-4">
+        <div class="rail-card-header accent-blue mb-3 d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <span><i class="fa-solid fa-shield-halved text-primary me-2"></i> My Official Safety & Counselling Record</span>
+                <span class="badge bg-secondary ms-2"><i class="fa-solid fa-lock me-1"></i> Read-Only (Maintained by CLI)</span>
+            </div>
+            {% if counselling_record %}
+                <div>
+                    <span class="small text-muted me-2">Safety Grade:</span>
+                    {% if counselling_record.grade == 'A' %}
+                        <span class="badge bg-success fs-6"><i class="fa-solid fa-circle-check me-1"></i> Grade A (Satisfactory)</span>
+                    {% elif counselling_record.grade == 'B' %}
+                        <span class="badge bg-primary fs-6"><i class="fa-solid fa-check me-1"></i> Grade B (Normal)</span>
+                    {% elif counselling_record.grade == 'C' %}
+                        <span class="badge bg-danger fs-6"><i class="fa-solid fa-triangle-exclamation me-1"></i> Grade C (Monitored)</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark border">{{ counselling_record.grade or 'Not Graded' }}</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        {% if counselling_record %}
+            <!-- GRID OF RECORD FIELDS -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Nominated CLI</small>
+                        <strong class="text-dark">{{ counselling_record.cli_name or 'Not Assigned' }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Designation Since</small>
+                        <strong class="text-dark">{{ counselling_record.designation_since or '—' }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Last Footplate Date</small>
+                        <strong class="text-success"><i class="fa-solid fa-calendar-check me-1"></i>{{ counselling_record.last_footplate or '—' }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Safety Counselling Date</small>
+                        <strong class="text-primary"><i class="fa-solid fa-comments me-1"></i>{{ counselling_record.safety_counselling or '—' }}</strong>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Technical Counselling</small>
+                        <strong class="text-dark">{{ counselling_record.technical_counselling or '—' }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Verified By</small>
+                        <strong class="text-dark">{{ counselling_record.counselling_verified_by or '—' }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Last SPM Check</small>
+                        <strong class="text-dark">{{ counselling_record.last_spm_check or 'NA' }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Last CVVRS Check</small>
+                        <strong class="text-dark">{{ counselling_record.last_cvvrs_check or 'NA' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RISK & PERSONAL STATUS (READ-ONLY) -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 rounded border small {% if counselling_record.ba_fail_history and counselling_record.ba_fail_history not in ['NA', 'No', 'NO', '', '-'] %}bg-danger bg-opacity-10 border-danger{% else %}bg-light{% endif %}">
+                        <small class="text-muted d-block">BA Test Record</small>
+                        <strong class="{% if counselling_record.ba_fail_history and counselling_record.ba_fail_history not in ['NA', 'No', 'NO', '', '-'] %}text-danger{% else %}text-success{% endif %}">
+                            {{ counselling_record.ba_fail_history or 'NA' }}
+                        </strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 rounded border small {% if counselling_record.spad_history and counselling_record.spad_history not in ['NA', 'No', 'NO', '', '-'] %}bg-warning bg-opacity-10 border-warning{% else %}bg-light{% endif %}">
+                        <small class="text-muted d-block">SPAD History</small>
+                        <strong class="{% if counselling_record.spad_history and counselling_record.spad_history not in ['NA', 'No', 'NO', '', '-'] %}text-danger{% else %}text-success{% endif %}">
+                            {{ counselling_record.spad_history or 'NA' }}
+                        </strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 rounded border small {% if counselling_record.da_case and counselling_record.da_case not in ['NA', 'No', 'NO', '', '-'] %}bg-danger bg-opacity-10 border-danger{% else %}bg-light{% endif %}">
+                        <small class="text-muted d-block">D&A Case Status</small>
+                        <strong class="{% if counselling_record.da_case and counselling_record.da_case not in ['NA', 'No', 'NO', '', '-'] %}text-danger{% else %}text-success{% endif %}">
+                            {{ counselling_record.da_case or 'NA' }}
+                        </strong>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="p-2 bg-light rounded border small">
+                        <small class="text-muted d-block">Mobile Habit Record</small>
+                        <strong class="text-dark">{{ counselling_record.mobile_habit or 'NA' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            {% if counselling_record.family_issue and counselling_record.family_issue not in ['NA', 'No', 'NO', '', '-'] %}
+                <div class="p-2 bg-warning bg-opacity-10 border border-warning rounded small mb-2">
+                    <strong class="text-dark"><i class="fa-solid fa-house-chimney-user text-warning me-1"></i> Family Issue / Domestic Hardship on Record:</strong>
+                    <span class="text-secondary ms-1">{{ counselling_record.family_issue }}</span>
+                </div>
+            {% endif %}
+            {% if counselling_record.health_issue and counselling_record.health_issue not in ['NA', 'No', 'NO', '', '-'] %}
+                <div class="p-2 bg-danger bg-opacity-10 border border-danger rounded small mb-2">
+                    <strong class="text-dark"><i class="fa-solid fa-notes-medical text-danger me-1"></i> Health Issue on Record:</strong>
+                    <span class="text-secondary ms-1">{{ counselling_record.health_issue }}</span>
+                </div>
+            {% endif %}
+
+            {% if counselling_record.remarks %}
+                <div class="p-2 bg-light rounded border small mb-3">
+                    <strong class="text-dark"><i class="fa-solid fa-comment-dots text-primary me-1"></i> CLI Observation & Guidance:</strong>
+                    <span class="text-secondary ms-1">{{ counselling_record.remarks }}</span>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <div class="alert alert-info small mb-3">
+                <i class="fa-solid fa-info-circle me-1"></i> Your counselling record has not been imported yet or is pending initial logging by your nominated CLI.
+            </div>
+        {% endif %}
+
+        <!-- POLICY NOTICE -->
+        <div class="alert alert-warning border-start border-4 border-warning small mb-0 py-2">
+            <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>
+            <strong>Important Policy Notice:</strong> As per Railway Safety Operating Norms, <strong>running staff cannot edit or alter safety counselling records</strong>.
+            All grading, footplate dates, and risk observations are logged exclusively by your nominated Chief Loco Inspector.
+            If you have any difficulty, disagreement, family/health issue, or feedback, you can send your comments directly to your CLI using the report form below.
+        </div>
+    </div>
+
+    <!-- ROW: SUBMIT COMMENT / REPORT PROBLEM TO CLI -->
+    <div class="rail-card p-4 mb-4" id="problemReportCard">
+        <div class="rail-card-header accent-gold mb-3">
+            <span><i class="fa-solid fa-paper-plane text-warning me-2"></i> Submit Comment or Report Problem to Nominated CLI</span>
+            <small class="text-muted">Direct hierarchical channel to your CLI (can be escalated to Officers)</small>
+        </div>
+
+        <form action="{{ url_for('crew.report_problem') }}" method="POST">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Issue / Comment Category</label>
+                    <select name="category" class="form-select form-select-sm" required>
+                        <option value="Family Issue">Family Difficulty / Personal Issue</option>
+                        <option value="Health Issue">Health / Medical Issue</option>
+                        <option value="Duty / Rest Concern">Duty Hours / Rest Concern</option>
+                        <option value="Footplate / Counselling Query">Footplate / Counselling Query</option>
+                        <option value="Loco / Technical Doubt">Loco Fault / Technical Doubt</option>
+                        <option value="Safety Rule Clarification">GR & SR / Safety Clarification</option>
+                        <option value="Grievance">General Operational Grievance</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label small fw-bold">Subject / Short Summary</label>
+                    <input type="text" name="subject" class="form-control form-control-sm" placeholder="e.g. Request for counselling review / Family emergency notification" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label small fw-bold">Your Detailed Comments / Explanation</label>
+                    <textarea name="body" class="form-control form-control-sm" rows="3" placeholder="Explain your situation, comment on counselling, or describe the problem clearly for your CLI..." required></textarea>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-warning btn-sm fw-bold text-dark px-4 shadow-sm">
+                        <i class="fa-solid fa-paper-plane me-1"></i> Send to Nominated CLI
+                    </button>
+                    <small class="text-muted ms-2">Your CLI will review this. If approved or unresolved, they can forward it to Sr. DEE(OP)/HWH or AEE(OP)/HWH.</small>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- ROW 1: TRAINING VALIDITY & COMPETENCY MONITOR -->
+    <div class="rail-card p-4 mb-4">
+
+        <div class="rail-card-header accent-gold mb-3">
+            <span><i class="fa-solid fa-graduation-cap text-warning me-2"></i> My Mandatory Training & Competency Cards</span>
+            <span class="badge bg-info text-dark">GR&SR & Safety Rule Compliance</span>
+        </div>
+
+        <div class="row g-3">
+            {% for t in trainings %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border shadow-sm border-top border-4 border-{{ t.status_info.class }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold text-dark mb-0">{{ t.training_type }}</h6>
+                                <span class="badge bg-{{ t.status_info.class }}">{{ t.status_info.badge }}</span>
+                            </div>
+                            <div class="small text-secondary mb-2">
+                                <div><i class="fa-solid fa-landmark me-1 text-muted"></i> Institute: <strong>{{ t.institute }}</strong></div>
+                                <div><i class="fa-solid fa-calendar-check me-1 text-success"></i> Last Completed: <strong>{{ t.last_done_date.strftime('%d-%b-%Y') }}</strong></div>
+                                <div><i class="fa-solid fa-calendar-xmark me-1 text-danger"></i> Next Due: <strong>{{ t.due_date.strftime('%d-%b-%Y') }}</strong></div>
+                                {% if t.certificate_no %}
+                                    <div><i class="fa-solid fa-certificate me-1 text-warning"></i> Cert No: <code>{{ t.certificate_no }}</code></div>
+                                {% endif %}
+                            </div>
+                            {% if t.status_info.status == 'OVERDUE' %}
+                                <div class="alert alert-danger p-1 text-center small mb-0 fw-bold">
+                                    <i class="fa-solid fa-ban me-1"></i> Overdue! Contact CCC immediately before booking.
+                                </div>
+                            {% elif t.status_info.status == 'DUE_SOON' %}
+                                <div class="alert alert-warning p-1 text-center small mb-0 fw-bold">
+                                    <i class="fa-solid fa-bell me-1"></i> Due soon! Apply for refresher slot.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-3 text-muted">
+                    No training records entered yet. Training records will appear after bulk Excel upload.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ROW 2: PENDING ACKNOWLEDGEMENTS (ELECTRONIC ASSURANCE REGISTER) -->
+    <div class="row g-4 mb-4">
+        <!-- PENDING NOTICES -->
+        <div class="col-lg-6">
+            <div class="rail-card h-100 p-3">
+                <div class="rail-card-header accent-blue mb-3">
+                    <span><i class="fa-solid fa-signature text-primary me-2"></i> Safety Notices Awaiting Acknowledgement</span>
+                    <span class="badge bg-danger">{{ pending_notices|length }} Pending</span>
+                </div>
+
+                {% if pending_notices %}
+                    <div class="list-group list-group-flush">
+                        {% for n in pending_notices %}
+                            <div class="list-group-item px-2 py-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong class="text-dark small">{{ n.title }}</strong>
+                                    <span class="badge bg-secondary">{{ n.category }}</span>
+                                </div>
+                                <p class="small text-muted mb-2 text-truncate">{{ n.content }}</p>
+                                <form action="{{ url_for('crew.acknowledge_notice', notice_id=n.id) }}" method="POST">
+                                    <button type="submit" class="btn btn-sm btn-success fw-bold w-100">
+                                        <i class="fa-solid fa-check-double me-1"></i> Read & Understood (Acknowledge)
+                                    </button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-success">
+                        <i class="fa-solid fa-circle-check fa-2x mb-2 d-block"></i>
+                        All safety circulars & notices are acknowledged!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- SAFETY COUNSELLING (MONTHLY & SPECIAL) -->
+        <div class="col-lg-6">
+            <div class="rail-card h-100 p-3">
+                <div class="rail-card-header accent-gold mb-3 d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-user-shield text-success me-2"></i> Safety Counselling (Monthly & Special)</span>
+                    <a href="{{ url_for('public.counselling') }}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem;">View Archive</a>
+                </div>
+
+                {% for ct in counselling_list %}
+                    <div class="p-3 mb-3 bg-light rounded border border-start border-3 {% if ct.counselling_type == 'SPECIAL' %}border-danger{% else %}border-primary{% endif %}">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-1 mb-1">
+                            <div>
+                                <span class="badge {% if ct.counselling_type == 'SPECIAL' %}bg-danger{% else %}bg-primary{% endif %}">
+                                    {{ ct.counselling_type or 'MONTHLY' }}
+                                </span>
+                                {% if ct.month_year %}
+                                    <span class="badge bg-dark">{{ ct.month_year }}</span>
+                                {% endif %}
+                                {% if ct.rule_reference %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-book-bookmark me-1"></i>{{ ct.rule_reference }}</span>
+                                {% endif %}
+                            </div>
+                            {% if ct.id in acked_counsel_ids %}
+                                <span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Assured</span>
+                            {% else %}
+                                <span class="badge bg-danger"><i class="fa-solid fa-clock me-1"></i>Assurance Pending</span>
+                            {% endif %}
+                        </div>
+
+                        <h6 class="fw-bold text-dark mt-2 mb-1">{{ ct.title }}</h6>
+                        
+                        <div class="d-flex flex-wrap justify-content-between align-items-center border-top pt-2 mt-2">
+                            <small class="text-muted">
+                                {% if ct.approver %}
+                                    <i class="fa-solid fa-stamp text-success me-1"></i> Signed by {{ ct.approver.sub_role }}
+                                {% else %}
+                                    {{ ct.topic_date.strftime('%d-%b-%Y') }}
+                                {% endif %}
+                            </small>
+                            <a href="{{ url_for('public.counselling_detail', topic_id=ct.id) }}" class="btn btn-sm {% if ct.id in acked_counsel_ids %}btn-outline-success{% else %}btn-success fw-bold{% endif %}">
+                                {% if ct.id in acked_counsel_ids %}
+                                    View Certificate &rarr;
+                                {% else %}
+                                    Take Test & Assure &rarr;
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-circle-check fs-2 mb-2 d-block text-success"></i>
+                        No active safety counselling topics requiring attention.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 3: FOOTPLATE INSPECTION HISTORY & COMMUNICATION -->
+    <div class="row g-4">
+        <!-- MY FOOTPLATE LOGS -->
+        <div class="col-lg-6">
+            <div class="rail-card h-100 p-3">
+                <div class="rail-card-header mb-3">
+                    <span><i class="fa-solid fa-route text-primary me-2"></i> My Footplate Inspections & CLI Feedback</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm small align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Train / Loco</th>
+                                <th>Section</th>
+                                <th>Grade</th>
+                                <th>CLI Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for insp in inspections %}
+                                <tr>
+                                    <td>{{ insp.inspection_date.strftime('%d-%b-%Y') }}</td>
+                                    <td>{{ insp.train_no }}<br><code>{{ insp.loco_no }}</code></td>
+                                    <td>{{ insp.from_station }} - {{ insp.to_station }}</td>
+                                    <td><span class="badge bg-success fs-6">{{ insp.grading }}</span></td>
+                                    <td>{{ insp.counselling_given or insp.aspects_covered }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">No footplate inspections recorded yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MY COMMUNICATION / SENT MESSAGES -->
+        <div class="col-lg-6">
+            <div class="rail-card h-100 p-3">
+                <div class="rail-card-header mb-3">
+                    <span><i class="fa-solid fa-comments text-info me-2"></i> Messages to CLI & Officer Responses</span>
+                    <a href="{{ url_for('crew.message_cli') }}" class="btn btn-sm btn-outline-primary py-0">New Message</a>
+                </div>
+                {% if sent_messages %}
+                    <div class="list-group list-group-flush">
+                        {% for sm in sent_messages %}
+                            <div class="list-group-item px-2 py-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong class="text-dark small">{{ sm.subject }}</strong>
+                                    <span class="badge {% if sm.status == 'OFFICER_REPLIED' %}bg-success{% elif sm.status == 'FORWARDED_TO_OFFICER' %}bg-danger{% elif sm.status == 'RESOLVED_BY_CLI' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                        {{ sm.status.replace('_', ' ') }}
+                                    </span>
+                                </div>
+                                <p class="small text-secondary mb-1">{{ sm.body }}</p>
+                                {% if sm.cli_remarks %}
+                                    <div class="small p-2 bg-light rounded border mt-2">
+                                        <strong class="text-warning"><i class="fa-solid fa-user-tie me-1"></i> CLI Remarks:</strong> {{ sm.cli_remarks }}
+                                    </div>
+                                {% endif %}
+                                {% if sm.officer_remarks %}
+                                    <div class="small p-2 bg-success bg-opacity-10 border border-success rounded mt-2">
+                                        <strong class="text-success"><i class="fa-solid fa-shield-halved me-1"></i> Officer Decision:</strong> {{ sm.officer_remarks }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted small">
+                        No messages sent yet. Use "New Message" to submit any queries, grievances, or equipment observations to your nominated CLI.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

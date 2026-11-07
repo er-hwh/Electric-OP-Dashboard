@@ -1,0 +1,258 @@
+﻿{% extends "control/base_control.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/css/duty_hours_count.css?v=3.2">
+
+<div class="container-fluid duty-hours-page">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1 fw-bold text-dark">Duty Hours Count</h4>
+                <p class="text-muted small mb-0">Upload Continuous Working Hours report, filter by Sign Off Date, and renumber serial numbers dynamically.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload and Filter Panel -->
+    <div class="row g-4">
+        <!-- Step 1: Upload Excel -->
+        <div class="col-md-6">
+            <div class="upload-card p-4 h-100">
+                <h5 class="fw-bold mb-3"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Step 1: Upload Report</h5>
+                <div class="upload-zone" id="uploadZone">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <h5>Drag & drop your Excel report here</h5>
+                    <p class="text-muted small">or click to browse files</p>
+                </div>
+                <input type="file" id="excelFile" class="d-none" accept=".xlsx,.xls">
+            </div>
+        </div>
+
+        <!-- Step 2: Filter Options -->
+        <div class="col-md-6">
+            <div id="filterCard" class="filter-card h-100 d-none">
+                <h5 class="fw-bold mb-3"><i class="bi bi-funnel text-primary me-2"></i>Step 2: Filter Options</h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="fromSignOffDateSelect" class="form-label text-muted fw-semibold small">From Date</label>
+                        <select id="fromSignOffDateSelect" class="form-select form-select-custom">
+                            <option value="">-- From Date --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="toSignOffDateSelect" class="form-label text-muted fw-semibold small">To Date</label>
+                        <select id="toSignOffDateSelect" class="form-select form-select-custom">
+                            <option value="">-- To Date --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="dutySlabSelect" class="form-label text-muted fw-semibold small">Duty Hours Slab</label>
+                        <select id="dutySlabSelect" class="form-select form-select-custom">
+                            <option value="all">All Slabs</option>
+                            <option value="0-4">&le; 4 hrs</option>
+                            <option value="4-9">04-09 hrs</option>
+                            <option value="under_9">&lt; 9 hrs (All &le; 9 hrs)</option>
+                            <option value="9-12">09-12 hrs</option>
+                            <option value="12-14">12-14 hrs</option>
+                            <option value="over_14">&gt; 14 hrs</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-muted small mt-3">
+                    <i class="bi bi-info-circle me-1"></i> Filter duties signed off within the date range and duty slabs.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dates Summary Banner -->
+    <div id="datesSummaryRow" class="row mt-3 d-none">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-3" style="border: 1px solid #e2e8f0 !important;">
+                <div class="card-header bg-white border-bottom-0 pt-3 pb-2 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-dark mb-0" style="font-size: 0.9rem;">
+                        <i class="bi bi-calendar3-event text-primary me-2"></i>Available Sign Off Dates Summary
+                    </h6>
+                    <button id="btnDownloadDatesExcel" class="btn btn-outline-success btn-sm py-1 px-2" style="font-size: 0.75rem;">
+                        <i class="bi bi-file-earmark-excel"></i> Download Excel
+                    </button>
+                </div>
+                <div class="card-body p-0 border-top">
+                    <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                        <table class="table table-hover table-bordered table-sm mb-0 align-middle text-center" id="datesSummaryTable">
+                            <thead class="sticky-top">
+                                <tr>
+                                    <th rowspan="2" class="ps-3 text-start align-middle" style="min-width: 100px;">Sign Off Date</th>
+                                    <th rowspan="2" class="text-end align-middle" style="min-width: 90px;">Total Duties</th>
+                                    <th colspan="2" class="text-center">&le; 4 hrs</th>
+                                    <th colspan="2" class="text-center">04-09 hrs</th>
+                                    <th colspan="2" class="text-center">09-12 hrs</th>
+                                    <th colspan="2" class="text-center">12-14 hrs</th>
+                                    <th colspan="2" class="text-center pe-3">&gt; 14 hrs</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-end" style="min-width: 50px;">Nos</th>
+                                    <th class="text-end" style="min-width: 55px;">%</th>
+                                    <th class="text-end" style="min-width: 50px;">Nos</th>
+                                    <th class="text-end" style="min-width: 55px;">%</th>
+                                    <th class="text-end" style="min-width: 50px;">Nos</th>
+                                    <th class="text-end" style="min-width: 55px;">%</th>
+                                    <th class="text-end" style="min-width: 50px;">Nos</th>
+                                    <th class="text-end" style="min-width: 55px;">%</th>
+                                    <th class="text-end" style="min-width: 50px;">Nos</th>
+                                    <th class="text-end pe-3" style="min-width: 55px;">%</th>
+                                </tr>
+                            </thead>
+                            <tbody id="datesSummaryTableBody">
+                                <!-- dynamically generated rows here -->
+                            </tbody>
+                            <tfoot id="datesSummaryTableFoot">
+                                <!-- dynamically generated total row -->
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Summary Cards & Visual Charts -->
+    <div id="summaryRow" class="row g-4 mt-2 d-none">
+        <div class="col-12">
+            <hr class="my-2 border-slate-200">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-graph-up text-primary me-2"></i>Summary Statistics & Visualization</h5>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="summary-card">
+                        <div class="summary-icon groups">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="summary-details">
+                            <h6>Total Duty Groups</h6>
+                            <h3 id="totalGroups">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="summary-card">
+                        <div class="summary-icon rows">
+                            <i class="bi bi-list-ol"></i>
+                        </div>
+                        <div class="summary-details">
+                            <h6>Total Rows</h6>
+                            <h3 id="totalRows">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-9">
+            <div id="routeSummaryCard" class="summary-card flex-column align-items-stretch" style="min-height: 250px; padding: 15px;">
+                <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="summary-icon" style="width: 32px; height: 32px; font-size: 1.1rem; border-radius: 8px; background: #fffbeb; color: #d97706; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-compass-fill"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-0 small text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.5px;">Route-wise Summary</h6>
+                    </div>
+                    <div class="d-flex gap-1" id="routeSummaryActions">
+                        <button id="btnDownloadRouteExcel" class="btn btn-outline-success py-1 px-2" style="font-size: 0.75rem;" disabled>
+                            <i class="bi bi-file-earmark-excel"></i> Excel
+                        </button>
+                        <button id="btnDownloadRouteImage" class="btn btn-outline-primary py-1 px-2" style="font-size: 0.75rem;" disabled>
+                            <i class="bi bi-image"></i> Image
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs inside Route-wise panel -->
+                <ul class="nav nav-tabs mb-3" id="routeSummaryTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active py-1 text-uppercase fw-semibold" style="font-size: 0.75rem;" id="route-table-tab" data-bs-toggle="tab" data-bs-target="#route-table-pane" type="button" role="tab" aria-controls="route-table-pane" aria-selected="true">Data Table</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 text-uppercase fw-semibold" style="font-size: 0.75rem;" id="route-charts-tab" data-bs-toggle="tab" data-bs-target="#route-charts-pane" type="button" role="tab" aria-controls="route-charts-pane" aria-selected="false">Visual Charts</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="routeSummaryTabContent">
+                    <div class="tab-pane fade show active" id="route-table-pane" role="tabpanel" aria-labelledby="route-table-tab">
+                        <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-sm table-hover mb-0" id="routeSummaryTable" style="font-size: 0.85rem;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-secondary fw-semibold border-0">Route</th>
+                                        <th class="text-end text-secondary fw-semibold border-0">Duty Count</th>
+                                        <th class="text-end text-secondary fw-semibold border-0">Avg Duty Hours</th>
+                                        <th class="text-end text-secondary fw-semibold border-0">Avg Wheel Movement</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamically loaded -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="route-charts-pane" role="tabpanel" aria-labelledby="route-charts-tab">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card p-2 border-0 shadow-sm" style="background: #f8fafc; border: 1px solid #e2e8f0 !important;">
+                                    <h6 class="fw-bold text-dark small text-center mb-2">Duties Count per Route</h6>
+                                    <div style="height: 200px; position: relative;">
+                                        <canvas id="routeDutiesChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card p-2 border-0 shadow-sm" style="background: #f8fafc; border: 1px solid #e2e8f0 !important;">
+                                    <h6 class="fw-bold text-dark small text-center mb-2">Average Duty Hours (hrs)</h6>
+                                    <div style="height: 200px; position: relative;">
+                                        <canvas id="routeAvgDutyChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card p-2 border-0 shadow-sm" style="background: #f8fafc; border: 1px solid #e2e8f0 !important;">
+                                    <h6 class="fw-bold text-dark small text-center mb-2">Avg Wheel Movement (hrs)</h6>
+                                    <div style="height: 200px; position: relative;">
+                                        <canvas id="routeAvgWheelChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Preview Table -->
+    <div id="previewContainer" class="preview-container d-none">
+        <div class="preview-header">
+            <div>
+                <h5 class="fw-bold text-dark mb-0">Filtered Report Preview</h5>
+                <span class="text-muted small">Showing results for: <strong id="selectDateTitle">-</strong></span>
+            </div>
+            <div>
+                <button class="btn btn-success btn-download-excel" id="btnDownloadExcel" disabled>
+                    <i class="bi bi-download"></i> Download Excel
+                </button>
+            </div>
+        </div>
+        <div class="table-viewport" id="tableViewport">
+            <!-- Rendered HTML Table -->
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div id="dutyHoursToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="/static/js/duty_hours_count.js?v=3.2"></script>
+{% endblock %}
+

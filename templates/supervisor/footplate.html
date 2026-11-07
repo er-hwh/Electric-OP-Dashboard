@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Footplate Inspection & Counselling Log | CLI Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="rail-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <span class="badge bg-success mb-1 fs-6"><i class="fa-solid fa-file-pen me-1"></i> Footplate Inspection & Monitoring</span>
+                        <h4 class="fw-bold text-dark mb-0">Record Footplate Inspection & Technical Counselling</h4>
+                        <small class="text-muted">Observance of signal calling, brake test, neutral section, speed compliance & safety rules</small>
+                    </div>
+                    <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+                    </a>
+                </div>
+
+                <form method="POST" action="{{ url_for('supervisor.new_footplate') }}">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Select Crew Member <span class="text-danger">*</span></label>
+                            <select name="crew_id" class="form-select" required>
+                                <option value="">-- Select Running Staff --</option>
+                                {% for c in my_crews %}
+                                    <option value="{{ c.id }}" {% if request.args.get('crew_id') == c.id|string %}selected{% endif %}>
+                                        {{ c.full_name }} ({{ c.sub_role }}) - Mob: {{ c.mobile }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Date of Inspection <span class="text-danger">*</span></label>
+                            <input type="date" name="inspection_date" class="form-control" value="{{ now_date or '' }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Train Number <span class="text-danger">*</span></label>
+                            <input type="text" name="train_no" class="form-control" placeholder="e.g. 12301 Up / 37812 EMU / Goods PKR" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Locomotive / EMU Rake No. <span class="text-danger">*</span></label>
+                            <input type="text" name="loco_no" class="form-control" placeholder="e.g. WAP-7 30201 / WAG-9 42881" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">From Station</label>
+                            <input type="text" name="from_station" class="form-control" placeholder="e.g. HWH">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">To Station</label>
+                            <input type="text" name="to_station" class="form-control" placeholder="e.g. BWN">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-dark">Departure Time</label>
+                            <input type="time" name="departure_time" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-dark">Arrival Time</label>
+                            <input type="time" name="arrival_time" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-dark">Footplate KM (KMA - ACS 64)</label>
+                            <input type="number" step="0.1" name="footplate_km" class="form-control" placeholder="e.g. 108.5">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-dark">Grading Awarded <span class="text-danger">*</span></label>
+                            <select name="grading" class="form-select" required>
+                                <option value="A">Grade A (Exemplary & High Vigilance)</option>
+                                <option value="B">Grade B (Satisfactory & Safe)</option>
+                                <option value="C">Grade C (Needs Improvement / Minor Lapses)</option>
+                                <option value="D">Grade D (Unsatisfactory / Monitored Crew)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Safety Aspects Checked on Run:</label>
+                        <textarea name="aspects_covered" class="form-control" rows="2" placeholder="e.g. Signal calling aloud between LP & ALP, RS valve test, Caution order adherence, W/L intermittent whistling at level crossings, Neutral section coasting."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Deficiencies / Irregularities Observed (if any):</label>
+                        <textarea name="deficiencies" class="form-control" rows="2" placeholder="Note any delayed whistling, improper signal exchange, or late brake application..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-dark">Counselling Imparted to the Crew:</label>
+                        <textarea name="counselling_given" class="form-control" rows="3" placeholder="Explain the exact safety guidance and rule pointers given to the crew during this footplate..."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg fs-6 fw-bold shadow-sm">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Footplate Inspection Record
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1654 @@
+﻿{% extends "control/base_control.html" %}
+
+{% block content %}
+<!-- External dependencies for Snap Image (html2canvas) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<div class="container-fluid py-2">
+    <!-- Header Banner -->
+    <div class="card border-0 shadow-sm rounded-3 mb-3 bg-white d-print-none">
+        <div class="card-body py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-indigo-subtle text-primary rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background-color: #eff6ff;">
+                    <i class="bi bi-file-earmark-text-fill fs-5 text-primary"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h5 class="mb-0 fw-bold text-dark" style="letter-spacing: -0.01em;">PCNL/HWH Control Memo Studio</h5>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0 rounded-pill small">
+                            <i class="bi bi-broadcast-pin me-1"></i>Power Control / HWH
+                        </span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0 rounded-pill small" id="memoAutoStatus">
+                            <i class="bi bi-check-circle-fill me-1"></i>Ready
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-0" style="font-size: 0.78rem;">
+                        Simple Railway Operational Memo &bull; 1, 2, 3, or 4 Slips per Page &bull; Typed &amp; Blank Pen Proformas &bull; Clean Layout
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle fw-semibold" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-magic me-1"></i>Load Photo Templates
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                        <li><h6 class="dropdown-header text-uppercase text-secondary fw-bold" style="font-size: 0.7rem;">Field Photo Formats</h6></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSpecificTemplate('excess_tonnage')"><i class="bi bi-speedometer2 text-danger me-2"></i>Photo 1: Excess Tonnage &amp; Stalling Disclaimer</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSpecificTemplate('signal_gate_drop')"><i class="bi bi-exclamation-octagon text-danger me-2"></i>Photo 2: Gate Signal Dropped to RED</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSpecificTemplate('dpwcs_defect')"><i class="bi bi-slash-circle text-warning me-2"></i>Photo 3: DPWCS Defect Base Shed Movement</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSpecificTemplate('brake_binding')"><i class="bi bi-file-earmark-ruled text-primary me-2"></i>Photo 4: Brake Binding &amp; Statements Call</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSpecificTemplate('power_plan_pilot')"><i class="bi bi-table text-success me-2"></i>Photo 5: Engg Pilots / Power Plan Demand</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSpecificTemplate('blank_pen')"><i class="bi bi-pencil-square text-dark me-2"></i>Blank Proforma for Pen Handwriting</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSpecificTemplate('overdue_loco')"><i class="bi bi-clock-history text-secondary me-2"></i>Overdue Loco Clearance</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="loadSpecificTemplate('general')"><i class="bi bi-pencil-square text-info me-2"></i>General Operational Memo</a></li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold" onclick="resetMemoForm()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Form
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Two-Column Layout -->
+    <div class="row g-3">
+        <!-- LEFT COLUMN: Form Builder (Hidden in Print) -->
+        <div class="col-lg-5 d-print-none">
+            <div class="card shadow-sm border-0 mb-3" style="border-radius: 10px;">
+                <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-primary">
+                        <i class="bi bi-sliders me-1"></i>Memo Setup &amp; Inputs
+                    </span>
+                    <span class="badge bg-light text-secondary border small">Step 1: Fill / Edit Parameters</span>
+                </div>
+                <div class="card-body p-3">
+                    <form id="memoForm" autocomplete="off" onsubmit="event.preventDefault();">
+                        <!-- Template Selection Dropdown -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-dark mb-1">
+                                <i class="bi bi-collection me-1 text-primary"></i>Operational Memo Category <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select form-select-sm fw-bold border-primary text-primary" id="memoTypeSelect" onchange="onMemoTypeChange()">
+                                <option value="excess_tonnage" selected>1. Photo 1: Excess Tonnage &amp; Stalling Disclaimer</option>
+                                <option value="signal_gate_drop">2. Photo 2: Gate Signal Dropped to RED from Double Yellow</option>
+                                <option value="dpwcs_defect">3. Photo 3: DPWCS Defect Base Shed Movement</option>
+                                <option value="brake_binding">4. Photo 4: Brake Binding &amp; Statement Requisition</option>
+                                <option value="power_plan_pilot">5. Photo 5: Engg Pilots / Power Plan Demand Responsibilities</option>
+                                <option value="blank_pen">6. Blank Proforma (Ruled Lines for Pen / Manual Fill-up)</option>
+                                <option value="overdue_loco">7. Overdue Schedule Loco Clearance</option>
+                                <option value="general">8. General Control Memo</option>
+                                <option value="custom">9. Blank Custom Memo</option>
+                            </select>
+                        </div>
+
+                        <!-- Recipient (TO) -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-dark mb-1">TO (Recipient) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm fw-bold" id="memoTo" list="recipientSuggestions" placeholder="e.g. DY CNL / HWH" oninput="updateMemoPreview()">
+                            <datalist id="recipientSuggestions">
+                                <option value="DY CNL / HWH">
+                                <option value="The DY.Chg & Signal / Control">
+                                <option value="Dy. Chg/CNL & PWR/CNL">
+                                <option value="The ENGG/CNL & DYCNL/HWH">
+                                <option value="TLC / HWH">
+                                <option value="Dy.CC (Coaching) / HWH">
+                                <option value="Dy.CC (Freight) / HWH">
+                                <option value="Dy.CC / BWN">
+                                <option value="TPC / HWH">
+                                <option value="SSE / Loco / HWH">
+                                <option value="SSE / Loco / BWN">
+                                <option value="SSE / Loco / RPH">
+                                <option value="Station Master Concerned">
+                            </datalist>
+                        </div>
+
+                        <!-- Date & Time -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">Date</label>
+                                <input type="date" class="form-control form-control-sm" id="memoDate" onchange="syncDateTimeToFields()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">Time</label>
+                                <input type="time" class="form-control form-control-sm" id="memoTime" onchange="syncDateTimeToFields()">
+                            </div>
+                        </div>
+
+                        <!-- Subject -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-dark mb-1">Subject</label>
+                            <input type="text" class="form-control form-control-sm fw-semibold" id="memoSubject" placeholder="Enter Subject (Optional)" oninput="updateMemoPreview()">
+                        </div>
+
+                        <hr class="my-2 border-secondary opacity-25">
+
+                        <!-- Dynamic Specific Fields by Type -->
+                        <div id="dynamicSpecificFields">
+                            <!-- Injected dynamically based on template selected -->
+                        </div>
+
+                        <!-- Main Memo Body / Operational Directive Text -->
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-semibold text-dark mb-0">
+                                    <i class="bi bi-file-earmark-text me-1 text-primary"></i>Operational Directive / Generated Wording
+                                </label>
+                                <button type="button" class="btn btn-xs btn-link text-primary p-0 text-decoration-none small" onclick="rebuildBoilerplateFromFields()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Re-sync Text
+                                </button>
+                            </div>
+                            <textarea class="form-control form-control-sm font-monospace" id="memoBodyText" rows="7" placeholder="Enter memo directives..." oninput="updateMemoPreview()"></textarea>
+                            <div class="form-text text-muted" style="font-size: 0.72rem;">
+                                Click anywhere inside the right-hand preview slip to edit text directly (WYSIWYG)!
+                            </div>
+                        </div>
+
+                        <!-- Special Instructions (Default BLANK per instructions) -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-dark mb-1">Special Precautions / Instructions (Optional, blank by default)</label>
+                            <textarea class="form-control form-control-sm" id="memoInstructions" rows="2" placeholder="Leave blank if not required..." oninput="updateMemoPreview()"></textarea>
+                        </div>
+
+                        <!-- Sign-off Authority -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-dark mb-1">Sign-off Authority</label>
+                            <input type="text" class="form-control form-control-sm fw-bold" id="memoIssuerDesig" value="PCNL / HWH" oninput="updateMemoPreview()">
+                        </div>
+
+                        <!-- Copy to (C/-) -->
+                        <div class="mb-1">
+                            <label class="form-label small fw-semibold text-dark mb-1">Copy Forwarded to (C/-) (Optional)</label>
+                            <input type="text" class="form-control form-control-sm" id="memoCopyTo" placeholder="e.g. Dy.CC (F)/HWH, TI/HQ, TM/LP (Leave blank if not needed)" oninput="updateMemoPreview()">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Interactive Preview & Print / Export Studio -->
+        <div class="col-lg-7">
+            <!-- Toolbar & Layout Controls (Hidden in Print) -->
+            <div class="card shadow-sm border-0 mb-3 bg-white d-print-none" style="border-radius: 10px;">
+                <div class="card-body p-2 d-flex flex-column gap-2">
+                    <!-- Row 1: Print Mode & Export Actions -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <!-- Layout Modes Toggle: 1-Up, 2-Up, 3-Up, 4-Up -->
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="small fw-bold text-dark text-nowrap">
+                                <i class="bi bi-printer me-1 text-primary"></i>Print Mode:
+                            </span>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <input type="radio" class="btn-check" name="printLayoutMode" id="mode1Up" value="1up" onchange="onLayoutModeChange()">
+                                <label class="btn btn-outline-primary fw-semibold px-2" for="mode1Up" title="Single Memo covering full A4 page">
+                                    <i class="bi bi-file-earmark me-1"></i>1/Page
+                                </label>
+
+                                <input type="radio" class="btn-check" name="printLayoutMode" id="mode2Up" value="2up" onchange="onLayoutModeChange()">
+                                <label class="btn btn-outline-primary fw-semibold px-2" for="mode2Up" title="2 identical half-page cut-slips on 1 A4 sheet">
+                                    <i class="bi bi-layout-split me-1"></i>2/Page
+                                </label>
+
+                                <input type="radio" class="btn-check" name="printLayoutMode" id="mode3Up" value="3up" onchange="onLayoutModeChange()">
+                                <label class="btn btn-outline-primary fw-semibold px-2" for="mode3Up" title="3 identical 1/3-page cut-slips on 1 A4 sheet">
+                                    <i class="bi bi-distribute-vertical me-1"></i>3/Page
+                                </label>
+
+                                <input type="radio" class="btn-check" name="printLayoutMode" id="mode4Up" value="4up" checked onchange="onLayoutModeChange()">
+                                <label class="btn btn-outline-primary fw-semibold px-2" for="mode4Up" title="4 cut-slips on 1 A4 sheet (2x2 grid)">
+                                    <i class="bi bi-grid-fill me-1"></i>4/Page
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-primary fw-semibold" onclick="triggerPrintMemo()" title="Print A4 or Save as PDF">
+                                <i class="bi bi-printer-fill me-1"></i>Print / PDF
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success fw-semibold" onclick="takeMemoSnap()" id="snapBtn" title="Take image snapshot for WhatsApp">
+                                <i class="bi bi-camera-fill me-1"></i>Snap Image
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-dark fw-semibold" onclick="downloadMemoWord()" title="Download as Word Document">
+                                <i class="bi bi-file-earmark-word-fill me-1 text-primary"></i>Word Doc
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold" onclick="copyMemoWhatsApp()" title="Copy as formatted WhatsApp message">
+                                <i class="bi bi-whatsapp text-success me-1"></i>Copy Text
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Pen Fill-Up Preset Bar (Mixed / All Filled / All Blank Proformas) -->
+                    <div class="d-flex flex-wrap align-items-center justify-content-between pt-1 border-top gap-2 bg-light-subtle px-2 py-1 rounded">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="small fw-bold text-dark text-nowrap">
+                                <i class="bi bi-pen-fill me-1 text-danger"></i>Slip Fill:
+                            </span>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-dark fw-semibold" id="btnPresetAllFilled" onclick="setSlipFillPreset('all_filled')">
+                                    <i class="bi bi-check2-all me-1 text-success"></i>All Filled
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary fw-semibold active" id="btnPresetMixed" onclick="setSlipFillPreset('mixed')">
+                                    <i class="bi bi-intersect me-1"></i>Top Filled + Bottom Blank
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-dark fw-semibold" id="btnPresetAllBlank" onclick="setSlipFillPreset('all_blank')">
+                                    <i class="bi bi-pencil-square me-1 text-warning"></i>All Blank (Pen)
+                                </button>
+                            </div>
+                        </div>
+                        <div class="small text-muted" style="font-size: 0.74rem;">
+                            <i class="bi bi-info-circle me-1"></i>Click <strong>"Switch"</strong> on any slip below to toggle Filled/Blank.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Notice Bar (Hidden in Print) -->
+            <div class="alert alert-info py-1 px-2 mb-2 small d-flex align-items-center justify-content-between d-print-none" style="font-size: 0.78rem;">
+                <div>
+                    <i class="bi bi-pencil-fill me-1 text-primary"></i>
+                    <strong>Simple &amp; Clean Preview:</strong> Click anywhere on the slip text to edit words directly before printing.
+                </div>
+                <span class="badge bg-info-subtle text-info border border-info-subtle" id="activeModeBadge">4 Slips (Top Filled + Bottom Blank)</span>
+            </div>
+
+            <!-- Toast Notification -->
+            <div id="memoToast" class="alert alert-success d-none py-2 px-3 small d-flex align-items-center justify-content-between d-print-none mb-2">
+                <div>
+                    <i class="bi bi-check-circle-fill me-1"></i><span id="memoToastMsg">Action completed!</span>
+                </div>
+                <button type="button" class="btn-close btn-close-sm" onclick="hideMemoToast()"></button>
+            </div>
+
+            <!-- PREVIEW SHEET AREA (PRINT TARGET) -->
+            <div id="memoPrintArea">
+                <!-- 1-Up Container (Full A4) -->
+                <div id="layoutContainer1Up" class="memo-page-sheet d-none">
+                    <div class="d-flex justify-content-end mb-2 d-print-none">
+                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('1up', 0)">
+                            <span id="badge_1up_0"><i class="bi bi-file-text me-1 text-success"></i>Filled Memo</span> &bull; <span class="text-primary">Switch</span>
+                        </button>
+                    </div>
+                    <div class="memo-single-card" id="singleMemoPreview" contenteditable="true" spellcheck="false" oninput="handlePreviewDirectEdit(this)">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- 2-Up Container (2 Half-Page Slips) -->
+                <div id="layoutContainer2Up" class="memo-page-sheet d-none">
+                    <div class="a4-slips-grid-2">
+                        <div class="memo-slip-card memo-slip-2up" id="slipBox2_1">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 1 (Top Half)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('2up', 0)">
+                                    <span id="badge_2up_0"><i class="bi bi-file-text me-1 text-success"></i>Filled</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip2_1" contenteditable="true" spellcheck="false" oninput="handleSlip2DirectEdit(this)"></div>
+                        </div>
+                        <div class="memo-slip-card memo-slip-2up" id="slipBox2_2">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 2 (Bottom Half)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('2up', 1)">
+                                    <span id="badge_2up_1"><i class="bi bi-pencil-square me-1 text-warning"></i>Blank Pen Proforma</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip2_2" contenteditable="true" spellcheck="false"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3-Up Container (3 Horizontal Strip Slips) -->
+                <div id="layoutContainer3Up" class="memo-page-sheet d-none">
+                    <div class="a4-slips-grid-3">
+                        <div class="memo-slip-card memo-slip-3up" id="slipBox3_1">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 1 (Top)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('3up', 0)">
+                                    <span id="badge_3up_0"><i class="bi bi-file-text me-1 text-success"></i>Filled</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip3_1" contenteditable="true" spellcheck="false" oninput="handleSlip3DirectEdit(this)"></div>
+                        </div>
+                        <div class="memo-slip-card memo-slip-3up" id="slipBox3_2">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 2 (Middle)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('3up', 1)">
+                                    <span id="badge_3up_1"><i class="bi bi-file-text me-1 text-success"></i>Filled</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip3_2" contenteditable="true" spellcheck="false"></div>
+                        </div>
+                        <div class="memo-slip-card memo-slip-3up" id="slipBox3_3">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 3 (Bottom)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('3up', 2)">
+                                    <span id="badge_3up_2"><i class="bi bi-pencil-square me-1 text-warning"></i>Blank Pen Proforma</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip3_3" contenteditable="true" spellcheck="false"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4-Up Container (2x2 Grid A4) -->
+                <div id="layoutContainer4Up" class="memo-page-sheet">
+                    <div class="a4-slips-grid">
+                        <!-- Slip 1 (Top Left) -->
+                        <div class="memo-slip-card memo-slip-4up" id="slipBox4_1">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 1 (Top Left)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('4up', 0)">
+                                    <span id="badge_4up_0"><i class="bi bi-file-text me-1 text-success"></i>Filled</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip1" contenteditable="true" spellcheck="false" oninput="handleSlipDirectEdit(this)"></div>
+                        </div>
+
+                        <!-- Slip 2 (Top Right) -->
+                        <div class="memo-slip-card memo-slip-4up" id="slipBox4_2">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 2 (Top Right)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('4up', 1)">
+                                    <span id="badge_4up_1"><i class="bi bi-file-text me-1 text-success"></i>Filled</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip2" contenteditable="true" spellcheck="false"></div>
+                        </div>
+
+                        <!-- Slip 3 (Bottom Left) -->
+                        <div class="memo-slip-card memo-slip-4up" id="slipBox4_3">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 3 (Bottom Left)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('4up', 2)">
+                                    <span id="badge_4up_2"><i class="bi bi-pencil-square me-1 text-warning"></i>Blank Pen Proforma</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip3" contenteditable="true" spellcheck="false"></div>
+                        </div>
+
+                        <!-- Slip 4 (Bottom Right) -->
+                        <div class="memo-slip-card memo-slip-4up" id="slipBox4_4">
+                            <div class="slip-screen-control d-print-none d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+                                <span class="badge bg-light text-dark border">Slip 4 (Bottom Right)</span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small" onclick="toggleSingleSlipState('4up', 3)">
+                                    <span id="badge_4up_3"><i class="bi bi-pencil-square me-1 text-warning"></i>Blank Pen Proforma</span> &bull; <span class="text-primary">Switch</span>
+                                </button>
+                            </div>
+                            <div class="slip-content-wrapper" id="slip4" contenteditable="true" spellcheck="false"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Executive Form Styling */
+#memoForm .form-label {
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    margin-bottom: 3px;
+}
+#memoForm .form-control,
+#memoForm .form-select {
+    border: 1.5px solid #cbd5e1 !important;
+    font-size: 0.85rem !important;
+    color: #0f172a !important;
+    font-weight: 500;
+}
+#memoForm .form-control:focus,
+#memoForm .form-select:focus {
+    border-color: #1e40af !important;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12) !important;
+}
+
+/* Screen Preview Sheet Container */
+.memo-page-sheet {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    padding: 16px;
+    min-height: 580px;
+}
+
+/* Base Slip & Card Typography */
+.memo-single-card, .memo-slip-card {
+    font-family: 'Times New Roman', Times, serif;
+    color: #000000;
+    outline: none;
+    box-sizing: border-box;
+    position: relative;
+    background-color: #ffffff;
+}
+
+/* Ruled Dotted Lines for Blank Manual Pen Proforma */
+.memo-ruled-line {
+    border-bottom: 1.5px dotted #1e293b;
+    height: 26px;
+    margin: 4px 0;
+    width: 100%;
+}
+.memo-dotted-blank {
+    border-bottom: 1.5px dotted #1e293b;
+    display: inline-block;
+    min-width: 60px;
+    height: 16px;
+    vertical-align: bottom;
+}
+
+/* Clean Routing Bar (No Borders) */
+.memo-routing-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+    margin-bottom: 8px;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.memo-routing-bar .memo-to-box {
+    text-align: left;
+    flex-grow: 1;
+    border: none !important;
+}
+.memo-routing-bar .memo-date-box {
+    text-align: right;
+    white-space: nowrap;
+    border: none !important;
+}
+.memo-routing-table,
+.memo-routing-table tr,
+.memo-routing-table td {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Single Full-Page Memo Styling (1-Up) - Large Clear Fonts */
+.memo-single-card {
+    line-height: 1.65;
+    padding: 22px;
+}
+.memo-single-card .memo-routing-bar {
+    width: 100%;
+    margin-bottom: 14px;
+    font-size: 1.15rem;
+}
+.memo-single-card .memo-subject-line {
+    margin: 6px 0 12px 0;
+    padding: 4px 0;
+    font-size: 1.15rem;
+    border-bottom: 1px dashed #94a3b8;
+}
+.memo-single-card .memo-body-content {
+    font-size: 1.20rem;
+    text-align: justify;
+    margin-bottom: 16px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.68;
+}
+.memo-single-card .memo-signoff {
+    margin-top: auto;
+    padding-top: 30px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    font-size: 1.18rem;
+}
+.memo-single-card .memo-copyto {
+    margin-top: 14px;
+    font-size: 0.95rem;
+    border-top: 1px dashed #94a3b8;
+    padding-top: 5px;
+}
+
+/* Scissors Marker Tag on Cut-Slips */
+.cut-scissors-tag {
+    position: absolute;
+    top: -9px;
+    right: 14px;
+    background: #ffffff;
+    padding: 0 6px;
+    font-size: 0.65rem;
+    color: #475569;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+}
+
+/* 2-Up (Half-Page) Layout - Prominent Font Size */
+.a4-slips-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-gap: 16px;
+}
+.memo-slip-2up {
+    border: 1.5px dashed #475569;
+    border-radius: 6px;
+    padding: 14px 18px;
+    min-height: 270px;
+    display: flex;
+    flex-direction: column;
+}
+.memo-slip-2up .memo-routing-bar { font-size: 1.08rem; margin-bottom: 8px; }
+.memo-slip-2up .memo-subject-line { font-size: 1.06rem; margin: 4px 0 8px 0; border-bottom: 1px dashed #cbd5e1; }
+.memo-slip-2up .memo-body-content { font-size: 1.15rem; margin-bottom: 8px; line-height: 1.58; }
+.memo-slip-2up .memo-signoff { margin-top: auto; padding-top: 24px; font-size: 1.10rem; display: flex; justify-content: flex-end; }
+
+/* 3-Up (1/3-Page Horizontal Strips) Layout */
+.a4-slips-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-gap: 12px;
+}
+.memo-slip-3up {
+    border: 1.5px dashed #475569;
+    border-radius: 5px;
+    padding: 7px 12px;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+}
+.memo-slip-3up .memo-routing-bar { font-size: 0.90rem; margin-bottom: 4px; }
+.memo-slip-3up .memo-subject-line { font-size: 0.90rem; margin: 2px 0 4px 0; border-bottom: 1px dashed #cbd5e1; }
+.memo-slip-3up .memo-body-content { font-size: 0.92rem; margin-bottom: 4px; line-height: 1.34; }
+.memo-slip-3up .memo-signoff { margin-top: auto; padding-top: 10px; font-size: 0.88rem; display: flex; justify-content: flex-end; }
+
+/* 4-Up (2x2 Grid) Layout - Large Clear Readable Typography */
+.a4-slips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 12px;
+}
+.memo-slip-4up {
+    border: 1.5px dashed #475569;
+    border-radius: 4px;
+    padding: 10px 14px;
+    min-height: 270px;
+    display: flex;
+    flex-direction: column;
+}
+.memo-slip-4up .memo-routing-bar { font-size: 1.00rem; margin-bottom: 6px; }
+.memo-slip-4up .memo-subject-line { font-size: 1.00rem; margin: 3px 0 6px 0; border-bottom: 1px dashed #cbd5e1; }
+.memo-slip-4up .memo-body-content { font-size: 1.05rem; margin-bottom: 6px; line-height: 1.50; white-space: pre-wrap; }
+.memo-slip-4up .memo-signoff { margin-top: auto; padding-top: 18px; font-size: 1.02rem; display: flex; justify-content: flex-end; }
+
+/* PRINT MEDIA QUERIES (Exact A4 297mm x 210mm calibration) */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 5mm 5mm 5mm 5mm;
+    }
+    html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+    .header, .sidebar, .footer, .d-print-none, .alert, .btn, nav {
+        display: none !important;
+    }
+    .main, .content, .container-fluid {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+    #memoPrintArea {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .memo-page-sheet {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 1-Up Full Page */
+    #layoutContainer1Up .memo-single-card {
+        padding: 8mm !important;
+        border: 1.5px solid #000000 !important;
+        min-height: 275mm !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    #layoutContainer1Up .memo-single-card .memo-routing-bar {
+        font-size: 1.15rem !important;
+        margin-bottom: 14px !important;
+    }
+    #layoutContainer1Up .memo-single-card .memo-subject-line {
+        font-size: 1.15rem !important;
+    }
+    #layoutContainer1Up .memo-single-card .memo-body-content {
+        font-size: 1.22rem !important;
+        line-height: 1.68 !important;
+    }
+    #layoutContainer1Up .memo-single-card .memo-signoff {
+        font-size: 1.18rem !important;
+    }
+
+    /* 2-Up (2 Half-Page Slips) */
+    #layoutContainer2Up .a4-slips-grid-2 {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr 1fr !important;
+        height: 282mm !important;
+        grid-gap: 5mm !important;
+        page-break-inside: avoid !important;
+    }
+    #layoutContainer2Up .memo-slip-2up {
+        border: 1px dashed #000000 !important;
+        padding: 5mm 6mm !important;
+        height: 138mm !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    #layoutContainer2Up .memo-slip-2up .memo-routing-bar {
+        font-size: 1.08rem !important;
+        margin-bottom: 8px !important;
+    }
+    #layoutContainer2Up .memo-slip-2up .memo-subject-line {
+        font-size: 1.06rem !important;
+    }
+    #layoutContainer2Up .memo-slip-2up .memo-body-content {
+        font-size: 1.15rem !important;
+        line-height: 1.58 !important;
+    }
+    #layoutContainer2Up .memo-slip-2up .memo-signoff {
+        font-size: 1.10rem !important;
+    }
+
+    /* 3-Up (3 Horizontal Strip Slips) */
+    #layoutContainer3Up .a4-slips-grid-3 {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr 1fr 1fr !important;
+        height: 282mm !important;
+        grid-gap: 3.5mm !important;
+        page-break-inside: avoid !important;
+    }
+    #layoutContainer3Up .memo-slip-3up {
+        border: 1px dashed #000000 !important;
+        padding: 3mm 5mm !important;
+        height: 91mm !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    #layoutContainer3Up .memo-slip-3up .memo-routing-bar {
+        font-size: 0.90rem !important;
+        margin-bottom: 4px !important;
+    }
+    #layoutContainer3Up .memo-slip-3up .memo-subject-line {
+        font-size: 0.90rem !important;
+    }
+    #layoutContainer3Up .memo-slip-3up .memo-body-content {
+        font-size: 0.92rem !important;
+        line-height: 1.34 !important;
+    }
+    #layoutContainer3Up .memo-slip-3up .memo-signoff {
+        font-size: 0.88rem !important;
+    }
+
+    /* 4-Up (2x2 Grid) */
+    #layoutContainer4Up .a4-slips-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: 1fr 1fr !important;
+        height: 282mm !important;
+        grid-gap: 4mm !important;
+        page-break-inside: avoid !important;
+    }
+    #layoutContainer4Up .memo-slip-4up {
+        border: 1px dashed #000000 !important;
+        padding: 4mm 5mm !important;
+        height: 139mm !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    #layoutContainer4Up .memo-slip-4up .memo-routing-bar {
+        font-size: 1.00rem !important;
+        margin-bottom: 6px !important;
+    }
+    #layoutContainer4Up .memo-slip-4up .memo-subject-line {
+        font-size: 1.00rem !important;
+    }
+    #layoutContainer4Up .memo-slip-4up .memo-body-content {
+        font-size: 1.06rem !important;
+        line-height: 1.50 !important;
+    }
+    #layoutContainer4Up .memo-slip-4up .memo-signoff {
+        font-size: 1.02rem !important;
+    }
+
+    .memo-routing-bar,
+    .memo-routing-table,
+    .memo-routing-table td {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .memo-ruled-line {
+        border-bottom: 1.5px dotted #000000 !important;
+        height: 20pt !important;
+        margin: 3pt 0 !important;
+    }
+    .memo-dotted-blank {
+        border-bottom: 1.5px dotted #000000 !important;
+    }
+    .memo-signoff {
+        margin-top: auto !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+    }
+}
+</style>
+
+<script>
+// State Store
+let activeLayoutMode = "4up";
+let activeFillPreset = "mixed"; // 'all_filled', 'mixed', 'all_blank'
+let toastTimeout = null;
+
+// Individual slip states: 'filled' or 'blank'
+let slipStates = {
+    '1up': ['filled'],
+    '2up': ['filled', 'blank'],
+    '3up': ['filled', 'filled', 'blank'],
+    '4up': ['filled', 'filled', 'blank', 'blank']
+};
+
+// Initialize on Load
+document.addEventListener("DOMContentLoaded", function() {
+    initDateTimeDefaults();
+    onMemoTypeChange();
+});
+
+function initDateTimeDefaults() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    const yyyy = now.getFullYear();
+    const mm = pad(now.getMonth() + 1);
+    const dd = pad(now.getDate());
+    
+    const dateInput = document.getElementById("memoDate");
+    const timeInput = document.getElementById("memoTime");
+    if (dateInput && !dateInput.value) dateInput.value = `${yyyy}-${mm}-${dd}`;
+    if (timeInput && !timeInput.value) timeInput.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+function syncDateTimeToFields() {
+    updateMemoPreview();
+}
+
+// 1. Template Change Handler
+function onMemoTypeChange() {
+    const type = document.getElementById("memoTypeSelect").value;
+    const dynamicContainer = document.getElementById("dynamicSpecificFields");
+    const subjInput = document.getElementById("memoSubject");
+    const toInput = document.getElementById("memoTo");
+    const bodyInput = document.getElementById("memoBodyText");
+    const instructInput = document.getElementById("memoInstructions");
+    const issuerInput = document.getElementById("memoIssuerDesig");
+
+    // Special Instructions default to BLANK per instructions
+    instructInput.value = "";
+
+    // PHOTO 1: Excess Tonnage Memo
+    if (type === "excess_tonnage") {
+        toInput.value = "DY CNL / HWH";
+        subjInput.value = "";
+        issuerInput.value = "PCNL / HWH";
+
+        dynamicContainer.innerHTML = `
+            <div class="card p-2 bg-light-subtle border mb-2">
+                <span class="fw-bold small text-danger mb-2 d-block">
+                    <i class="bi bi-speedometer2 me-1"></i>Photo 1: Excess Tonnage Parameters
+                </span>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Train No (T/No)</label>
+                        <input type="text" class="form-control form-control-sm" id="et_train" value="FKK" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Load Formation</label>
+                        <input type="text" class="form-control form-control-sm" id="et_load" value="(59+1) BOBRN" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Loco No</label>
+                        <input type="text" class="form-control form-control-sm" id="et_loco" value="41145" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Loco Class</label>
+                        <input type="text" class="form-control form-control-sm" id="et_class" value="G9" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Weather Condition</label>
+                        <input type="text" class="form-control form-control-sm" id="et_weather" value="Rainy" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Now At (Station)</label>
+                        <input type="text" class="form-control form-control-sm" id="et_now_at" value="MRR" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Gross Tonnage</label>
+                        <input type="text" class="form-control form-control-sm" id="et_gross_ton" value="5232" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">High Gradient Section</label>
+                        <input type="text" class="form-control form-control-sm" id="et_gradient_sec" value="GMAN/TDLE" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+            </div>
+        `;
+        rebuildBoilerplateFromFields();
+
+    // PHOTO 2: Gate Signal Dropped to RED Memo
+    } else if (type === "signal_gate_drop") {
+        toInput.value = "The DY.Chg & Signal / Control";
+        subjInput.value = "";
+        issuerInput.value = "PCNL / HWH";
+
+        dynamicContainer.innerHTML = `
+            <div class="card p-2 bg-light-subtle border mb-2">
+                <span class="fw-bold small text-danger mb-2 d-block">
+                    <i class="bi bi-exclamation-octagon me-1"></i>Photo 2: Signal / Gate Aspect Parameters
+                </span>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">LPG Designation &amp; Lobby</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_lobby" value="LPG/BWN" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">LP Name</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_lp_name" value="S. Chatterjee" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Train No</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_train" value="Goods / DN EC-60078" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Engine No (E/)</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_loco" value="31250" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Departed Station</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_dept_stn" value="BWN" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Signal Passed</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_passed_sig" value="Adv Starter" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Gate Signal No</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_gate_no" value="42/C" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Train Stopped At</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_stop_time" value="14:20" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Signal Again Cleared At</label>
+                        <input type="text" class="form-control form-control-sm" id="sg_clear_time" value="14:38" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+            </div>
+        `;
+        rebuildBoilerplateFromFields();
+
+    // PHOTO 3: DPWCS Defect Base Shed Movement Memo
+    } else if (type === "dpwcs_defect") {
+        toInput.value = "DYCNL / HWH";
+        subjInput.value = "";
+        issuerInput.value = "TLC / HWH";
+
+        dynamicContainer.innerHTML = `
+            <div class="card p-2 bg-light-subtle border mb-2">
+                <span class="fw-bold small text-warning mb-2 d-block">
+                    <i class="bi bi-slash-circle me-1"></i>Photo 3: DPWCS Defective Locos List
+                </span>
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold text-dark mb-0">Nominated Defective Locos (1 per line)</label>
+                    <textarea class="form-control form-control-sm font-monospace" id="dpwcs_list" rows="4" oninput="rebuildBoilerplateFromFields()">i) 31450 + 31452 / FKK now at BWN
+ii) 32100 + 32105 / AYRN now at RPH
+iii) 31802 + 31809 / BCN now at KAN</textarea>
+                </div>
+            </div>
+        `;
+        rebuildBoilerplateFromFields();
+
+    // PHOTO 4: Brake Binding & Statements Memo
+    } else if (type === "brake_binding") {
+        toInput.value = "Dy. Chg/CNL & PWR/CNL";
+        subjInput.value = "";
+        issuerInput.value = "CCNL / HWH";
+
+        dynamicContainer.innerHTML = `
+            <div class="card p-2 bg-light-subtle border mb-2">
+                <span class="fw-bold small text-primary mb-2 d-block">
+                    <i class="bi bi-file-earmark-ruled me-1"></i>Photo 4: Brake Binding Detention Details
+                </span>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-7">
+                        <label class="form-label small fw-semibold text-dark mb-0">Train No &amp; Load</label>
+                        <input type="text" class="form-control form-control-sm" id="bb_train_load" value="DN/EC-60078/BWN, 42 BCN/E + M7" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small fw-semibold text-dark mb-0">Detained At Station</label>
+                        <input type="text" class="form-control form-control-sm" id="bb_station" value="KPLE" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-12">
+                        <label class="form-label small fw-semibold text-dark mb-0">Reported Brake Binding In Wagon / Position</label>
+                        <input type="text" class="form-control form-control-sm" id="bb_wagon" value="5th wagon from rear" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-dark mb-0">Station Master (SM)</label>
+                        <input type="text" class="form-control form-control-sm" id="bb_sm" value="SM/KPLE" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label small fw-semibold text-dark mb-0">Train Manager (TM / Guard)</label>
+                        <input type="text" class="form-control form-control-sm" id="bb_tm" value="TM- R. K. Mandal / BWN (Mob: 9876543210)" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-12">
+                        <label class="form-label small fw-semibold text-dark mb-0">LP &amp; ALP Particulars</label>
+                        <input type="text" class="form-control form-control-sm" id="bb_crew" value="LP- S. Das / HWH, ALP- P. Roy / HWH" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+            </div>
+        `;
+        rebuildBoilerplateFromFields();
+
+    // PHOTO 5: Engg Pilots / Power Plan Demand Responsibilities Memo
+    } else if (type === "power_plan_pilot") {
+        toInput.value = "The ENGG/CNL & DYCNL/HWH";
+        subjInput.value = "Responsibility regarding utilization of locos nominated against Power Plan demands";
+        issuerInput.value = "PCNL / HWH";
+
+        dynamicContainer.innerHTML = `
+            <div class="card p-2 bg-light-subtle border mb-2">
+                <span class="fw-bold small text-success mb-2 d-block">
+                    <i class="bi bi-table me-1"></i>Photo 5: Engineering Pilots Table
+                </span>
+                <div class="row g-2 mb-2">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Power Plan Demand Date</label>
+                        <input type="text" class="form-control form-control-sm" id="pp_demand_date" value="14.09.2026" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Number of Pilots Nominated</label>
+                        <input type="text" class="form-control form-control-sm" id="pp_num_pilots" value="5" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="mb-1">
+                    <label class="form-label small fw-semibold text-dark mb-0">Pilots Nominated (Format: Pilot | Loco | Due Date | Fuel | Current Loc)</label>
+                    <textarea class="form-control form-control-sm font-monospace" id="pp_pilots_raw" rows="5" oninput="rebuildBoilerplateFromFields()">E-1 | Loco 11122 | Due: 18.09.26 | 2400 L | BWN
+E-2 | Loco 11145 | Due: 20.09.26 | 1800 L | RPH
+E-3 | Loco 11204 | Due: 22.09.26 | 2100 L | KAN
+E-4 | Loco 11350 | Due: 19.09.26 | 1600 L | UDL
+E-5 | Loco 11412 | Due: 25.09.26 | 2500 L | PKR</textarea>
+                </div>
+            </div>
+        `;
+        rebuildBoilerplateFromFields();
+
+    // Blank Pen Entry Proforma Template
+    } else if (type === "blank_pen") {
+        toInput.value = "";
+        subjInput.value = "";
+        issuerInput.value = "PCNL / HWH";
+        dynamicContainer.innerHTML = `
+            <div class="alert alert-warning py-2 px-3 small mb-2">
+                <i class="bi bi-pencil-square me-1"></i>
+                <strong>Blank Manual Pen Format Activated:</strong> Renders blank proforma slips with ruled lines for hand-writing memos with pen.
+            </div>
+        `;
+        bodyInput.value = "";
+        setSlipFillPreset('all_blank');
+
+    // Overdue Loco Clearance Memo
+    } else if (type === "overdue_loco") {
+        toInput.value = "Dy.CC / HWH, SSE / Loco / Concerned, TLC / HWH";
+        subjInput.value = "Permission for One-Trip Working / Clearance of Overdue Schedule Loco";
+        issuerInput.value = "PCNL / HWH";
+
+        dynamicContainer.innerHTML = `
+            <div class="card p-2 bg-light-subtle border mb-2">
+                <span class="fw-bold small text-warning mb-2 d-block"><i class="bi bi-clock-history me-1"></i>Overdue Loco Particulars</span>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Loco No &amp; Shed</label>
+                        <input type="text" class="form-control form-control-sm" id="od_loco" value="WAP7 #30455 / HWH" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Train Working</label>
+                        <input type="text" class="form-control form-control-sm" id="od_train" value="13010 DN Doon Exp" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2 mb-1">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Overdue Schedule</label>
+                        <input type="text" class="form-control form-control-sm" id="od_sch" value="TI (Trip Inspection)" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Due Date / Overdue Days</label>
+                        <input type="text" class="form-control form-control-sm" id="od_due" value="2 Days overdue" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-12">
+                        <label class="form-label small fw-semibold text-dark mb-0">Destination / Home Shed Returning To</label>
+                        <input type="text" class="form-control form-control-sm" id="od_dest" value="ELS/HWH for immediate inspection" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+            </div>
+        `;
+        rebuildBoilerplateFromFields();
+
+    // General Memo
+    } else if (type === "general") {
+        toInput.value = "Dy.CC (C) / HWH, Dy.CC (F) / HWH, SM Concerned";
+        subjInput.value = "Operational Control Directive / Movement Instruction";
+        issuerInput.value = "PCNL / HWH";
+
+        dynamicContainer.innerHTML = `
+            <div class="card p-2 bg-light-subtle border mb-2">
+                <span class="fw-bold small text-info mb-2 d-block"><i class="bi bi-info-circle me-1"></i>General Movement Details</span>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Train / Power Reference</label>
+                        <input type="text" class="form-control form-control-sm" id="gen_ref" placeholder="e.g. Train No / Light Engine / Shunting" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-dark mb-0">Location / Station</label>
+                        <input type="text" class="form-control form-control-sm" id="gen_loc" placeholder="e.g. HWH Yard / BWN / RPH" oninput="rebuildBoilerplateFromFields()">
+                    </div>
+                </div>
+            </div>
+        `;
+        bodyInput.value = "As per instructions of competent authority and operational requirement, the following movement/arrangement is ordered with immediate effect. All concerned to note and act accordingly.";
+
+    // Blank Custom Memo
+    } else {
+        dynamicContainer.innerHTML = "";
+        bodyInput.value = "";
+    }
+
+    updateMemoPreview();
+}
+
+// 2. Rebuild Boilerplate from Form Fields (Exact text flow from Photo 1)
+function rebuildBoilerplateFromFields() {
+    const type = document.getElementById("memoTypeSelect").value;
+    const bodyInput = document.getElementById("memoBodyText");
+
+    if (type === "excess_tonnage") {
+        const trn = document.getElementById("et_train")?.value || "---";
+        const load = document.getElementById("et_load")?.value || "---";
+        const loco = document.getElementById("et_loco")?.value || "---";
+        const lclass = document.getElementById("et_class")?.value || "G9";
+        const wthr = document.getElementById("et_weather")?.value || "Rainy";
+        const stn = document.getElementById("et_now_at")?.value || "MRR";
+        const gross = document.getElementById("et_gross_ton")?.value || "5232";
+        const sec = document.getElementById("et_gradient_sec")?.value || "GMAN/TDLE";
+
+        bodyInput.value = `T/No- ${trn} Load- ${load} Loco/No- ${loco} W/Condition- ${wthr} Now at ${stn}. This is ${lclass} Locomotive & gross weight of this load is ${gross} tonnage which is excess than the hauling capacity of Locomotive between ${sec} due to high gradient. It may cause stalling in the section & Loco may get damaged to haul excess tonnage. So, request you to change the Loco & use the right powering or provide banking up to destination otherwise incase of any failure or stalling PCNL/HWH will not be responsible & no loss punctuality or asset will not be accepted in Loco Account.`;
+
+    } else if (type === "signal_gate_drop") {
+        const lobby = document.getElementById("sg_lobby")?.value || "LPG/BWN";
+        const lpName = document.getElementById("sg_lp_name")?.value || "---";
+        const trn = document.getElementById("sg_train")?.value || "---";
+        const loco = document.getElementById("sg_loco")?.value || "---";
+        const deptStn = document.getElementById("sg_dept_stn")?.value || "---";
+        const passedSig = document.getElementById("sg_passed_sig")?.value || "---";
+        const gateNo = document.getElementById("sg_gate_no")?.value || "---";
+        const stopTime = document.getElementById("sg_stop_time")?.value || "---";
+        const clearTime = document.getElementById("sg_clear_time")?.value || "---";
+
+        bodyInput.value = `This is for your information that ${lobby} ${lpName}, of Tr. no- ${trn}, E/${loco} reported that after departed from ${deptStn} & passed ${passedSig}, suddenly Gate signal no- ${gateNo} turned to Red from double yellow. LP stopped his train at ${stopTime} hrs & again at ${clearTime} hrs signal given to double yellow. So please take necessary action.`;
+
+    } else if (type === "dpwcs_defect") {
+        const listText = document.getElementById("dpwcs_list")?.value || "";
+        bodyInput.value = `Please note that following locos now working in HWH Division DPWCS not working. As per higher authority loco declare fail if not send towards base shed direction for DPWCS attention.\n\n${listText}\n\nPlease send these loco towards base shed direction only otherwise loco treated as fail.`;
+
+    } else if (type === "brake_binding") {
+        const trnLoad = document.getElementById("bb_train_load")?.value || "---";
+        const stn = document.getElementById("bb_station")?.value || "---";
+        const wgn = document.getElementById("bb_wagon")?.value || "---";
+        const sm = document.getElementById("bb_sm")?.value || "---";
+        const tm = document.getElementById("bb_tm")?.value || "---";
+        const crew = document.getElementById("bb_crew")?.value || "---";
+
+        bodyInput.value = `Train no. ${trnLoad} detained at ${stn} due to reported brake binding in ${wgn}.\n\nIn this connection, kindly arrange to provide written statements of ${sm}, ${tm} and ${crew}.`;
+
+    } else if (type === "power_plan_pilot") {
+        const pDate = document.getElementById("pp_demand_date")?.value || "---";
+        const nPilots = document.getElementById("pp_num_pilots")?.value || "5";
+        const rawPilots = document.getElementById("pp_pilots_raw")?.value || "";
+
+        bodyInput.value = `Ref: Power plan demand dated ${pDate}\n\nWith reference to above, the following locos are nominated/working as Engineering pilots:\n${rawPilots}\n\nIt is to inform that if those ${nPilots} nos Pilots are used in other work then concern control shall not be responsible.`;
+
+    } else if (type === "overdue_loco") {
+        const loco = document.getElementById("od_loco")?.value || "---";
+        const trn = document.getElementById("od_train")?.value || "---";
+        const sch = document.getElementById("od_sch")?.value || "---";
+        const due = document.getElementById("od_due")?.value || "---";
+        const dest = document.getElementById("od_dest")?.value || "---";
+
+        bodyInput.value = `Loco No: ${loco} working Tr: ${trn} is overdue for ${sch} inspection since ${due}. In view of operational exigency, permission is granted to work the train up to ${dest} with strict loco health check.`;
+    }
+
+    updateMemoPreview();
+}
+
+// 3. Generate HTML for Filled Memo (Clean, Simple, Top Header, Increased Font Size, No FROM at top)
+function generateMemoHtml(mode = '4up') {
+    const toVal = document.getElementById("memoTo")?.value || "All Concerned";
+    const dateVal = document.getElementById("memoDate")?.value || "";
+    const timeVal = document.getElementById("memoTime")?.value || "";
+    const subjVal = document.getElementById("memoSubject")?.value || "";
+    const bodyVal = document.getElementById("memoBodyText")?.value || "";
+    const instructVal = document.getElementById("memoInstructions")?.value || "";
+    const issuerDesig = document.getElementById("memoIssuerDesig")?.value || "PCNL / HWH";
+    const copyToVal = document.getElementById("memoCopyTo")?.value || "";
+
+    const isSlip = mode !== '1up';
+
+    let dateDisplay = dateVal;
+    if (dateVal) {
+        const parts = dateVal.split("-");
+        if (parts.length === 3) dateDisplay = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+
+    let instructionsHtml = "";
+    if (instructVal.trim()) {
+        const instrFontSize = mode === '3up' ? '0.74rem' : (mode === '2up' ? '0.86rem' : (mode === '4up' ? '0.76rem' : '0.94rem'));
+        instructionsHtml = `
+            <div style="margin-top: 4px; font-weight: bold; font-size: ${instrFontSize};">
+                Special Instructions:
+            </div>
+            <div style="white-space: pre-wrap; font-size: ${instrFontSize}; margin-top: 1px;">${escapeHtml(instructVal)}</div>
+        `;
+    }
+
+    let copyToHtml = "";
+    if (copyToVal.trim()) {
+        const copyFontSize = mode === '3up' ? '0.72rem' : (mode === '2up' ? '0.84rem' : (mode === '4up' ? '0.74rem' : '0.88rem'));
+        copyToHtml = `
+            <div class="memo-copyto" style="font-size: ${copyFontSize};">
+                <strong>C/-</strong> ${escapeHtml(copyToVal)}
+            </div>
+        `;
+    }
+
+    // Scissors marker tag for cut slips
+    const scissorsTag = isSlip ? '<span class="cut-scissors-tag"><i class="bi bi-scissors me-1"></i>Cut Slip</span>' : '';
+
+    return `
+        ${scissorsTag}
+        <div class="memo-routing-bar">
+            <div class="memo-to-box">
+                <strong>TO:</strong> <span style="font-weight: bold;">${escapeHtml(toVal)}</span>
+            </div>
+            <div class="memo-date-box">
+                <strong>DATE:</strong> ${escapeHtml(dateDisplay)} &nbsp; <strong>TIME:</strong> ${escapeHtml(timeVal ? timeVal + ' HRS' : '')}
+            </div>
+        </div>
+
+        ${subjVal.trim() ? `
+            <div class="memo-subject-line">
+                <strong>Sub:</strong> <span>${escapeHtml(subjVal)}</span>
+            </div>
+        ` : ''}
+
+        <div class="memo-body-content">${escapeHtml(bodyVal)}</div>
+
+        ${instructionsHtml}
+
+        <div class="memo-signoff" style="margin-top: auto; padding-top: ${mode === '1up' ? '30px' : (mode === '3up' ? '10px' : '18px')};">
+            <div style="text-align: right; font-weight: bold; font-size: ${mode === '3up' ? '0.88rem' : (mode === '1up' ? '1.18rem' : (mode === '2up' ? '1.10rem' : '1.02rem'))};">
+                ${escapeHtml(issuerDesig)}
+            </div>
+        </div>
+
+        ${copyToHtml}
+    `;
+}
+
+// 4. Generate HTML for Blank Ruled Proforma (For Pen / Manual Handwriting, No FROM at top)
+function generateBlankProformaHtml(mode = '4up') {
+    const isSlip = mode !== '1up';
+    const scissorsTag = isSlip ? '<span class="cut-scissors-tag"><i class="bi bi-scissors me-1"></i>Cut Slip</span>' : '';
+
+    // Calibrated number of ruled lines for pen writing
+    let numLines = 8;
+    if (mode === '1up') numLines = 20;
+    else if (mode === '2up') numLines = 11;
+    else if (mode === '3up') numLines = 5;
+    else if (mode === '4up') numLines = 8;
+
+    let ruledLinesHtml = '';
+    for (let i = 0; i < numLines; i++) {
+        ruledLinesHtml += '<div class="memo-ruled-line"></div>';
+    }
+
+    return `
+        ${scissorsTag}
+        <div class="memo-routing-bar">
+            <div class="memo-to-box">
+                <strong>TO:</strong> <span class="memo-dotted-blank" style="width: 72%;"></span>
+            </div>
+            <div class="memo-date-box">
+                <strong>DATE:</strong> <span class="memo-dotted-blank" style="width: 55px;"></span> &nbsp; <strong>TIME:</strong> <span class="memo-dotted-blank" style="width: 45px;"></span>
+            </div>
+        </div>
+
+        <div class="memo-subject-line" style="border-bottom: 1px dotted #64748b;">
+            <strong>Sub:</strong> <span class="memo-dotted-blank" style="width: 86%;"></span>
+        </div>
+
+        <div style="margin-top: 6px; margin-bottom: 6px;">
+            ${ruledLinesHtml}
+        </div>
+
+        <div class="memo-signoff" style="margin-top: auto; padding-top: ${mode === '1up' ? '35px' : (mode === '3up' ? '12px' : '18px')};">
+            <div style="text-align: right; font-weight: bold; font-size: ${mode === '3up' ? '0.88rem' : (mode === '1up' ? '1.18rem' : (mode === '2up' ? '1.10rem' : '1.02rem'))};">
+                PCNL / HWH
+            </div>
+        </div>
+    `;
+}
+
+// 5. Live Preview Synchronizer with Individual Slip States
+function updateMemoPreview() {
+    // 1-Up
+    const singleContainer = document.getElementById("singleMemoPreview");
+    if (singleContainer) {
+        const isBlank = slipStates['1up'][0] === 'blank';
+        singleContainer.innerHTML = isBlank ? generateBlankProformaHtml('1up') : generateMemoHtml('1up');
+        updateBadgeLabel('1up', 0, isBlank);
+    }
+
+    // 2-Up
+    const s2_1 = document.getElementById("slip2_1");
+    const s2_2 = document.getElementById("slip2_2");
+    if (s2_1) {
+        const isB = slipStates['2up'][0] === 'blank';
+        s2_1.innerHTML = isB ? generateBlankProformaHtml('2up') : generateMemoHtml('2up');
+        updateBadgeLabel('2up', 0, isB);
+    }
+    if (s2_2) {
+        const isB = slipStates['2up'][1] === 'blank';
+        s2_2.innerHTML = isB ? generateBlankProformaHtml('2up') : generateMemoHtml('2up');
+        updateBadgeLabel('2up', 1, isB);
+    }
+
+    // 3-Up
+    for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById(`slip3_${i}`);
+        if (el) {
+            const isB = slipStates['3up'][i - 1] === 'blank';
+            el.innerHTML = isB ? generateBlankProformaHtml('3up') : generateMemoHtml('3up');
+            updateBadgeLabel('3up', i - 1, isB);
+        }
+    }
+
+    // 4-Up
+    for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`slip${i}`);
+        if (el) {
+            const isB = slipStates['4up'][i - 1] === 'blank';
+            el.innerHTML = isB ? generateBlankProformaHtml('4up') : generateMemoHtml('4up');
+            updateBadgeLabel('4up', i - 1, isB);
+        }
+    }
+}
+
+function updateBadgeLabel(mode, index, isBlank) {
+    const badge = document.getElementById(`badge_${mode}_${index}`);
+    if (badge) {
+        if (isBlank) {
+            badge.innerHTML = `<i class="bi bi-pencil-square me-1 text-warning"></i><span class="text-warning fw-bold">Blank Pen Proforma</span>`;
+        } else {
+            badge.innerHTML = `<i class="bi bi-file-text me-1 text-success"></i><span class="text-success fw-bold">Filled Memo</span>`;
+        }
+    }
+}
+
+// Toggle individual slip state: 'filled' <-> 'blank'
+function toggleSingleSlipState(mode, index) {
+    slipStates[mode][index] = (slipStates[mode][index] === 'filled') ? 'blank' : 'filled';
+    updateMemoPreview();
+    showMemoToast(`Slip ${index + 1} switched to: ${slipStates[mode][index] === 'blank' ? 'Blank Pen Proforma' : 'Filled Memo'}`);
+}
+
+// Preset Fill Modes: 'all_filled', 'mixed', 'all_blank'
+function setSlipFillPreset(preset) {
+    activeFillPreset = preset;
+
+    const bAll = document.getElementById("btnPresetAllFilled");
+    const bMixed = document.getElementById("btnPresetMixed");
+    const bBlank = document.getElementById("btnPresetAllBlank");
+    bAll.classList.remove("active", "btn-primary");
+    bMixed.classList.remove("active", "btn-primary");
+    bBlank.classList.remove("active", "btn-primary");
+    bAll.classList.add("btn-outline-dark");
+    bMixed.classList.add("btn-outline-dark");
+    bBlank.classList.add("btn-outline-dark");
+
+    if (preset === 'all_filled') {
+        bAll.classList.add("active", "btn-primary");
+        bAll.classList.remove("btn-outline-dark");
+        slipStates['1up'] = ['filled'];
+        slipStates['2up'] = ['filled', 'filled'];
+        slipStates['3up'] = ['filled', 'filled', 'filled'];
+        slipStates['4up'] = ['filled', 'filled', 'filled', 'filled'];
+        showMemoToast("All slips set to Filled Memo.");
+
+    } else if (preset === 'all_blank') {
+        bBlank.classList.add("active", "btn-primary");
+        bBlank.classList.remove("btn-outline-dark");
+        slipStates['1up'] = ['blank'];
+        slipStates['2up'] = ['blank', 'blank'];
+        slipStates['3up'] = ['blank', 'blank', 'blank'];
+        slipStates['4up'] = ['blank', 'blank', 'blank', 'blank'];
+        showMemoToast("All slips set to Blank Manual Pen Proformas.");
+
+    } else { // 'mixed'
+        bMixed.classList.add("active", "btn-primary");
+        bMixed.classList.remove("btn-outline-dark");
+        slipStates['1up'] = ['filled'];
+        slipStates['2up'] = ['filled', 'blank']; // Top filled, bottom blank
+        slipStates['3up'] = ['filled', 'filled', 'blank']; // Top 2 filled, bottom blank
+        slipStates['4up'] = ['filled', 'filled', 'blank', 'blank']; // Top 2 filled, bottom 2 blank
+        showMemoToast("Top Slips set to Filled, Bottom Slips set to Blank Proformas!");
+    }
+
+    updateMemoPreview();
+}
+
+// Direct WYSIWYG Editing Handlers (synchronizes across sibling filled cut-slips)
+function handleSlipDirectEdit(el) {
+    const html = el.innerHTML;
+    for (let i = 2; i <= 4; i++) {
+        if (slipStates['4up'][i - 1] === 'filled') {
+            const slipEl = document.getElementById(`slip${i}`);
+            if (slipEl) slipEl.innerHTML = html;
+        }
+    }
+}
+
+function handleSlip2DirectEdit(el) {
+    if (slipStates['2up'][1] === 'filled') {
+        const s2_2 = document.getElementById("slip2_2");
+        if (s2_2) s2_2.innerHTML = el.innerHTML;
+    }
+}
+
+function handleSlip3DirectEdit(el) {
+    const html = el.innerHTML;
+    for (let i = 2; i <= 3; i++) {
+        if (slipStates['3up'][i - 1] === 'filled') {
+            const slipEl = document.getElementById(`slip3_${i}`);
+            if (slipEl) slipEl.innerHTML = html;
+        }
+    }
+}
+
+function handlePreviewDirectEdit(el) {
+    // 1-Up saved in DOM
+}
+
+// 6. Layout Mode Toggler (1-Up, 2-Up, 3-Up, 4-Up)
+function onLayoutModeChange() {
+    const mode = document.querySelector('input[name="printLayoutMode"]:checked')?.value || "4up";
+    activeLayoutMode = mode;
+
+    const box1Up = document.getElementById("layoutContainer1Up");
+    const box2Up = document.getElementById("layoutContainer2Up");
+    const box3Up = document.getElementById("layoutContainer3Up");
+    const box4Up = document.getElementById("layoutContainer4Up");
+    const badge = document.getElementById("activeModeBadge");
+
+    box1Up.classList.add("d-none");
+    box2Up.classList.add("d-none");
+    box3Up.classList.add("d-none");
+    box4Up.classList.add("d-none");
+
+    if (mode === "1up") {
+        box1Up.classList.remove("d-none");
+        if (badge) badge.textContent = "1 Full Page Memo";
+        showMemoToast("Switched to 1 Memo per Page (Full A4 Sheet).");
+    } else if (mode === "2up") {
+        box2Up.classList.remove("d-none");
+        if (badge) badge.textContent = "2 Slips per Page (Half A4)";
+        showMemoToast("Switched to 2 Cut-Slips per A4 Sheet (Top & Bottom halves).");
+    } else if (mode === "3up") {
+        box3Up.classList.remove("d-none");
+        if (badge) badge.textContent = "3 Slips per Page (1/3rd A4)";
+        showMemoToast("Switched to 3 Cut-Slips per A4 Sheet (3 Horizontal Strips).");
+    } else {
+        box4Up.classList.remove("d-none");
+        if (badge) badge.textContent = "4 Slips per Page (2x2 Grid)";
+        showMemoToast("Switched to 4 Cut-Slips per A4 Sheet (2x2 Grid).");
+    }
+
+    updateMemoPreview();
+}
+
+// 7. Action: Print / PDF
+function triggerPrintMemo() {
+    window.print();
+}
+
+// 8. Action: Snap / Screenshot as Image (html2canvas)
+function takeMemoSnap() {
+    let targetElement = document.getElementById("layoutContainer4Up");
+    if (activeLayoutMode === "1up") {
+        targetElement = document.getElementById("singleMemoPreview");
+    } else if (activeLayoutMode === "2up") {
+        targetElement = document.getElementById("layoutContainer2Up");
+    } else if (activeLayoutMode === "3up") {
+        targetElement = document.getElementById("layoutContainer3Up");
+    }
+
+    if (!targetElement) {
+        showMemoToast("Error: Preview element not found.");
+        return;
+    }
+
+    showMemoToast("Generating snapshot image...");
+    const snapBtn = document.getElementById("snapBtn");
+    if (snapBtn) snapBtn.disabled = true;
+
+    html2canvas(targetElement, {
+        scale: 2.5,
+        useCORS: true,
+        backgroundColor: "#ffffff"
+    }).then(canvas => {
+        const link = document.createElement("a");
+        const now = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        const dateCode = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+        link.download = `PCNL_HWH_MEMO_${dateCode}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        showMemoToast("Snapshot image saved to Downloads!");
+        if (snapBtn) snapBtn.disabled = false;
+    }).catch(err => {
+        console.error("Snap generation failed:", err);
+        showMemoToast("Snapshot failed: " + err.message);
+        if (snapBtn) snapBtn.disabled = false;
+    });
+}
+
+// 9. Action: Word / Docs (.doc) Download
+function downloadMemoWord() {
+    let targetElement = document.getElementById("layoutContainer4Up");
+    if (activeLayoutMode === "1up") {
+        targetElement = document.getElementById("singleMemoPreview");
+    } else if (activeLayoutMode === "2up") {
+        targetElement = document.getElementById("layoutContainer2Up");
+    } else if (activeLayoutMode === "3up") {
+        targetElement = document.getElementById("layoutContainer3Up");
+    }
+
+    const memoHtml = targetElement?.innerHTML || "";
+    const now = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    const dateCode = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+
+    const content = `
+        <!DOCTYPE html>
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset="utf-8">
+            <title>PCNL_HWH_MEMO_${dateCode}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; font-size: 11pt; color: #000000; line-height: 1.4; }
+                .memo-routing-bar { display: flex; justify-content: space-between; border: none; margin-bottom: 8pt; }
+                .memo-subject-line { border-bottom: 1px dashed #999; padding: 2pt 0; margin-bottom: 6pt; }
+                .memo-body-content { text-align: justify; margin-bottom: 8pt; }
+                .memo-ruled-line { border-bottom: 1pt dotted #000; height: 18pt; margin: 4pt 0; }
+                .memo-signoff { margin-top: 24pt; text-align: right; }
+            </style>
+        </head>
+        <body>
+            ${memoHtml}
+        </body>
+        </html>
+    `;
+
+    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `PCNL_HWH_MEMO_${dateCode}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showMemoToast("Word document (.doc) downloaded!");
+}
+
+// 10. Action: Copy WhatsApp Formatted Message (Clean layout without FROM at top)
+function copyMemoWhatsApp() {
+    const toVal = document.getElementById("memoTo")?.value || "All Concerned";
+    const dateVal = document.getElementById("memoDate")?.value || "";
+    const timeVal = document.getElementById("memoTime")?.value || "";
+    const subjVal = document.getElementById("memoSubject")?.value || "";
+    const bodyVal = document.getElementById("memoBodyText")?.value || "";
+    const instructVal = document.getElementById("memoInstructions")?.value || "";
+    const issuerDesig = document.getElementById("memoIssuerDesig")?.value || "PCNL / HWH";
+    const copyToVal = document.getElementById("memoCopyTo")?.value || "";
+
+    let lines = [];
+    lines.push(`*TO:* ${toVal}`);
+    lines.push(`*DATE:* ${dateVal} ${timeVal ? timeVal + ' HRS' : ''}`);
+    if (subjVal.trim()) {
+        lines.push(`*SUB:* ${subjVal}`);
+    }
+    lines.push(`----------------------------------------`);
+    if (bodyVal) lines.push(bodyVal);
+    if (instructVal) {
+        lines.push(``);
+        lines.push(`*Special Instructions:*`);
+        lines.push(instructVal);
+    }
+    lines.push(``);
+    lines.push(`*${issuerDesig}*`);
+    if (copyToVal) lines.push(`*C/-* ${copyToVal}`);
+
+    const text = lines.join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+        showMemoToast("WhatsApp memo copied to clipboard!");
+    }).catch(() => {
+        showMemoToast("Failed to copy text.");
+    });
+}
+
+// Helpers: Load Template from Dropdown
+function loadSpecificTemplate(typeKey) {
+    const typeSelect = document.getElementById("memoTypeSelect");
+    if (typeSelect) {
+        typeSelect.value = typeKey;
+        onMemoTypeChange();
+    }
+    showMemoToast(`Loaded template: ${typeKey.replace(/_/g, ' ')}`);
+}
+
+function resetMemoForm() {
+    if (confirm("Reset memo form to default parameters?")) {
+        document.getElementById("memoForm")?.reset();
+        initDateTimeDefaults();
+        onMemoTypeChange();
+        showMemoToast("Memo form reset to defaults.");
+    }
+}
+
+function showMemoToast(msg) {
+    const toast = document.getElementById("memoToast");
+    const msgSpan = document.getElementById("memoToastMsg");
+    if (toast && msgSpan) {
+        msgSpan.textContent = msg;
+        toast.classList.remove("d-none");
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toast.classList.add("d-none");
+        }, 4000);
+    }
+}
+
+function hideMemoToast() {
+    const toast = document.getElementById("memoToast");
+    if (toast) toast.classList.add("d-none");
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}
+

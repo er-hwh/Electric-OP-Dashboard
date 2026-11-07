@@ -1,0 +1,603 @@
+﻿{% extends "control/base_control.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/css/long_hours_analysis.css">
+
+<div class="container-fluid lh-container">
+
+
+    <!-- UNIFIED CONTROL BAR (UPLOAD & FILTERS) -->
+    <div class="card lh-card mb-4 shadow-sm" style="background: #f8fafc;">
+        <div class="card-body p-2">
+            <!-- SECTION 1: DATA IMPORTS -->
+            <div class="row g-3 mb-2">
+                <div class="col-md-6">
+                    <form id="uploadForm" enctype="multipart/form-data" class="d-flex align-items-center gap-2 mb-0">
+                        <div class="flex-grow-1 lh-input-group p-2 border rounded-3 bg-white d-flex align-items-center">
+                            <i class="bi bi-cloud-arrow-up text-primary fs-5 px-2"></i>
+                            <div class="w-100">
+                                <label for="excelFile" class="text-muted fw-bold small d-block mb-0 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Long Hours Data</label>
+                                <input type="file" id="excelFile" accept=".xlsx,.xls" style="font-size: 0.8rem; border: none; outline: none; background: transparent; width: 100%; padding: 0;">
+                            </div>
+                        </div>
+                        <button type="submit" id="uploadBtn" class="btn btn-primary d-flex align-items-center justify-content-center shadow-sm" style="height: 48px; width: 48px; border-radius: 12px;" title="Import long-hours register">
+                            <i class="bi bi-cloud-upload fs-5"></i>
+                        </button>
+                    </form>
+                    <div id="uploadStatus" class="alert d-none py-1 px-2 mt-2 mb-0 small" role="alert" style="font-size: 0.75rem;"></div>
+                </div>
+                <div class="col-md-6">
+                    <form id="totalDutiesUploadForm" enctype="multipart/form-data" class="d-flex align-items-center gap-2 mb-0">
+                        <div class="flex-grow-1 lh-input-group p-2 border rounded-3 bg-white d-flex align-items-center">
+                            <i class="bi bi-calculator text-success fs-5 px-2"></i>
+                            <div class="w-100">
+                                <label for="totalDutiesFile" class="text-muted fw-bold small d-block mb-0 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Total Duties Data</label>
+                                <input type="file" id="totalDutiesFile" accept=".xlsx,.xls" style="font-size: 0.8rem; border: none; outline: none; background: transparent; width: 100%; padding: 0;">
+                            </div>
+                        </div>
+                        <button type="submit" id="totalDutiesUploadBtn" class="btn btn-success d-flex align-items-center justify-content-center shadow-sm" style="height: 48px; width: 48px; border-radius: 12px;" title="Import daily total duties">
+                            <i class="bi bi-cloud-upload fs-5"></i>
+                        </button>
+                    </form>
+                    <div id="totalDutiesUploadStatus" class="alert d-none py-1 px-2 mt-2 mb-0 small" role="alert" style="font-size: 0.75rem;"></div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: FILTERS & ACTIONS -->
+            <div class="row g-2 align-items-center mt-1 border-top pt-3">
+                <div class="col-xl-9 col-lg-12">
+                    <div class="row g-2">
+                        <div class="col-md-3 col-sm-6">
+                            <div class="lh-input-group p-2 border rounded-3 bg-white">
+                                <label for="fromDate" class="text-muted fw-bold small d-block mb-0 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">From Date</label>
+                                <input type="date" id="fromDate" style="font-size: 0.85rem; border: none; outline: none; background: transparent; width: 100%;">
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="lh-input-group p-2 border rounded-3 bg-white">
+                                <label for="toDate" class="text-muted fw-bold small d-block mb-0 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">To Date</label>
+                                <input type="date" id="toDate" style="font-size: 0.85rem; border: none; outline: none; background: transparent; width: 100%;">
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="lh-input-group p-2 border rounded-3 bg-white">
+                                <label for="filterCategory" class="text-muted fw-bold small d-block mb-0 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Category</label>
+                                <select id="filterCategory" style="font-size: 0.85rem; border: none; outline: none; background: transparent; width: 100%; height: 24px;">
+                                    <option value="">All Categories</option>
+                                    <option value="DIVISIONAL">Divisional</option>
+                                    <option value="HWH-OTH">HWH - Other Div</option>
+                                    <option value="OTH-HWH">Other Div - HWH</option>
+                                    <option value="OTH DIV">Other Division</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="lh-input-group p-2 border rounded-3 bg-white">
+                                <label for="filterSection" class="text-muted fw-bold small d-block mb-0 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Section</label>
+                                <select id="filterSection" style="font-size: 0.85rem; border: none; outline: none; background: transparent; width: 100%; height: 24px;">
+                                    <option value="">All Sections</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-12 d-flex justify-content-end gap-2 mt-xl-0 mt-3">
+                    <button type="button" id="syncDutyHoursBtn" class="btn btn-outline-success px-3 d-flex align-items-center justify-content-center shadow-sm" style="height: 48px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;" title="Sync with Duty Hours Database">
+                        <i class="bi bi-arrow-repeat me-1 fs-6"></i>Sync
+                    </button>
+                    <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" style="height: 48px; width: 48px; border-radius: 12px;" title="Toggle Advanced Filters">
+                        <i class="bi bi-sliders fs-5"></i>
+                    </button>
+                    <button type="button" id="resetFiltersBtn" class="btn btn-outline-danger px-3 d-flex align-items-center justify-content-center shadow-sm" style="height: 48px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">
+                        Reset
+                    </button>
+                    <button type="button" id="applyFiltersBtn" class="btn btn-primary px-4 d-flex align-items-center justify-content-center shadow-sm" style="height: 48px; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">
+                        Apply
+                    </button>
+                </div>
+            </div>
+            </ul>
+
+            <!-- ADVANCED COLLAPSIBLE FILTERS -->
+            <div class="collapse" id="advancedFilters">
+                <div class="row g-2 border-top pt-2 mt-2">
+                    <div class="col-md-4 col-sm-6">
+                        <div class="lh-input-group" style="padding: 6px 12px;">
+                            <label for="filterTrain" style="font-size: 0.72rem;">Train Number</label>
+                            <input type="text" id="filterTrain" placeholder="e.g. PSPM" style="height: 22px;">
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6">
+                        <div class="lh-input-group" style="padding: 6px 12px;">
+                            <label for="filterLoco" style="font-size: 0.72rem;">Loco Number</label>
+                            <input type="text" id="filterLoco" placeholder="e.g. 38815" style="height: 22px;">
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6">
+                        <div class="lh-input-group" style="padding: 6px 12px;">
+                            <label for="filterCrew" style="font-size: 0.72rem;">Crew ID / Name</label>
+                            <input type="text" id="filterCrew" placeholder="e.g. RPH1074" style="height: 22px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- DYNAMIC METRICS SUMMARY BAR -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 rounded-3 p-3 text-center d-flex flex-column justify-content-center" style="background: #f8fafc; border: 1px solid #cbd5e1 !important; height: 100px;">
+                <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Total Duties</div>
+                <h3 id="metricTotalDuties" class="fw-bold text-dark mb-0 mt-1" style="font-size: 1.5rem;">0</h3>
+                <div id="totalDutySourceText" class="text-muted small" style="font-size: 0.62rem; margin-top: 1px; line-height: 1.1;">Manual fallback</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 rounded-3 p-3 text-center d-flex flex-column justify-content-center" style="background: #eff6ff; border: 1px solid #bfdbfe !important; height: 100px;">
+                <div class="text-primary small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Total Long Hours (>12h)</div>
+                <h3 id="metricTotalLH" class="fw-bold text-primary mb-0 mt-1" style="font-size: 1.5rem;">0</h3>
+                <div class="text-muted small" style="font-size: 0.62rem; margin-top: 1px; line-height: 1.1;">All cases > 12 Hours</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 rounded-3 p-3 text-center d-flex flex-column justify-content-center" style="background: #fffbeb; border: 1px solid #fde68a !important; height: 100px;">
+                <div class="text-warning small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">12 - 14 Hours Cases</div>
+                <h3 id="metric12to14Cases" class="fw-bold text-warning mb-0 mt-1" style="font-size: 1.5rem;">0</h3>
+                <div id="pct12to14Text" class="text-muted small" style="font-size: 0.62rem; margin-top: 1px; line-height: 1.1;">0.00% of duties</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 rounded-3 p-3 text-center d-flex flex-column justify-content-center" style="background: #fff5f5; border: 1px solid #feb2b2 !important; height: 100px;">
+                <div class="text-danger small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">> 14 Hours Cases</div>
+                <h3 id="metricGt14Cases" class="fw-bold text-danger mb-0 mt-1" style="font-size: 1.5rem;">0</h3>
+                <div id="pctGt14Text" class="text-muted small" style="font-size: 0.62rem; margin-top: 1px; line-height: 1.1;">0.00% of duties</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MAIN DISPLAY BLOCK: SECTION-WISE SUMMARY (> 14 HOURS) -->
+    <div class="card lh-card">
+        <div class="lh-card-header">
+            <span class="lh-card-title text-dark">
+                <i class="bi bi-exclamation-triangle-fill text-danger"></i>Section-Wise Summary (&gt; 14 Hours Duty)
+            </span>
+            <button type="button" id="exportSummaryGt14Btn" class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i>Download Excel
+            </button>
+        </div>
+        <div class="lh-card-body p-0">
+            <div class="table-responsive">
+                <table class="table lh-table-hover align-middle mb-0" id="summaryTableGt14">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>DIVISIONAL / OTHER DIVISION</th>
+                            <th>SECTION</th>
+                            <th class="text-center" style="width: 120px;">No of case</th>
+                            <th class="text-center" style="width: 120px;">% of total duties</th>
+                            <th class="text-center">HWH div</th>
+                            <th class="text-center">Other div</th>
+                            <th class="text-center text-success">Total duty</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTableBodyGt14">
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                Apply filters to load summary data.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DISPLAY BLOCK: SECTION-WISE SUMMARY (12 TO 14 HOURS) -->
+    <div class="card lh-card">
+        <div class="lh-card-header">
+            <span class="lh-card-title text-dark">
+                <i class="bi bi-clock-fill text-warning"></i>Section-Wise Summary (12 to 14 Hours Duty)
+            </span>
+            <button type="button" id="exportSummary12to14Btn" class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i>Download Excel
+            </button>
+        </div>
+        <div class="lh-card-body p-0">
+            <div class="table-responsive">
+                <table class="table lh-table-hover align-middle mb-0" id="summaryTable12to14">
+                    <thead class="table-success text-dark">
+                        <tr>
+                            <th>DIVISIONAL / OTHER DIVISION</th>
+                            <th>SECTION</th>
+                            <th class="text-center" style="width: 120px;">No of case</th>
+                            <th class="text-center" style="width: 120px;">% of total duties</th>
+                            <th class="text-center">HWH div</th>
+                            <th class="text-center">Other div</th>
+                            <th class="text-center text-success">Total duty</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTableBody12to14">
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                Apply filters to load summary data.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DISPLAY BLOCK: DETAILED LONG HOURS ANALYSIS -->
+    <div class="card lh-card">
+        <div class="lh-card-header">
+            <span class="lh-card-title text-dark">
+                <i class="bi bi-diagram-3-fill text-info"></i>Detailed Long Hours Analysis
+            </span>
+        </div>
+        <div class="lh-card-body p-0">
+            <ul class="nav nav-tabs px-3 pt-3" id="detailedAnalysisTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="detailedSummaryTab" data-bs-toggle="tab" data-bs-target="#detailedSummaryPane" type="button" role="tab">
+                        Section Summary
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="detailedScenariosTab" data-bs-toggle="tab" data-bs-target="#detailedScenariosPane" type="button" role="tab">
+                        Scenario Analysis
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="detailedChartsTab" data-bs-toggle="tab" data-bs-target="#detailedChartsPane" type="button" role="tab">
+                        <i class="bi bi-bar-chart-line-fill me-1"></i>Visual Charts
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="detailedSummaryPane" role="tabpanel" aria-labelledby="detailedSummaryTab">
+                    <div class="table-responsive border-bottom">
+                        <table class="table lh-table-hover align-middle mb-0" id="detailedOverviewTable">
+                            <thead class="table-info text-dark">
+                                <tr>
+                                    <th>DIVISIONAL / OTHER DIVISION</th>
+                                    <th>SECTION</th>
+                                    <th class="text-center">No of case</th>
+                                    <th class="text-center">Avg Total Duty</th>
+                                    <th class="text-center">Avg HWH Div</th>
+                                    <th class="text-center">Avg Other Div</th>
+                                    <th class="text-center">Sign On-Dep</th>
+                                    <th class="text-center">Wheel Movement</th>
+                                    <th class="text-center">Arr-Sign Off</th>
+                                    <th class="text-center">Avg Detn I/C</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailedOverviewBody">
+                                <tr>
+                                    <td colspan="10" class="text-center py-4 text-muted">
+                                        Apply filters to load detailed analysis.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="detailedScenariosPane" role="tabpanel" aria-labelledby="detailedScenariosTab">
+                    <div id="detailedSectionCards" class="lh-advanced-section-wrap">
+                        <div class="text-center py-4 text-muted">Apply filters to load section scenario analysis.</div>
+                    </div>
+                </div>
+                <div class="tab-pane fade p-3 bg-light-subtle" id="detailedChartsPane" role="tabpanel" aria-labelledby="detailedChartsTab">
+                    <div class="row g-3">
+                        <!-- Chart 1: Top Sections Cases -->
+                        <div class="col-md-6">
+                            <div class="card border shadow-sm rounded-3">
+                                <div class="card-header bg-white py-2">
+                                    <span class="fw-bold text-secondary text-uppercase small" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                        <i class="bi bi-bar-chart-fill text-primary me-1"></i>Top Sections by LH Cases (>12 Hrs)
+                                    </span>
+                                </div>
+                                <div class="card-body" style="height: 280px; position: relative;">
+                                    <canvas id="topSectionsLhChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Chart 2: Category Breakdown -->
+                        <div class="col-md-6">
+                            <div class="card border shadow-sm rounded-3">
+                                <div class="card-header bg-white py-2">
+                                    <span class="fw-bold text-secondary text-uppercase small" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                        <i class="bi bi-pie-chart-fill text-success me-1"></i>Duty Category Share
+                                    </span>
+                                </div>
+                                <div class="card-body" style="height: 280px; position: relative;">
+                                    <canvas id="categoryLhChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Chart 3: Avg Hours Breakdown by Section -->
+                        <div class="col-md-6">
+                            <div class="card border shadow-sm rounded-3">
+                                <div class="card-header bg-white py-2">
+                                    <span class="fw-bold text-secondary text-uppercase small" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                        <i class="bi bi-activity text-danger me-1"></i>Average Hours Breakdown per Section (Hours)
+                                    </span>
+                                </div>
+                                <div class="card-body" style="height: 320px; position: relative;">
+                                    <canvas id="sectionAvgHoursChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Chart 4: Sign-On Detention and Term Detn -->
+                        <div class="col-md-6">
+                            <div class="card border shadow-sm rounded-3">
+                                <div class="card-header bg-white py-2">
+                                    <span class="fw-bold text-secondary text-uppercase small" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                        <i class="bi bi-hourglass text-info me-1"></i>Sign On - Departure &amp; Arr - Sign Off Average
+                                    </span>
+                                </div>
+                                <div class="card-body" style="height: 320px; position: relative;">
+                                    <canvas id="sectionDetnBreakdownChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DISPLAY BLOCK: SIGN-ON TIME SLOT ANALYSIS -->
+    <div class="row g-3 mb-4">
+        <!-- Table Column -->
+        <div class="col-xl-7 col-lg-12">
+            <div class="card lh-card h-100 mb-0">
+                <div class="lh-card-header">
+                    <span class="lh-card-title text-dark">
+                        <i class="bi bi-clock-history text-primary"></i>Sign-On Time Slot Analysis (Long Hours Distribution)
+                    </span>
+                </div>
+                <div class="lh-card-body p-0">
+                    <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+                        <table class="table lh-table-hover align-middle mb-0" id="slotsTable">
+                            <thead class="table-primary text-dark" style="position: sticky; top: 0; z-index: 2;">
+                                <tr>
+                                    <th>DIVISIONAL / OTHER DIVISION</th>
+                                    <th>SECTION</th>
+                                    <th class="text-center" style="width: 100px;">Total LH Cases</th>
+                                    <th class="text-center">00:00 - 08:00 Slot</th>
+                                    <th class="text-center">08:00 - 16:00 Slot</th>
+                                    <th class="text-center">16:00 - 24:00 Slot</th>
+                                </tr>
+                            </thead>
+                            <tbody id="slotsTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        Apply filters to load time slot summary.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Column -->
+        <div class="col-xl-5 col-lg-12">
+            <div class="row g-3 h-100">
+                <!-- Doughnut Chart Card -->
+                <div class="col-12">
+                    <div class="card lh-card shadow-sm mb-0">
+                        <div class="lh-card-header py-2" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                            <span class="fw-bold small text-uppercase text-secondary" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                <i class="bi bi-pie-chart-fill text-info me-1"></i>Overall Slot Distribution
+                            </span>
+                        </div>
+                        <div class="lh-card-body d-flex align-items-center justify-content-center p-3" style="min-height: 230px;">
+                            <div style="width: 100%; max-width: 280px; position: relative; height: 180px;">
+                                <canvas id="overallSlotsDoughnutChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Stacked Bar Chart Card -->
+                <div class="col-12">
+                    <div class="card lh-card shadow-sm mb-0">
+                        <div class="lh-card-header py-2" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                            <span class="fw-bold small text-uppercase text-secondary" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                <i class="bi bi-bar-chart-steps text-primary me-1"></i>Section Slot Comparison (Top 8 Sections)
+                            </span>
+                        </div>
+                        <div class="lh-card-body p-3" style="min-height: 250px;">
+                            <div style="width: 100%; position: relative; height: 210px;">
+                                <canvas id="sectionSlotsBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INDIVIDUAL RECORDS TABLE -->
+    <div class="card lh-card">
+        <div class="lh-card-header">
+            <span class="lh-card-title text-dark">
+                <i class="bi bi-database-fill text-primary"></i>Individual Long Hours Register
+            </span>
+            <button type="button" id="btnOpenDownloadModal" class="btn btn-success btn-sm">
+                <i class="bi bi-download me-1"></i>Download Register
+            </button>
+        </div>
+        <div class="lh-card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover align-middle" id="recordsTable" style="width:100%; font-size: 0.88rem;">
+                    <thead>
+                        <tr class="table-light text-center align-middle" style="font-size: 0.8rem;">
+                            <th>Sl No</th>
+                            <th>CREW</th>
+                            <th>TRAIN NO & LOCO NO</th>
+                            <th>SIGN ON</th>
+                            <th>TOC & DEP</th>
+                            <th>PDD or SIGN ON-DEP<br>(SUB PRE CTO & POST CTO)</th>
+                            <th>WHEEL MOVEMENT</th>
+                            <th>INTERCHANGE</th>
+                            <th>ARR & CMO</th>
+                            <th>PAD OR ARR - SIGN OFF<br>(SUB PRE CMO & POST CMO)</th>
+                            <th>SIGN OFF</th>
+                            <th>TOTAL DUTY</th>
+                            <th>LH SECTION</th>
+                            <th>REMARKS</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- COLUMN SELECTOR MODAL FOR CUSTOM EXCEL EXPORTS -->
+<div class="modal fade" id="colModal" tabindex="-1" aria-labelledby="colModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-success text-white py-3">
+                <h5 class="modal-title fw-bold" id="colModalLabel">
+                    <i class="bi bi-check2-square me-2"></i>Select Columns for Excel Export
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-3">
+                    Choose which data fields to include in your customized Excel spreadsheet export. Checked columns will be exported in order.
+                </p>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="selectAllCols" checked>
+                        <label class="form-check-label fw-bold text-dark" for="selectAllCols">Select / Deselect All</label>
+                    </div>
+                </div>
+
+                <div class="column-grid mb-4">
+                    <!-- Column selections -->
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="CREW" checked><span>CREW</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="TRAIN NO & LOCO NO" checked><span>TRAIN NO & LOCO NO</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="SIGN ON" checked><span>SIGN ON</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="TOC & DEP" checked><span>TOC & DEP</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="PDD or SIGN ON-DEP (SUB PRE CTO & POST CTO)" checked><span>PDD or SIGN ON-DEP</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="WHEEL MOVEMENT" checked><span>WHEEL MOVEMENT</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="INTERCHANGE" checked><span>INTERCHANGE</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="ARR & CMO" checked><span>ARR & CMO</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="PAD OR ARR - SIGN OFF(SUB PRE CMO & POST CMO)" checked><span>PAD OR ARR - SIGN OFF</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="SIGN OFF" checked><span>SIGN OFF</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="TOTAL DUTY" checked><span>TOTAL DUTY</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="LH SECTION" checked><span>LH SECTION</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="REMARKS" checked><span>REMARKS</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="WORKING"><span>WORKING</span></label>
+                    <label class="column-item"><input type="checkbox" class="col-checkbox" value="ALL POSTED ROUTES (AFTER WORKING)"><span>ALL POSTED ROUTES</span></label>
+                </div>
+                
+                <div class="border-top pt-3">
+                    <h6 class="fw-bold text-dark mb-2">Select Export Scope:</h6>
+                    <div class="form-check form-check-inline me-3">
+                        <input class="form-check-input" type="radio" name="downloadScope" id="scopeFiltered" value="filtered" checked>
+                        <label class="form-check-label" for="scopeFiltered">Current Filtered View Only</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="downloadScope" id="scopeAll" value="all">
+                        <label class="form-check-label" for="scopeAll">Full Database Result Set</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success px-4 fw-bold" id="btnConfirmDownload">
+                    <i class="bi bi-download me-1"></i>Download Excel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REMARKS VIEW MODAL -->
+<div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold" id="remarksModalLabel">
+                    <i class="bi bi-chat-left-text-fill me-2"></i>Detailed Remarks
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="background-color: #fdfdfd;">
+                <div class="p-3 border rounded bg-light" style="max-height: 400px; overflow-y: auto;">
+                    <pre id="remarksModalContent" class="mb-0 text-dark" style="white-space: pre-wrap; font-family: system-ui, -apple-system, sans-serif; font-size: 0.95rem; line-height: 1.6;"></pre>
+                </div>
+            </div>
+            <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION INDIVIDUAL RECORDS MODAL -->
+<div class="modal fade" id="sectionRecordsModal" tabindex="-1" aria-labelledby="sectionRecordsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-info text-dark py-3">
+                <h5 class="modal-title fw-bold" id="sectionRecordsModalLabel">
+                    <i class="bi bi-list-ul me-2"></i>Section Individual Records
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="sectionRecordsSummary" class="px-3 py-2 bg-light border-bottom small fw-semibold text-muted"></div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover align-middle mb-0 lh-section-records-table">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th>Sl</th>
+                                <th>Crew</th>
+                                <th>Train / Loco</th>
+                                <th>Sign ON</th>
+                                <th>TOC / DEP</th>
+                                <th>PDD</th>
+                                <th>Wheel</th>
+                                <th>I/C Detn</th>
+                                <th>ARR / CMO</th>
+                                <th>PAD</th>
+                                <th>Sign OFF</th>
+                                <th>Total Duty</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sectionRecordsTableBody">
+                            <tr>
+                                <td colspan="13" class="text-center py-4 text-muted">Click a section to load records.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- DataTables JS from parent base -->
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/static/js/long_hours_analysis.js?v=2.6"></script>
+
+{% endblock %}
+

@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}About Us & Organization Hierarchy | Electric Operation Department{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row g-4">
+        <div class="col-lg-12">
+            <div class="rail-card p-4">
+                <div class="border-bottom pb-3 mb-4">
+                    <h3 class="fw-bold text-primary mb-1">
+                        <i class="fa-solid fa-sitemap me-2 text-warning"></i> Organization Structure & Operational Hierarchy
+                    </h3>
+                    <p class="text-muted mb-0">Electric Operation Department &bull; Howrah Division &bull; Eastern Railway</p>
+                </div>
+
+                <!-- HIERARCHY TREE VISUAL -->
+                <div class="bg-light p-4 rounded border mb-4">
+                    <div class="text-center mb-4">
+                        <div class="d-inline-block p-3 rounded shadow-sm text-white" style="background: linear-gradient(135deg, #002244, #003366); border: 3px solid var(--ir-gold); min-width: 320px;">
+                            <i class="fa-solid fa-crown fa-lg text-warning me-2"></i>
+                            <h5 class="fw-bold mb-0">Sr. DEE(OP)/HWH</h5>
+                            <small class="text-warning">Head of the Hierarchy &bull; Senior Divisional Electrical Engineer (OP)</small>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-center text-center g-3 mb-4">
+                        <div class="col-md-5">
+                            <div class="p-3 bg-white rounded border shadow-sm border-top border-4 border-primary">
+                                <h6 class="fw-bold text-primary mb-0">1. AEE(OP)/HWH</h6>
+                                <small class="text-muted">Assistant Electrical Engineer (Operations)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="p-3 bg-white rounded border shadow-sm border-top border-4 border-primary">
+                                <h6 class="fw-bold text-primary mb-0">2. AME(P)/HWH</h6>
+                                <small class="text-muted">Assistant Mechanical Engineer (Power)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <div class="d-inline-block px-4 py-2 bg-secondary text-white rounded-pill fw-bold">
+                            <i class="fa-solid fa-arrows-down-to-people me-2"></i> 11 Running Lobbies & Chief Crew Controllers (CCC)
+                        </div>
+                    </div>
+
+                    <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-2 text-center mb-4">
+                        {% for l in lobbies %}
+                            <div class="col">
+                                <div class="p-2 bg-white rounded border small">
+                                    <strong class="text-primary">{{ l.code }}</strong><br>
+                                    <span class="text-muted">{{ l.name }}</span><br>
+                                    <span class="badge bg-light text-dark border">{{ l.ccc_name.split('(')[0] }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <div class="d-inline-block px-4 py-2 bg-warning text-dark rounded-pill fw-bold">
+                            <i class="fa-solid fa-user-tie me-2"></i> Chief Loco Inspectors (CLI)
+                        </div>
+                        <p class="small text-muted mt-1">Each CLI is assigned a nominated squad of running staff for footplate monitoring, counselling, and safety grading.</p>
+                    </div>
+
+                    <!-- RUNNING STAFF DESIGNATIONS -->
+                    <div class="bg-white p-3 rounded border">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-users-line text-success me-2"></i> Running Staff Cadres Under Electric Operation Department
+                        </h6>
+                        <div class="row g-2 text-center">
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="badge bg-danger mb-1">LPM</span>
+                                    <div class="fw-bold small">Loco Pilot Mail / Express</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="badge bg-primary mb-1">LPP</span>
+                                    <div class="fw-bold small">Loco Pilot Passenger</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="badge bg-warning text-dark mb-1">MMAN</span>
+                                    <div class="fw-bold small">Motorman (EMU/MEMU)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="badge bg-success mb-1">LPG</span>
+                                    <div class="fw-bold small">Loco Pilot Goods</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="badge bg-secondary mb-1">LPS-II</span>
+                                    <div class="fw-bold small">Sr. Loco Pilot Shunter</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="badge bg-secondary mb-1">LPS-I</span>
+                                    <div class="fw-bold small">Loco Pilot Shunter</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="badge bg-info text-dark mb-1">Sr. ALP</span>
+                                    <div class="fw-bold small">Senior Assistant Loco Pilot</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <span class="badge bg-dark mb-1">ALP</span>
+                                    <div class="fw-bold small">Assistant Loco Pilot</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MANDATORY TRAINING SCHEDULES -->
+                <div class="mt-4">
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-graduation-cap text-primary me-2"></i> Mandatory Training & Refresher Courses
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle small">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Training Category</th>
+                                    <th>Target Staff</th>
+                                    <th>Periodicity / Timing</th>
+                                    <th>Institute</th>
+                                    <th>Significance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold">Initial Induction (DSL/ELEC/GR&SR)</td>
+                                    <td>Newly Recruited ALPs</td>
+                                    <td>Initial Joining</td>
+                                    <td>ZRTI Bhuli / ELTC / DTC</td>
+                                    <td>Basic train working rules, locomotive technical systems, and safety ethics.</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Periodical Refresher Training</td>
+                                    <td>All Running Staff (LP/ALP/MMAN)</td>
+                                    <td>Every 3 Years</td>
+                                    <td>ZRTI Bhuli / DTC Howrah</td>
+                                    <td>Update on recent correction slips to GR&SR, safety drives, and troubleshooting.</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Automatic Block Competency Certificate</td>
+                                    <td>Guards, Loco Pilots & Motormen in ABS territory</td>
+                                    <td>Every 6 Months (As per GR&SR)</td>
+                                    <td>Divisional Safety / DTC</td>
+                                    <td>Intensive 1-day course for working on Automatic Signalling territories (SR 9.02).</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Promotional Training</td>
+                                    <td>ALP to LPG / LPG to LPP / LPP to LPM</td>
+                                    <td>Upon Promotion Cadre</td>
+                                    <td>ZRTI Bhuli</td>
+                                    <td>Advanced train handling, higher speed limits, passenger train safety protocols.</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Periodical Medical Examination (PME)</td>
+                                    <td>All Running Staff</td>
+                                    <td>As per age category (A-1 Medical)</td>
+                                    <td>Railway Hospital</td>
+                                    <td>Vision, hearing, and physical fitness certification for train operation.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

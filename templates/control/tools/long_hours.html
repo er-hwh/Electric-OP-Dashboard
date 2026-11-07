@@ -1,0 +1,209 @@
+﻿{% extends "control/base_control.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="mb-3">
+        <h3>Long Hours Converter</h3>
+        <div class="page-subtitle">
+            CMS Excel â†’ Long Hours Sheet â†’ Crew Duty Report
+        </div>
+    </div>
+
+    <div class="card mb-3">
+
+        <div class="card-body">
+
+            <div class="row align-items-end">
+
+                <div class="col-md-6">
+
+                    <label class="form-label fw-bold">
+                        Upload CMS Excel
+                    </label>
+
+                    <input
+                        type="file"
+                        id="sourceFile"
+                        class="form-control"
+                        accept=".xlsx">
+
+                </div>
+
+                <div class="col-md-6 text-end">
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="submitSource()">
+
+                        Generate Sheet
+
+                    </button>
+
+                    <button
+                        class="btn btn-warning"
+                        onclick="generateCrewReport()">
+
+                        All in one Report Generator
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card mb-3">
+
+        <div class="card-header d-flex justify-content-between">
+
+            <span>CMS Converted Sheet</span>
+
+            <button
+                class="btn btn-success btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#columnModal">
+
+                Download Excel
+            </button>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table
+                    class="table table-bordered table-sm"
+                    id="resultTable">
+
+                    <thead>
+                        <tr id="headerRow"></tr>
+                    </thead>
+
+                    <tbody></tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="crewReportContainer" style="display:none">
+
+        <div class="card">
+
+            <div class="card-header d-flex justify-content-between">
+
+                <span>Crew Duty Report</span>
+
+                <button
+                    class="btn btn-success btn-sm"
+                    onclick="downloadCrewReport()">
+
+                    Download Report
+
+                </button>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table
+                        class="table table-bordered table-sm"
+                        id="crewReportTable">
+
+                        <thead></thead>
+                        <tbody></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- COLUMN SELECT MODAL -->
+<div class="modal fade" id="columnModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5>Select Extra Columns</h5>
+        <!-- NEW CLOSE BUTTON -->
+      <!-- <button type="button" class="btn-close" id="extraColumnModalClose"></button> -->
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-2">
+    Tick the fields you want in Excel export.  
+    Unchecked columns will NOT be included.  
+    Preview table also shows these calculated fields.
+    </p>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="optSignOff" checked>
+          <label class="form-check-label">Sign Off Date</label>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="optKM" checked>
+          <label class="form-check-label">Working KM</label>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="optSection" checked>
+          <label class="form-check-label">Section</label>
+        </div>
+
+        <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="optWorkingSection" checked>
+      <label class="form-check-label">Working Section</label>
+    </div>
+
+        <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="optRemarks" checked>
+      <label class="form-check-label">Remarks</label>
+    </div>
+
+        <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="optWorking">
+      <label class="form-check-label">WORKING</label>
+    </div>
+
+        <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="optPostedRoutes">
+      <label class="form-check-label">ALL POSTED ROUTES (AFTER WORKING)</label>
+    </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" onclick="downloadResultFinal()" data-bs-dismiss="modal">Download</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal will come here -->
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+
+<script src="/static/js/long_hours.js?v=3"></script>
+
+{% endblock %}

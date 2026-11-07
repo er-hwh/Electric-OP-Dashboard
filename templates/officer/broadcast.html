@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Broadcast Directive | Officer Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="rail-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <span class="badge bg-danger mb-1 fs-6"><i class="fa-solid fa-bullhorn me-1"></i> Divisional Broadcast</span>
+                        <h4 class="fw-bold text-dark mb-0">Issue Notice / Sr. DEE(OP) Directive</h4>
+                        <small class="text-muted">Broadcast to all running staff, lobby supervisors, or specific lobbies</small>
+                    </div>
+                    <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+                    </a>
+                </div>
+
+                <form method="POST" action="{{ url_for('officer.broadcast') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Notice / Directive Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Safety Drive on Observance of Signal Aspects & Calling-on Arm" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Category <span class="text-danger">*</span></label>
+                            <select name="category" class="form-select" required>
+                                <option value="Sr. DEE(OP) Instruction">Sr. DEE(OP) Instruction</option>
+                                <option value="Safety Drive">Safety Drive</option>
+                                <option value="Notice">Notice</option>
+                                <option value="Circular">Circular</option>
+                                <option value="Seniority">Seniority List</option>
+                                <option value="Result">Result / Selection</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Target Audience <span class="text-danger">*</span></label>
+                            <select name="target_audience" class="form-select" id="targetAudience" required>
+                                <option value="ALL">All Staff (CLIs & Crews)</option>
+                                <option value="CLI_ONLY">All Chief Loco Inspectors (CLIs) Only</option>
+                                <option value="CREW_ONLY">All Running Crews Only</option>
+                                <option value="LOBBY_WISE">Specific Lobby Only</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12" id="lobbySelectDiv" style="display: none;">
+                            <label class="form-label fw-bold small text-dark">Select Target Lobby</label>
+                            <select name="target_lobby_id" class="form-select">
+                                <option value="">-- Select Lobby --</option>
+                                {% for l in lobbies %}
+                                    <option value="{{ l.id }}">{{ l.code }} - {{ l.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Directive Content / Message Body <span class="text-danger">*</span></label>
+                        <textarea name="content" class="form-control" rows="6" placeholder="Enter detailed operational instructions or guidelines..." required></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small text-dark">Attach Document / Circular (PDF, Image, Excel)</label>
+                            <input type="file" name="attachment" class="form-control" accept=".pdf, .png, .jpg, .jpeg, .xlsx, .xls">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check p-2 border rounded bg-light w-100">
+                                <input class="form-check-input ms-1" type="checkbox" name="is_urgent" id="isUrgent" value="1">
+                                <label class="form-check-label ms-3 fw-bold text-danger" for="isUrgent">
+                                    <i class="fa-solid fa-fire me-1"></i> Mark as URGENT
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-danger btn-lg fs-6 fw-bold shadow-sm">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Publish & Broadcast Directive
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('targetAudience').addEventListener('change', function() {
+    const lobbyDiv = document.getElementById('lobbySelectDiv');
+    if (this.value === 'LOBBY_WISE') {
+        lobbyDiv.style.display = 'block';
+    } else {
+        lobbyDiv.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

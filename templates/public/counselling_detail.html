@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}{{ topic.title }} | Safety Counselling & Directives{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="rail-card p-4">
+                <!-- TOP HEADER -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge {% if topic.counselling_type == 'SPECIAL' %}bg-danger{% else %}bg-primary{% endif %} fs-6">
+                                {{ topic.counselling_type or 'MONTHLY' }} COUNSELLING
+                            </span>
+                            {% if topic.month_year %}
+                                <span class="badge bg-dark fs-6">{{ topic.month_year }}</span>
+                            {% endif %}
+                            <span class="badge bg-light text-muted border fs-6">
+                                <i class="fa-regular fa-calendar me-1"></i>{{ topic.topic_date.strftime('%d-%b-%Y') }}
+                            </span>
+                            {% if topic.rule_reference %}
+                                <span class="badge bg-warning text-dark fs-6"><i class="fa-solid fa-book-bookmark me-1"></i>{{ topic.rule_reference }}</span>
+                            {% endif %}
+                        </div>
+                        <h3 class="fw-bold text-dark mb-0">{{ topic.title }}</h3>
+                    </div>
+                    <a href="{{ url_for('public.counselling') }}" class="btn btn-outline-secondary btn-sm mt-2 mt-md-0">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back to Archive
+                    </a>
+                </div>
+
+                <!-- OFFICER DIGITAL ENDORSEMENT SEAL & DRAFTING ATTRIBUTION -->
+                <div class="card border-0 shadow-sm bg-light p-3 mb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-success text-white p-3 me-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                                <i class="fa-solid fa-stamp fs-4"></i>
+                            </div>
+                            <div>
+                                <small class="text-uppercase text-muted fw-bold d-block" style="font-size: 0.72rem;">Divisional Safety Endorsement & Sanction</small>
+                                {% if topic.approver %}
+                                    <strong class="text-success fs-6">
+                                        <i class="fa-solid fa-circle-check me-1"></i> Digitally Signed & Approved by {{ topic.approver.sub_role }} ({{ topic.approver.full_name }})
+                                    </strong>
+                                    {% if topic.approval_date %}
+                                        <div class="text-muted small">Sanctioned on: {{ topic.approval_date.strftime('%d-%b-%Y at %H:%M hrs') }}</div>
+                                    {% endif %}
+                                    {% if topic.officer_signature_remarks %}
+                                        <div class="small text-secondary fst-italic mt-1">
+                                            "{{ topic.officer_signature_remarks }}"
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <strong class="text-dark fs-6">
+                                        <i class="fa-solid fa-shield-halved me-1"></i> {{ topic.issuer.sub_role if topic.issuer else 'Divisional Operating Headquarters' }}
+                                    </strong>
+                                    <div class="text-muted small">Sanctioned for Howrah Division Running Staff</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if topic.proposer %}
+                            <div class="text-md-end p-2 rounded bg-white border">
+                                <small class="text-muted d-block" style="font-size: 0.72rem;">FORMULATED & DRAFTED BY</small>
+                                <strong class="text-primary small">
+                                    <i class="fa-solid fa-user-pen me-1"></i> {{ topic.proposer.full_name }}
+                                </strong>
+                                <div class="text-muted small">{{ topic.proposer.sub_role }} {% if topic.proposer.lobby %}({{ topic.proposer.lobby.code }}){% endif %}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- DIRECTIVE CONTENT -->
+                <div class="mb-4">
+                    <h5 class="fw-bold text-primary mb-2">
+                        <i class="fa-solid fa-list-check me-2"></i> Safety Instructions & Operating Directives:
+                    </h5>
+                    <div class="p-4 bg-light rounded border text-dark" style="white-space: pre-line; line-height: 1.7; font-size: 0.95rem;">
+                        {{ topic.content }}
+                    </div>
+                </div>
+
+                <!-- CASE ANALYSIS / INVESTIGATION OCCURRENCE -->
+                {% if topic.case_analysis %}
+                    <div class="mb-4">
+                        <h5 class="fw-bold text-danger mb-2">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i> Real Case Study & Corrective Action:
+                        </h5>
+                        <div class="p-4 rounded border border-danger bg-light text-dark" style="white-space: pre-line; line-height: 1.7; font-size: 0.95rem;">
+                            {{ topic.case_analysis }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- ATTACHMENT -->
+                {% if topic.file_path %}
+                    <div class="mb-4">
+                        <a href="{{ url_for('static', filename='uploads/' + topic.file_path) }}" target="_blank" class="btn btn-outline-danger fw-bold">
+                            <i class="fa-solid fa-file-pdf me-2"></i> Download Official Circular / Presentation
+                        </a>
+                    </div>
+                {% endif %}
+
+                <!-- SECTION: ELECTRONIC ASSURANCE REGISTER & Q&A VERIFICATION -->
+                <div class="border-top pt-4 mt-4">
+                    {% if current_user and current_user.is_crew() %}
+                        {% if ack %}
+                            <!-- CASE 1: ALREADY ACKNOWLEDGED & VERIFIED -->
+                            <div class="card border-success shadow-sm bg-success bg-opacity-10 p-4">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 border-bottom border-success pb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success text-white p-3 me-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                                            <i class="fa-solid fa-circle-check fs-2"></i>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-success mb-1">OFFICIAL ASSURANCE RECORDED</span>
+                                            <h4 class="fw-bold text-success mb-0">Comprehension Verified & Assured</h4>
+                                            <small class="text-muted">Recorded in Eastern Railway Howrah Division Electronic Assurance Register</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-md-end mt-2 mt-md-0">
+                                        <div class="badge bg-success fs-6 py-2 px-3">
+                                            Score: {{ ack.quiz_score }}% (Passed)
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa-regular fa-clock me-1"></i> {{ ack.acknowledged_at.strftime('%d-%b-%Y at %H:%M hrs') }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 small">
+                                    <div class="col-md-3">
+                                        <span class="text-muted d-block">Crew Name:</span>
+                                        <strong class="text-dark">{{ current_user.full_name }}</strong>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <span class="text-muted d-block">Designation / Role:</span>
+                                        <strong class="text-dark">{{ current_user.sub_role }}</strong>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <span class="text-muted d-block">PF / ID / Mobile:</span>
+                                        <strong class="text-dark">{{ current_user.pf_number or current_user.mobile }}</strong>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <span class="text-muted d-block">Lobby HQ:</span>
+                                        <strong class="text-dark">{{ current_user.lobby.code if current_user.lobby else 'HWH' }}</strong>
+                                    </div>
+                                </div>
+
+                                {% if ack.doubt_or_query %}
+                                    <div class="mt-3 p-3 bg-white rounded border border-success small">
+                                        <strong class="text-primary"><i class="fa-solid fa-comment-dots me-1"></i> Your Observation / Question to CLI:</strong>
+                                        <p class="mb-0 text-muted">{{ ack.doubt_or_query }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                        {% else %}
+                            <!-- CASE 2: PENDING ASSURANCE WITH Q&A VERIFICATION -->
+                            <div class="card border border-warning shadow-sm p-4 bg-light">
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                                    <div>
+                                        <span class="badge bg-warning text-dark fs-6 mb-1">
+                                            <i class="fa-solid fa-signature me-1"></i> Running Staff Electronic Assurance
+                                        </span>
+                                        <h4 class="fw-bold text-dark mb-0">Safety Comprehension & Acknowledgement</h4>
+                                    </div>
+                                    <span class="badge bg-danger fs-6">Mandatory Under SR 2.03 & 4.30</span>
+                                </div>
+
+                                <p class="text-secondary small mb-3">
+                                    All Loco Pilots, Motormen, and Assistant Loco Pilots must thoroughly read the safety instructions above, answer the verification check questions below, and record their digital assurance.
+                                </p>
+
+                                <form action="{{ url_for('crew.acknowledge_counselling', counselling_id=topic.id) }}" method="POST">
+                                    {% set q_list = topic.get_questions() %}
+                                    {% if q_list %}
+                                        <div class="mb-4">
+                                            <h6 class="fw-bold text-primary mb-3">
+                                                <i class="fa-solid fa-spell-check text-warning me-2"></i> Safety Comprehension Verification Check (Answer all questions correctly):
+                                            </h6>
+
+                                            {% for q in q_list %}
+                                                {% set q_idx = loop.index0 %}
+                                                <div class="p-3 bg-white rounded border mb-3 shadow-sm">
+                                                    <p class="fw-bold text-dark mb-2">
+                                                        <span class="badge bg-primary me-2">Q{{ loop.index }}</span> {{ q.q }}
+                                                    </p>
+                                                    <div class="row g-2">
+                                                        {% for opt in q.options %}
+                                                            <div class="col-md-6">
+                                                                <div class="form-check p-2 rounded border bg-light">
+                                                                    <input class="form-check-input ms-1" type="radio" name="ans_{{ q_idx }}" id="q{{ q_idx }}_opt{{ loop.index0 }}" value="{{ loop.index0 }}" required>
+                                                                    <label class="form-check-label ms-2 small fw-bold text-dark" for="q{{ q_idx }}_opt{{ loop.index0 }}">
+                                                                        {{ opt }}
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small text-dark">
+                                            Any observation, operational doubt, or point for CLI discussion during next footplate? (Optional):
+                                        </label>
+                                        <textarea name="doubt_or_query" class="form-control" rows="2" placeholder="Write any specific query or doubt here..."></textarea>
+                                    </div>
+
+                                    <div class="form-check mb-3 p-3 bg-white rounded border">
+                                        <input class="form-check-input ms-1" type="checkbox" id="assurance_check" required>
+                                        <label class="form-check-label ms-2 small fw-bold text-dark" for="assurance_check">
+                                            I hereby certify that I have read, understood, and will strictly adhere to the General & Subsidiary Rules (GR & SR) and specific safety directives detailed above while on duty.
+                                        </label>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-success btn-lg fw-bold px-4 shadow-sm w-100">
+                                        <i class="fa-solid fa-circle-check me-2"></i> Submit Answers & Record Digital Assurance
+                                    </button>
+                                </form>
+                            </div>
+                        {% endif %}
+
+                    {% elif current_user and (current_user.is_supervisor() or current_user.is_officer() or current_user.is_admin()) %}
+                        <!-- SUPERVISOR / OFFICER MONITORING BOX -->
+                        <div class="card border shadow-sm p-4 bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold text-dark mb-0">
+                                    <i class="fa-solid fa-users-viewfinder text-primary me-2"></i> Running Staff Assurance Status
+                                </h5>
+                                <span class="badge bg-success fs-6">
+                                    <i class="fa-solid fa-user-check me-1"></i> {{ topic.acknowledgements.count() }} Crews Assured
+                                </span>
+                            </div>
+
+                            <p class="small text-muted mb-3">
+                                Running staff who have read the counselling directives and successfully completed the safety verification check.
+                            </p>
+
+                            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                                <table class="table table-sm table-hover align-middle bg-white border">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Staff Name</th>
+                                            <th>Designation</th>
+                                            <th>Lobby</th>
+                                            <th>Score</th>
+                                            <th>Assured At</th>
+                                            <th>Doubt / Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for ack_item in topic.acknowledgements.order_by(topic.acknowledgements.prop.mapper.class.acknowledged_at.desc()).limit(20).all() %}
+                                            <tr>
+                                                <td><strong>{{ ack_item.crew.full_name }}</strong></td>
+                                                <td><span class="badge bg-light text-dark border">{{ ack_item.crew.sub_role }}</span></td>
+                                                <td>{{ ack_item.crew.lobby.code if ack_item.crew.lobby else 'HWH' }}</td>
+                                                <td><span class="badge bg-success">{{ ack_item.quiz_score }}%</span></td>
+                                                <td><small class="text-muted">{{ ack_item.acknowledged_at.strftime('%d-%b-%Y %H:%M') }}</small></td>
+                                                <td><small class="text-secondary">{{ ack_item.doubt_or_query or '-' }}</small></td>
+                                            </tr>
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="6" class="text-center py-3 text-muted">No staff assurances logged yet.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    {% else %}
+                        <!-- GUEST USER -->
+                        <div class="alert alert-secondary mb-0">
+                            <i class="fa-solid fa-circle-info me-2 text-primary"></i>
+                            <strong>Running Staff Assurance Register:</strong> Please <a href="{{ url_for('auth.login') }}" class="alert-link fw-bold">Login</a> with your CUG Mobile / PF Number to complete the safety comprehension check and record your assurance.
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

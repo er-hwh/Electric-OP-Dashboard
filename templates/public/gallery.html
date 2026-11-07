@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Photo Gallery | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="rail-card p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="fa-solid fa-camera-retro text-warning me-2"></i> Photo Gallery & Divisional Glimpses
+                </h3>
+                <p class="text-muted mb-0">Electric Traction, Rolling Lobbies, Safety Seminars & Staff Felicitations</p>
+            </div>
+            {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('admin.gallery') }}" class="btn btn-warning text-dark fw-bold btn-sm shadow-sm">
+                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload & Manage Photos
+                </a>
+            {% endif %}
+        </div>
+
+        {% if items %}
+            <!-- CATEGORY FILTER PILLS -->
+            <div class="d-flex flex-wrap gap-2 mb-4" id="galleryFilters">
+                <button type="button" class="btn btn-sm btn-primary active-filter" data-filter="all">All Photos ({{ items|length }})</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="Locomotives">Locomotives</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="Lobby Facilities">Lobby Facilities</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="Safety Seminars">Safety Seminars</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="Inspections">Inspections</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="Operations">Operations</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="Staff Felicitations">Felicitations</button>
+            </div>
+
+            <div class="row g-4" id="galleryGrid">
+                {% for item in items %}
+                    <div class="col-lg-4 col-md-6 gallery-card" data-category="{{ item.category }}">
+                        <div class="card h-100 shadow-sm border overflow-hidden">
+                            <div class="position-relative">
+                                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" 
+                                     alt="{{ item.title }}" 
+                                     class="card-img-top gallery-img" 
+                                     style="height: 230px; object-fit: cover; cursor: pointer;"
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#photoModal{{ item.id }}"
+                                     onerror="this.src='https://placehold.co/600x300?text={{ item.category }}';">
+                                <span class="badge bg-primary position-absolute top-0 end-0 m-2 shadow-sm">{{ item.category }}</span>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="fw-bold text-dark mb-1">{{ item.title }}</h6>
+                                <p class="small text-muted mb-2">{{ item.caption or 'Divisional photograph of Eastern Railway, Howrah Division.' }}</p>
+                                <small class="text-secondary"><i class="fa-solid fa-calendar me-1"></i>{{ item.created_at.strftime('%d-%b-%Y') }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL FOR HIGH-RES PREVIEW -->
+                    <div class="modal fade" id="photoModal{{ item.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header bg-dark text-white">
+                                    <h5 class="modal-title fs-6">{{ item.title }} &bull; <span class="badge bg-warning text-dark">{{ item.category }}</span></h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-0 text-center bg-black">
+                                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" class="img-fluid" style="max-height: 75vh;" alt="{{ item.title }}">
+                                </div>
+                                <div class="modal-footer justify-content-between">
+                                    <p class="small text-muted mb-0">{{ item.caption }}</p>
+                                    <small class="text-secondary">{{ item.created_at.strftime('%d-%b-%Y') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- DEFAULT / ARCHIVAL SHOWCASE -->
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm border overflow-hidden">
+                        <svg class="bd-placeholder-img w-100" height="220" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="100%" height="100%" fill="#002244"></rect>
+                            <circle cx="50%" cy="45%" r="50" fill="#003366"></circle>
+                            <text x="50%" y="50%" fill="#ffde59" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="20" text-anchor="middle">WAP-7 High Speed Loco</text>
+                            <text x="50%" y="62%" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="12" text-anchor="middle">Howrah Division Premium Service</text>
+                        </svg>
+                        <div class="card-body">
+                            <span class="badge bg-primary mb-1">Locomotives</span>
+                            <h6 class="fw-bold text-dark mb-1">WAP-7 3-Phase Electric Engine</h6>
+                            <p class="small text-muted mb-0">High-speed passenger locomotive operating Rajdhani, Shatabdi & Mail trains from Howrah.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm border overflow-hidden">
+                        <svg class="bd-placeholder-img w-100" height="220" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="100%" height="100%" fill="#082c4d"></rect>
+                            <circle cx="50%" cy="45%" r="50" fill="#0b487e"></circle>
+                            <text x="50%" y="50%" fill="#58d68d" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="20" text-anchor="middle">WAG-9 Heavy Freight</text>
+                            <text x="50%" y="62%" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="12" text-anchor="middle">Pakur Stone & Freight Corridor</text>
+                        </svg>
+                        <div class="card-body">
+                            <span class="badge bg-success mb-1">Freight Corridor</span>
+                            <h6 class="fw-bold text-dark mb-1">WAG-9 6000 HP Freight Engine</h6>
+                            <p class="small text-muted mb-0">Heavy haul freight operations powering BOBRN / BOXN rakes across Pakur & Dankuni.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm border overflow-hidden">
+                        <svg class="bd-placeholder-img w-100" height="220" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="100%" height="100%" fill="#1a1c23"></rect>
+                            <circle cx="50%" cy="45%" r="50" fill="#2d3748"></circle>
+                            <text x="50%" y="50%" fill="#f39c12" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="20" text-anchor="middle">Safety Seminar & Felicitation</text>
+                            <text x="50%" y="62%" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="12" text-anchor="middle">Auditorium, DRM Building Howrah</text>
+                        </svg>
+                        <div class="card-body">
+                            <span class="badge bg-warning text-dark mb-1">Safety Seminars</span>
+                            <h6 class="fw-bold text-dark mb-1">Annual Safety Seminar & SPAD Felicitation</h6>
+                            <p class="small text-muted mb-0">Recognition of alert Loco Pilots, Motormen, and Assistant Loco Pilots for vigilant safety duty.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('#galleryFilters button');
+    const cards = document.querySelectorAll('.gallery-card');
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterButtons.forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-primary');
+            });
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary');
+
+            const filter = this.getAttribute('data-filter');
+            cards.forEach(card => {
+                if (filter === 'all' || card.getAttribute('data-category') === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

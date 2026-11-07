@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7">
+            <div class="rail-card shadow-lg p-4">
+                <div class="text-center mb-4">
+                    <div class="d-inline-block p-3 rounded-circle bg-primary text-warning fs-1 mb-2 shadow-sm">
+                        <i class="fa-solid fa-train-subway"></i>
+                    </div>
+                    <h4 class="fw-bold text-primary mb-0">Electric Operation Portal</h4>
+                    <small class="text-muted">Howrah Division &bull; Eastern Railway</small>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-bold small text-dark">
+                            <i class="fa-solid fa-user me-1 text-primary"></i> Username / Mobile No. / CLI ID:
+                        </label>
+                        <input type="text" class="form-control form-control-lg fs-6" id="username" name="username" placeholder="e.g. admin, Sr. DEE(OP)/HWH, CLI_HWH_01, 9876543210" required autofocus>
+                        <div class="form-text small">
+                            Crews enter Mobile No; CLIs enter CLI ID; Officers enter Officer Title.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-bold small text-dark">
+                            <i class="fa-solid fa-lock me-1 text-primary"></i> Password:
+                        </label>
+                        <input type="password" class="form-control form-control-lg fs-6" id="password" name="password" placeholder="Default: 12345" required>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg fs-6 fw-bold">
+                            <i class="fa-solid fa-right-to-bracket me-1"></i> Sign In to Portal
+                        </button>
+                    </div>
+
+                    <div class="text-center border-top pt-3">
+                        <span class="small text-muted">New Running Staff (LP / Motorman / ALP)?</span>
+                        <a href="{{ url_for('auth.register') }}" class="small fw-bold text-primary text-decoration-none ms-1">
+                            Register Here &rarr;
+                        </a>
+                    </div>
+                </form>
+
+                <!-- DEFAULT CREDENTIALS HELPER TABLE -->
+                <div class="mt-4 p-3 bg-light rounded border small">
+                    <h6 class="fw-bold text-dark mb-2 border-bottom pb-1">
+                        <i class="fa-solid fa-key me-1 text-warning"></i> Default System Credentials
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless mb-0">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th>Role</th>
+                                    <th>Username / ID</th>
+                                    <th>Default Password</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Admin</strong></td>
+                                    <td><code>admin</code></td>
+                                    <td><code>12345</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Officers</strong></td>
+                                    <td><code>Sr. DEE(OP)/HWH</code><br><code>AEE(OP)/HWH</code><br><code>AME(P)/HWH</code></td>
+                                    <td><code>12345</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>CLI / CCC</strong></td>
+                                    <td><code>CLI_HWH_01</code></td>
+                                    <td><code>12345</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Running Crew</strong></td>
+                                    <td><code>9876543210</code> (Mobile)</td>
+                                    <td><code>12345</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fa-solid fa-circle-info me-1"></i> Users with password <code>12345</code> will be asked to change it upon login.
+                    </small>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

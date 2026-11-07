@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Standard Operating Forms (Appendix 'D') | Electric OP Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="rail-card p-4">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">
+                    <i class="fa-solid fa-file-contract text-warning me-2"></i> Standardised Operating Forms & Authorities (Appendix 'D')
+                </h3>
+                <p class="text-muted mb-0">Official Operating Forms used in Train Working under Eastern Railway General & Subsidiary Rules</p>
+            </div>
+            <a href="{{ url_for('elearning.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to E-Learning
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle small">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 60px;">S.No.</th>
+                        <th style="width: 140px;">Form No.</th>
+                        <th>Description of Operating Form</th>
+                        <th style="width: 120px;">Font / Paper Colour</th>
+                        <th>Operational Context & Rule Authority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><span class="badge bg-danger fs-6">T/409</span></td>
+                        <td class="fw-bold">Caution Order</td>
+                        <td><span class="badge bg-success">Green Font / Green Paper</span></td>
+                        <td>Issued to Loco Pilot & Guard detailing permanent/temporary speed restrictions, locations, and reasons (GR 4.09).</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><span class="badge bg-primary fs-6">T/A 409</span></td>
+                        <td class="fw-bold">'NIL' Caution Order</td>
+                        <td><span class="badge bg-success">Green Font</span></td>
+                        <td>Issued by Notice Station when there are no special speed restrictions in force on the run (SR 4.09).</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><span class="badge bg-secondary fs-6">T/B 409</span></td>
+                        <td class="fw-bold">Reminder Caution Order</td>
+                        <td><span class="badge bg-success">Green Font</span></td>
+                        <td>Issued by rear station to remind crew of caution order before entering affected block section.</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td><span class="badge bg-primary fs-6">T/369-3b</span></td>
+                        <td class="fw-bold">Authority to Pass Signals in 'ON' or Defective Position</td>
+                        <td><span class="badge bg-primary">Blue Font</span></td>
+                        <td>Handed over to Loco Pilot at the foot of defective signal after points setting and clamping is confirmed (GR 3.69 / 3.70).</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td><span class="badge bg-secondary fs-6">T/369(1)</span></td>
+                        <td class="fw-bold">Advance Authority to Pass Defective Signals</td>
+                        <td><span class="badge bg-primary">Blue Font</span></td>
+                        <td>Issued at station in rear to advise Loco Pilot in advance regarding defective signal ahead.</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td><span class="badge bg-dark fs-6">T/806</span></td>
+                        <td class="fw-bold">Shunting Order</td>
+                        <td><span class="badge bg-primary">Blue Font</span></td>
+                        <td>Authorizes shunting past starter or into sidings when movements foul running lines (GR 5.14).</td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td><span class="badge bg-warning text-dark fs-6">T/509</span></td>
+                        <td class="fw-bold">Authority to Receive a Train on an Obstructed Line</td>
+                        <td><span class="badge bg-primary">Blue Font</span></td>
+                        <td>Issued when train must be received on a line already occupied (GR 5.09).</td>
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        <td><span class="badge bg-warning text-dark fs-6">T/511</span></td>
+                        <td class="fw-bold">Authority to Start from a Non-Signalled Line</td>
+                        <td><span class="badge bg-primary">Blue Font</span></td>
+                        <td>Starting order when train starts from a line where no starter signal is provided (GR 5.11).</td>
+                    </tr>
+                    <tr>
+                        <td>9</td>
+                        <td><span class="badge bg-danger fs-6">T/A 602</span></td>
+                        <td class="fw-bold">Authority to Proceed for Relief Engine into Occupied Block Section</td>
+                        <td><span class="badge bg-danger">Red Font</span></td>
+                        <td>Given to assisting locomotive to proceed without line clear into section with disabled train (GR 6.05).</td>
+                    </tr>
+                    <tr>
+                        <td>10</td>
+                        <td><span class="badge bg-danger fs-6">T/D 602</span></td>
+                        <td class="fw-bold">Authority for Temporary Single Line Working on Double Line Section</td>
+                        <td><span class="badge bg-danger">Red Font</span></td>
+                        <td>Issued to Loco Pilot for wrong line operation during track obstruction (SR 6.02).</td>
+                    </tr>
+                    <tr>
+                        <td>11</td>
+                        <td><span class="badge bg-info text-dark fs-6">T/C 1425</span></td>
+                        <td class="fw-bold">Paper Line Clear Ticket (UP)</td>
+                        <td><span class="badge bg-primary">Blue Font (Up Arrow)</span></td>
+                        <td>Physical authority to proceed when electrical block instrument fails on UP direction (GR 14.25).</td>
+                    </tr>
+                    <tr>
+                        <td>12</td>
+                        <td><span class="badge bg-info text-dark fs-6">T/D 1425</span></td>
+                        <td class="fw-bold">Paper Line Clear Ticket (DOWN)</td>
+                        <td><span class="badge bg-primary">Blue Font (Down Arrow)</span></td>
+                        <td>Physical authority to proceed when electrical block instrument fails on DOWN direction (GR 14.25).</td>
+                    </tr>
+                    <tr>
+                        <td>13</td>
+                        <td><span class="badge bg-dark fs-6">T/A 912</span></td>
+                        <td class="fw-bold">Authority to Pass Automatic/Semi-Automatic Stop Signals at 'ON'</td>
+                        <td><span class="badge bg-primary">Blue Font</span></td>
+                        <td>Used in Automatic Block territory during prolonged signal failure (GR 9.12 / App. E).</td>
+                    </tr>
+                    <tr>
+                        <td>14</td>
+                        <td><span class="badge bg-danger fs-6">T/B 912</span></td>
+                        <td class="fw-bold">Authority to Proceed Without Line Clear on Automatic Block Territory</td>
+                        <td><span class="badge bg-danger">Red Font</span></td>
+                        <td>Emergency movement during total communication failure in automatic section.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

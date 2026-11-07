@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Message Nominated CLI | Crew Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="rail-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1 fs-6"><i class="fa-solid fa-paper-plane me-1"></i> Running Staff Communication</span>
+                        <h4 class="fw-bold text-dark mb-0">Submit Message / Query to Nominated CLI</h4>
+                        <small class="text-muted">Your CLI will review your submission and either resolve it or forward it to Officers</small>
+                    </div>
+                    <a href="{{ url_for('crew.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+                    </a>
+                </div>
+
+                {% if crew.nominated_cli %}
+                    <div class="alert alert-info small mb-4">
+                        <i class="fa-solid fa-info-circle me-1"></i>
+                        This message will be routed directly to your assigned Chief Loco Inspector: 
+                        <strong>{{ crew.nominated_cli.full_name }}</strong> (CLI ID: <code>{{ crew.nominated_cli.username }}</code>).
+                        Upon review, your CLI has the authority to endorse and forward this communication to <strong>Sr. DEE(OP)/HWH, AEE(OP), or AME(P)</strong>.
+                    </div>
+
+                    <form method="POST" action="{{ url_for('crew.message_cli') }}">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-dark">Subject / Issue Title <span class="text-danger">*</span></label>
+                            <input type="text" name="subject" class="form-control" placeholder="e.g. Cab Air-Conditioning Defect in Loco 30201 / Rest Room Cleanliness" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-dark">Detailed Message / Description <span class="text-danger">*</span></label>
+                            <textarea name="body" class="form-control" rows="6" placeholder="Provide complete particulars (Train No, Loco No, Date, exact abnormality or operational suggestion)..." required></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg fs-6 fw-bold shadow-sm">
+                                <i class="fa-solid fa-paper-plane me-1"></i> Submit Message to CLI
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="alert alert-danger py-4 text-center">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x mb-2 d-block"></i>
+                        <h5>No Nominated CLI Mapped</h5>
+                        <p class="small mb-0">You currently do not have a nominated Chief Loco Inspector assigned to your profile. Please contact your Lobby CCC or the System Admin to map your CLI.</p>
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

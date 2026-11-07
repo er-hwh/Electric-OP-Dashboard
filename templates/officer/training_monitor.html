@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Training & Competency Monitor | Officer Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="rail-card p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div>
+                <span class="badge bg-info text-dark mb-1 fs-6"><i class="fa-solid fa-graduation-cap me-1"></i> Running Staff Competencies</span>
+                <h3 class="fw-bold text-dark mb-0">Training & Refresher Compliance Monitor</h3>
+                <small class="text-muted">Tracking Refreshers, Automatic Block Certificates, and PME (Medical) Validities</small>
+            </div>
+            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
+
+        <!-- FILTERS -->
+        <form method="GET" action="{{ url_for('officer.training_monitor') }}" class="row g-2 mb-4">
+            <div class="col-md-4">
+                <select name="status" class="form-select">
+                    <option value="ALL" {% if current_status == 'ALL' %}selected{% endif %}>All Validity Statuses</option>
+                    <option value="OVERDUE" {% if current_status == 'OVERDUE' %}selected{% endif %}>⚠️ Overdue Only (Expired)</option>
+                    <option value="DUE_SOON" {% if current_status == 'DUE_SOON' %}selected{% endif %}>⏳ Due Soon (Within 30 Days)</option>
+                    <option value="VALID" {% if current_status == 'VALID' %}selected{% endif %}>✅ Valid (> 30 Days)</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select name="lobby" class="form-select">
+                    <option value="ALL" {% if current_lobby == 'ALL' %}selected{% endif %}>All 11 Lobbies</option>
+                    {% for l in lobbies %}
+                        <option value="{{ l.id }}" {% if current_lobby == l.id|string %}selected{% endif %}>{{ l.code }} - {{ l.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">
+                    <i class="fa-solid fa-filter me-1"></i> Filter Compliance List
+                </button>
+            </div>
+        </form>
+
+        <!-- TRAINING TABLE -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle small">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Crew Name & Designation</th>
+                        <th>Mobile / PF</th>
+                        <th>Lobby</th>
+                        <th>Course / Competency</th>
+                        <th>Training Institute</th>
+                        <th>Last Completed</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Certificate No.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark">{{ r.crew_member.full_name }}</strong><br>
+                                <span class="badge bg-secondary">{{ r.crew_member.sub_role }}</span>
+                            </td>
+                            <td>
+                                <code>{{ r.crew_member.mobile }}</code>
+                                {% if r.crew_member.pf_number %}
+                                    <br><small class="text-muted">PF: {{ r.crew_member.pf_number }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.crew_member.lobby %}
+                                    <span class="badge bg-light text-dark border">{{ r.crew_member.lobby.code }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold text-primary">{{ r.training_type }}</td>
+                            <td>{{ r.institute }}</td>
+                            <td>{{ r.last_done_date.strftime('%d-%b-%Y') }}</td>
+                            <td><strong>{{ r.due_date.strftime('%d-%b-%Y') }}</strong></td>
+                            <td>
+                                <span class="badge bg-{{ r.status_info.class }} p-2">
+                                    {{ r.status_info.badge }}
+                                </span>
+                            </td>
+                            <td><code>{{ r.certificate_no or 'N/A' }}</code></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">No training records found matching filter criteria.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

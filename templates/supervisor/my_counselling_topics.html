@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}My Drafted Counselling Topics | Supervisor Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="rail-card p-4">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div>
+                <span class="badge bg-success mb-1 fs-6"><i class="fa-solid fa-file-signature me-1"></i> CLI Draft Repository</span>
+                <h3 class="fw-bold text-dark mb-0">My Drafted Safety Counselling Topics</h3>
+                <p class="text-muted small mb-0">Track proposal reviews, Officer endorsements, and running staff assurance status</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('supervisor.new_counselling_topic') }}" class="btn btn-success btn-sm fw-bold shadow-sm">
+                    <i class="fa-solid fa-plus-circle me-1"></i> Draft New Counselling
+                </a>
+                <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-dark btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 120px;">Month / Type</th>
+                        <th>Subject & GR / SR Reference</th>
+                        <th style="width: 140px;">Status</th>
+                        <th style="width: 200px;">Reviewing Officer</th>
+                        <th style="width: 160px;">Assurance / Date</th>
+                        <th style="width: 110px;" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in topics %}
+                        <tr>
+                            <td>
+                                <span class="badge {% if t.counselling_type == 'SPECIAL' %}bg-danger{% else %}bg-primary{% endif %} mb-1 d-block">
+                                    {{ t.counselling_type or 'MONTHLY' }}
+                                </span>
+                                <small class="text-muted fw-bold">{{ t.month_year or t.topic_date.strftime('%b %Y') }}</small>
+                            </td>
+                            <td>
+                                <strong class="text-dark d-block">{{ t.title }}</strong>
+                                {% if t.rule_reference %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-book me-1"></i>{{ t.rule_reference }}</span>
+                                {% endif %}
+                                {% set q_list = t.get_questions() %}
+                                {% if q_list %}
+                                    <span class="badge bg-info text-dark ms-1"><i class="fa-solid fa-circle-question me-1"></i>{{ q_list|length }} Q&A Check</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if t.status == 'APPROVED' %}
+                                    <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> APPROVED</span>
+                                    <small class="d-block text-muted" style="font-size: 0.75rem;">Signed & Active</small>
+                                {% elif t.status == 'REJECTED' %}
+                                    <span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i> RETURNED</span>
+                                    <small class="d-block text-danger" style="font-size: 0.75rem;">Needs Revision</small>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i> PENDING APPROVAL</span>
+                                    <small class="d-block text-muted" style="font-size: 0.75rem;">With Officer</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if t.approver %}
+                                    <strong class="text-success small d-block"><i class="fa-solid fa-stamp me-1"></i>{{ t.approver.sub_role }}</strong>
+                                    <small class="text-muted">{{ t.approver.full_name }}</small>
+                                    {% if t.officer_signature_remarks %}
+                                        <div class="small text-secondary fst-italic mt-1" style="font-size: 0.75rem;">
+                                            "{{ t.officer_signature_remarks }}"
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted small fst-italic">Awaiting Officer Review</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="small text-muted"><i class="fa-regular fa-calendar me-1"></i>{{ t.created_at.strftime('%d-%b-%Y') if t.created_at else '-' }}</div>
+                                {% if t.status == 'APPROVED' %}
+                                    <span class="badge bg-light text-dark border mt-1">
+                                        <i class="fa-solid fa-user-check me-1"></i>{{ t.acknowledgements.count() }} Assured
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('public.counselling_detail', topic_id=t.id) }}" class="btn btn-sm btn-outline-primary" title="View Full Topic">
+                                    <i class="fa-solid fa-eye me-1"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-folder-open fs-2 mb-2 d-block opacity-50"></i>
+                                You haven't drafted any counselling topics yet.
+                                <div class="mt-2">
+                                    <a href="{{ url_for('supervisor.new_counselling_topic') }}" class="btn btn-success btn-sm">
+                                        <i class="fa-solid fa-plus-circle me-1"></i> Draft Your First Topic
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

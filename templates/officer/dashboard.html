@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Officer Dashboard | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- OFFICER BANNER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <div>
+            <span class="badge bg-danger mb-1 fs-6"><i class="fa-solid fa-shield-halved me-1"></i> Divisional Officer Portal</span>
+            <h3 class="fw-bold text-dark mb-0">{{ officer.full_name }}</h3>
+            <span class="badge bg-warning text-dark fw-bold fs-6">{{ officer.sub_role }}</span>
+            <span class="text-muted ms-2">&bull; Howrah Division, Eastern Railway</span>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+            <a href="{{ url_for('officer.counselling_approvals') }}" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm position-relative">
+                <i class="fa-solid fa-stamp me-1"></i> Counselling Approvals
+                {% if pending_counselling_count > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">
+                        {{ pending_counselling_count }}
+                    </span>
+                {% endif %}
+            </a>
+            <a href="{{ url_for('officer.broadcast') }}" class="btn btn-danger btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-bullhorn me-1"></i> Broadcast Directive / Notice
+            </a>
+            <a href="{{ url_for('officer.new_counselling') }}" class="btn btn-success btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-file-shield me-1"></i> Issue Direct Topic
+            </a>
+            <a href="{{ url_for('officer.direct_message') }}" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-paper-plane me-1"></i> Send Direct Message
+            </a>
+            <a href="{{ url_for('officer.training_monitor') }}" class="btn btn-outline-dark btn-sm fw-bold">
+                <i class="fa-solid fa-graduation-cap me-1"></i> Training Monitor
+            </a>
+        </div>
+    </div>
+
+    <!-- STATS OVERVIEW -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-4 border-primary shadow-sm h-100 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold">Total Running Staff</small>
+                        <h2 class="fw-bold text-primary mb-0">{{ crew_total }}</h2>
+                    </div>
+                    <div class="text-primary fs-1 opacity-50"><i class="fa-solid fa-users"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-4 border-success shadow-sm h-100 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold">Chief Loco Inspectors</small>
+                        <h2 class="fw-bold text-success mb-0">{{ cli_total }}</h2>
+                    </div>
+                    <div class="text-success fs-1 opacity-50"><i class="fa-solid fa-user-tie"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-4 border-danger shadow-sm h-100 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold">Trainings Overdue</small>
+                        <h2 class="fw-bold text-danger mb-0">{{ overdue_trainings }}</h2>
+                    </div>
+                    <div class="text-danger fs-1 opacity-50"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-4 border-warning shadow-sm h-100 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold">Due in &le;30 Days</small>
+                        <h2 class="fw-bold text-warning mb-0">{{ due_soon_trainings }}</h2>
+                    </div>
+                    <div class="text-warning fs-1 opacity-50"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PENDING COUNSELLING ALERT BANNER -->
+    {% if pending_counselling_count > 0 %}
+        <div class="alert alert-warning border-warning shadow-sm d-flex flex-wrap justify-content-between align-items-center p-3 mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-stamp text-danger fs-2 me-3"></i>
+                <div>
+                    <h5 class="fw-bold text-dark mb-0">Safety Counselling Topics Pending Digital Endorsement</h5>
+                    <p class="small text-muted mb-0">There are <strong>{{ pending_counselling_count }}</strong> safety counselling proposals drafted by Chief Loco Inspectors (CLI) waiting for your review and digital signature.</p>
+                </div>
+            </div>
+            <a href="{{ url_for('officer.counselling_approvals') }}" class="btn btn-warning fw-bold text-dark btn-sm px-3 shadow-sm mt-2 mt-md-0">
+                <i class="fa-solid fa-signature me-1"></i> Review & Sign Proposals ({{ pending_counselling_count }}) &rarr;
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- ESCALATED CREW GRIEVANCES / QUERIES FORWARDED BY CLIs -->
+    <div class="rail-card p-4 mb-4">
+        <div class="rail-card-header accent-gold mb-3">
+            <span>
+                <i class="fa-solid fa-inbox text-warning me-2"></i> Escalated Messages & Queries Forwarded by Chief Loco Inspectors (CLI)
+            </span>
+            <span class="badge bg-danger">{{ escalated_messages|length }} Messages</span>
+        </div>
+
+        {% if escalated_messages %}
+            <div class="row g-3">
+                {% for m in escalated_messages %}
+                    <div class="col-lg-6">
+                        <div class="card border shadow-sm h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong class="text-dark">{{ m.subject }}</strong>
+                                    {% if m.status == 'FORWARDED_TO_OFFICER' %}
+                                        <span class="badge bg-danger ms-1">Pending Officer Review</span>
+                                    {% elif m.status == 'OFFICER_REPLIED' %}
+                                        <span class="badge bg-success ms-1">Replied</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ m.created_at.strftime('%d-%b %H:%M') }}</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2 p-2 bg-white rounded border small">
+                                    <strong class="text-primary"><i class="fa-solid fa-user me-1"></i> Crew:</strong> {{ m.sender.full_name }} ({{ m.sender.sub_role }}) &bull; Mobile: <code>{{ m.sender.mobile }}</code> &bull; Lobby: {{ m.sender.lobby.code if m.sender.lobby else 'N/A' }}
+                                </div>
+
+                                <p class="small text-secondary mb-3"><strong>Crew Message:</strong><br>{{ m.body }}</p>
+
+                                {% if m.forwarder_cli %}
+                                    <div class="p-2 mb-3 bg-warning bg-opacity-10 border border-warning rounded small">
+                                        <strong class="text-dark"><i class="fa-solid fa-forward me-1 text-warning"></i> Forwarded by CLI:</strong> {{ m.forwarder_cli.full_name }} ({{ m.forwarder_cli.username }})
+                                        {% if m.cli_remarks %}
+                                            <div class="mt-1"><strong>CLI Recommendation:</strong> <em>{{ m.cli_remarks }}</em></div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                {% if m.officer_remarks %}
+                                    <div class="p-2 mb-2 bg-success bg-opacity-10 border border-success rounded small">
+                                        <strong class="text-success"><i class="fa-solid fa-reply me-1"></i> Officer's Order / Remark:</strong>
+                                        <div>{{ m.officer_remarks }}</div>
+                                    </div>
+                                {% else %}
+                                    <!-- OFFICER REPLY FORM -->
+                                    <form action="{{ url_for('officer.reply_message', message_id=m.id) }}" method="POST" class="border-top pt-2">
+                                        <label class="form-label fw-bold small text-dark mb-1">Enter Officer Directive / Resolution:</label>
+                                        <textarea name="officer_remarks" class="form-control form-control-sm mb-2" rows="2" placeholder="Write decision or instructions..." required></textarea>
+                                        <button type="submit" class="btn btn-primary btn-sm fw-bold">
+                                            <i class="fa-solid fa-paper-plane me-1"></i> Send Reply to Crew & CLI
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fa-regular fa-folder-open fa-2x mb-2 d-block"></i>
+                No escalated messages pending officer review.
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

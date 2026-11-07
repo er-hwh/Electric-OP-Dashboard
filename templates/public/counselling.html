@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Running Staff Safety Counselling & GR & SR Directives | Electric OP Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="rail-card p-4">
+        <!-- TOP HEADER -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+            <div>
+                <h3 class="fw-bold text-success mb-1">
+                    <i class="fa-solid fa-user-shield text-success me-2"></i> Running Staff Safety Counselling & Directives
+                </h3>
+                <p class="text-muted mb-0">Monthly & Special Safety Counselling referencing Eastern Railway General & Subsidiary Rules (GR & SR)</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+                {% if current_user and current_user.is_supervisor() %}
+                    <a href="{{ url_for('supervisor.new_counselling_topic') }}" class="btn btn-success btn-sm fw-bold">
+                        <i class="fa-solid fa-file-signature me-1"></i> Draft New Counselling (CLI)
+                    </a>
+                {% elif current_user and current_user.is_officer() %}
+                    <a href="{{ url_for('officer.counselling_approvals') }}" class="btn btn-warning btn-sm fw-bold text-dark">
+                        <i class="fa-solid fa-stamp me-1"></i> Review & Sign Proposals
+                    </a>
+                    <a href="{{ url_for('officer.new_counselling') }}" class="btn btn-success btn-sm fw-bold">
+                        <i class="fa-solid fa-plus-circle me-1"></i> Issue Direct Counselling
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- FILTER TABS -->
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            <a href="{{ url_for('public.counselling', type='ALL') }}" class="btn btn-sm {% if not current_type or current_type == 'ALL' %}btn-success fw-bold{% else %}btn-outline-secondary{% endif %}">
+                <i class="fa-solid fa-list me-1"></i> All Topics ({{ counselling_list|length if not current_type or current_type == 'ALL' else 'All' }})
+            </a>
+            <a href="{{ url_for('public.counselling', type='MONTHLY') }}" class="btn btn-sm {% if current_type == 'MONTHLY' %}btn-primary fw-bold{% else %}btn-outline-primary{% endif %}">
+                <i class="fa-solid fa-calendar-days me-1"></i> Monthly Regular Counselling (মাসিক কাউন্সেলিং)
+            </a>
+            <a href="{{ url_for('public.counselling', type='SPECIAL') }}" class="btn btn-sm {% if current_type == 'SPECIAL' %}btn-danger fw-bold{% else %}btn-outline-danger{% endif %}">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i> Special Safety Counselling (বিশেষ কাউন্সেলিং)
+            </a>
+        </div>
+
+        <!-- COUNSELLING CARDS GRID -->
+        <div class="row g-4">
+            {% for c in counselling_list %}
+                <div class="col-lg-6">
+                    <div class="card h-100 border shadow-sm border-start border-4 {% if c.counselling_type == 'SPECIAL' %}border-danger{% else %}border-primary{% endif %}">
+                        <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge {% if c.counselling_type == 'SPECIAL' %}bg-danger{% else %}bg-primary{% endif %} fs-6">
+                                    {{ c.counselling_type or 'MONTHLY' }}
+                                </span>
+                                {% if c.month_year %}
+                                    <span class="badge bg-dark">{{ c.month_year }}</span>
+                                {% endif %}
+                                <span class="badge bg-light text-muted border">
+                                    <i class="fa-regular fa-calendar me-1"></i>{{ c.topic_date.strftime('%d-%b-%Y') }}
+                                </span>
+                            </div>
+                            {% if c.rule_reference %}
+                                <span class="badge bg-warning text-dark"><i class="fa-solid fa-book-bookmark me-1"></i>{{ c.rule_reference }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold text-dark mb-2">{{ c.title }}</h5>
+                            
+                            <!-- CONTENT PREVIEW -->
+                            <div class="card-text text-secondary mb-3 small flex-grow-1" style="white-space: pre-line; max-height: 120px; overflow-y: hidden;">
+                                {{ c.content }}
+                            </div>
+
+                            {% if c.case_analysis %}
+                                <div class="bg-light p-2 rounded border border-danger mb-3">
+                                    <h6 class="fw-bold text-danger small mb-1" style="font-size: 0.8rem;">
+                                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Case Analysis / Operational Learning:
+                                    </h6>
+                                    <p class="small text-muted mb-0" style="white-space: pre-line; max-height: 60px; overflow-y: hidden;">{{ c.case_analysis }}</p>
+                                </div>
+                            {% endif %}
+
+                            <!-- ENDORSEMENT FOOTER -->
+                            <div class="border-top pt-2 mt-auto">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                                    {% if c.approver %}
+                                        <div class="small">
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                                                <i class="fa-solid fa-stamp me-1"></i> Signed by {{ c.approver.sub_role }} ({{ c.approver.full_name }})
+                                            </span>
+                                        </div>
+                                    {% else %}
+                                        <small class="text-muted">Issued by: <strong>{{ c.issuer.sub_role if c.issuer else 'Headquarters' }}</strong></small>
+                                    {% endif %}
+
+                                    {% set q_count = c.get_questions()|length %}
+                                    {% if q_count > 0 %}
+                                        <span class="badge bg-info text-dark">
+                                            <i class="fa-solid fa-spell-check me-1"></i>{{ q_count }} Q&A Test
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="fa-solid fa-user-check text-success me-1"></i>{{ c.acknowledgements.count() }} Assured
+                                    </span>
+                                    <a href="{{ url_for('public.counselling_detail', topic_id=c.id) }}" class="btn btn-sm btn-outline-success fw-bold">
+                                        Read & Acknowledge &rarr;
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <i class="fa-solid fa-shield-cat fs-1 text-muted mb-2 d-block opacity-50"></i>
+                    <p class="text-muted mb-0">No counselling topics published in this category yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

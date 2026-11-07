@@ -1,0 +1,1507 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if active_rule %}{{ active_rule.rule_no }} - {{ active_rule.rule_title }} | {% endif %}Eastern Railway GR & SR Digital Rule Book | Electric OP Howrah
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Sleek Book Reader Styling */
+    .rule-reader-container {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .rule-sidebar-item {
+        transition: all 0.15s ease-in-out;
+        border-left: 3px solid transparent !important;
+        cursor: pointer;
+    }
+    .rule-sidebar-item:hover:not(.active) {
+        background-color: #f1f5f9;
+        border-left-color: #0d6efd !important;
+        transform: translateX(2px);
+    }
+    .rule-sidebar-item.active {
+        background-color: #0d6efd !important;
+        color: #ffffff !important;
+        border-left-color: #ffc107 !important;
+    }
+    .rule-sidebar-item.active .badge-rule {
+        background-color: #ffffff !important;
+        color: #0d6efd !important;
+    }
+    .rule-content-card {
+        transition: opacity 0.2s ease-in-out;
+    }
+    
+    /* GR & SR Attractive Card Designs */
+    .gr-card {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        background: #ffffff;
+    }
+    .gr-header {
+        background: linear-gradient(135deg, #1e3a8a, #0f172a);
+        color: #ffffff;
+        padding: 0.85rem 1.25rem;
+    }
+    
+    .sr-card {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #fde68a;
+        box-shadow: 0 4px 6px -1px rgba(180, 83, 9, 0.05), 0 2px 4px -2px rgba(180, 83, 9, 0.05);
+        background: #fffdf5;
+    }
+    .sr-header {
+        background: linear-gradient(135deg, #b45309, #78350f);
+        color: #ffffff;
+        padding: 0.85rem 1.25rem;
+    }
+
+    .rule-text-content {
+        font-size: 1.02rem;
+        line-height: 1.85;
+        color: #1e293b;
+        width: 100%;
+    }
+    
+    /* Sub-clause and Clause styling */
+    .rule-clause-card {
+        border-radius: 8px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .rule-clause-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .rule-subclause-item {
+        border-radius: 8px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .rule-subclause-item:hover {
+        background: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.12);
+    }
+    .clause-text {
+        word-break: normal;
+        overflow-wrap: break-word;
+        text-align: justify;
+        text-justify: inter-word;
+        text-align-last: left;
+    }
+    .rule-paragraph-block {
+        text-align: justify;
+        text-justify: inter-word;
+        text-align-last: left;
+        line-height: 1.85;
+    }
+    @media (max-width: 576px) {
+        .clause-text, .rule-paragraph-block {
+            text-align: left;
+        }
+    }
+
+    /* Font size adjustment classes */
+    .fs-reader-sm .rule-text-content { font-size: 0.92rem !important; }
+    .fs-reader-md .rule-text-content { font-size: 1.02rem !important; }
+    .fs-reader-lg .rule-text-content { font-size: 1.18rem !important; }
+    
+    /* Custom scrollbar for sidebar */
+    #chaptersTreeContainer::-webkit-scrollbar {
+        width: 6px;
+    }
+    #chaptersTreeContainer::-webkit-scrollbar-track {
+        background: #f8f9fa;
+    }
+    #chaptersTreeContainer::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    #chaptersTreeContainer::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* YouTube Video Card Styles */
+    .video-thumbnail-container {
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #0f172a;
+        aspect-ratio: 16 / 9;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .video-thumbnail-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+    }
+    .video-thumbnail-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.92;
+        transition: opacity 0.25s ease, transform 0.3s ease;
+    }
+    .video-thumbnail-container:hover .video-thumbnail-img {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+    .video-play-btn-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60px;
+        height: 60px;
+        background: rgba(220, 38, 38, 0.92);
+        color: #ffffff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
+        transition: all 0.25s ease;
+    }
+    .video-thumbnail-container:hover .video-play-btn-overlay {
+        transform: translate(-50%, -50%) scale(1.15);
+        background: #ef4444;
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.9);
+    }
+    .video-badge-overlay {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(15, 23, 42, 0.85);
+        color: #ffffff;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    /* Animated Flowchart & Step Styles */
+    .gr-flow-step {
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+    }
+    .gr-flow-step.active {
+        background: #eff6ff !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    .gr-connector {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: -2px 0;
+        position: relative;
+        z-index: 1;
+    }
+    .gr-connector-line {
+        width: 3px;
+        height: 20px;
+        background: #cbd5e1;
+        position: relative;
+        overflow: hidden;
+    }
+    .gr-connector.active .gr-connector-line {
+        background: #3b82f6;
+    }
+    .gr-connector.active .gr-connector-line::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 8px;
+        background: #ffffff;
+        animation: flowTravel 1.2s infinite ease-in-out;
+    }
+    @keyframes flowTravel {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(240%); }
+    }
+    @keyframes pulseRing {
+        0% { transform: scale(0.96); opacity: 0.85; }
+        50% { transform: scale(1.04); opacity: 1; }
+        100% { transform: scale(0.96); opacity: 0.85; }
+    }
+    .pulse-glow {
+        animation: pulseRing 1.6s infinite ease-in-out;
+    }
+
+    /* Track schematic diagram container */
+    .track-schematic-box {
+        background: linear-gradient(180deg, #09101d 0%, #172554 100%);
+        border-radius: 10px;
+        padding: 1rem;
+        color: #f8fafc;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #1e3a8a;
+    }
+</style>
+
+<div class="container-fluid px-3 px-md-4 py-3 rule-reader-container fs-reader-md" id="ruleReaderApp">
+    <!-- TOP TOOLBAR & QUICK LINKS -->
+    <div class="rail-card p-3 mb-3 shadow-sm border-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h4 class="fw-bold text-primary mb-1 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-book-bookmark text-warning"></i>
+                    <span>Eastern Railway General & Subsidiary Rules (GR & SR)</span>
+                </h4>
+                <p class="text-muted mb-0 small">
+                    Complete Official Digital Rule Book (343 Pages Digitized) &bull; <strong id="totalRulesCountBadge">{{ total_rules_count }}</strong> Rules Indexed
+                </p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <!-- FONT SIZE ADJUSTER -->
+                <div class="btn-group btn-group-sm me-2" role="group" aria-label="Font Size">
+                    <button type="button" class="btn btn-outline-secondary font-size-btn" data-size="sm" title="Small Text">A-</button>
+                    <button type="button" class="btn btn-outline-secondary font-size-btn active" data-size="md" title="Normal Text">A</button>
+                    <button type="button" class="btn btn-outline-secondary font-size-btn" data-size="lg" title="Large Text">A+</button>
+                </div>
+                <a href="{{ url_for('elearning.troubleshooting') }}" class="btn btn-outline-danger btn-sm fw-bold">
+                    <i class="fa-solid fa-screwdriver-wrench me-1"></i> Loco Troubleshooting
+                </a>
+                <a href="{{ url_for('elearning.forms_manual') }}" class="btn btn-outline-success btn-sm fw-bold">
+                    <i class="fa-solid fa-file-contract me-1"></i> Forms (T/409)
+                </a>
+                <a href="{{ url_for('elearning.quiz') }}" class="btn btn-warning btn-sm fw-bold text-dark">
+                    <i class="fa-solid fa-graduation-cap me-1"></i> Safety Quiz
+                </a>
+                <button type="button" class="btn btn-outline-primary btn-sm fw-bold me-1" id="toggleFullWidthBtn" title="Toggle Full Scape View">
+                    <i class="fa-solid fa-expand me-1"></i> <span id="fullWidthBtnText">Full Scape View</span>
+                </button>
+                <button type="button" class="btn btn-outline-dark btn-sm fw-bold" onclick="window.print()">
+                    <i class="fa-solid fa-print me-1"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MAIN WORKSPACE: SIDEBAR & MAIN READING PANE -->
+    <div class="row g-3" id="mainWorkspaceRow">
+        <!-- LEFT COLUMN: CHAPTERS & RULES INDEX SIDEBAR -->
+        <div class="col-lg-4 col-xl-3" id="sidebarColumn">
+
+            <div class="rail-card p-3 shadow-sm" style="position: sticky; top: 80px; max-height: calc(100vh - 100px); display: flex; flex-direction: column;">
+                <!-- SIDEBAR SEARCH BAR -->
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-dark mb-0 small text-uppercase">
+                            <i class="fa-solid fa-list-ol text-primary me-1"></i> Rule Book Index
+                        </h6>
+                        <span class="badge bg-light text-muted border small" id="visibleRulesCounter">
+                            {{ total_rules_count }} Rules
+                        </span>
+                    </div>
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" id="sidebarSearchInput" class="form-control border-start-0" placeholder="Type rule no. or keyword...">
+                        <button class="btn btn-outline-secondary border-start-0 bg-white" type="button" id="clearSearchBtn" title="Clear search">
+                            <i class="fa-solid fa-xmark text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SCROLLABLE ACCORDION FOR ALL CHAPTERS -->
+                <div class="flex-grow-1 overflow-auto pe-1" id="chaptersTreeContainer">
+                    <div class="accordion accordion-flush" id="chaptersAccordion">
+                        {% for chap in chapters %}
+                            {% set is_active_chap = active_rule and active_rule.chapter_no == chap.chapter_no %}
+                            <div class="accordion-item border-0 mb-1 chapter-item" data-chap-title="{{ chap.chapter_title|lower }} {{ chap.chapter_no|lower }}">
+                                <h2 class="accordion-header" id="headingChap{{ loop.index }}">
+                                    <button class="accordion-button py-2 px-2 rounded small fw-bold {% if not is_active_chap %}collapsed bg-light text-dark{% else %}bg-primary bg-opacity-10 text-primary border-primary border{% endif %}" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#collapseChap{{ loop.index }}" 
+                                            aria-expanded="{{ 'true' if is_active_chap else 'false' }}" 
+                                            aria-controls="collapseChap{{ loop.index }}">
+                                        <div class="d-flex flex-column text-start w-100 pe-2" style="min-width: 0;">
+                                            <div class="d-flex justify-content-between align-items-center w-100 mb-0.5">
+                                                <span class="fw-bold text-dark text-truncate" style="font-size: 0.86rem;">
+                                                    <i class="fa-solid fa-folder-open text-warning me-1.5"></i>{{ chap.chapter_no }}
+                                                </span>
+                                                <span class="badge bg-secondary rounded-pill chap-counter ms-1" style="font-size: 0.72rem;">{{ chap.rules|length }}</span>
+                                            </div>
+                                            <div class="text-secondary text-truncate fw-semibold" style="font-size: 0.75rem; max-width: 210px;" title="{{ chap.chapter_title }}">
+                                                {{ chap.chapter_title }}
+                                            </div>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="collapseChap{{ loop.index }}" 
+                                     class="accordion-collapse collapse {% if is_active_chap %}show{% endif %}" 
+                                     aria-labelledby="headingChap{{ loop.index }}" 
+                                     data-bs-parent="#chaptersAccordion">
+                                    <div class="accordion-body p-1 pt-2">
+                                        <div class="small text-primary fw-bold mb-1 px-2 border-bottom pb-1 d-flex justify-content-between align-items-center" style="font-size: 0.74rem;">
+                                            <span class="text-truncate" style="max-width: 160px;"><i class="fa-solid fa-book-bookmark text-warning me-1"></i>{{ chap.chapter_title }}</span>
+                                            <a href="{{ url_for('elearning.quiz', chapter=chap.chapter_no) }}" class="badge bg-warning text-dark text-decoration-none py-1 px-1.5 shadow-xs" title="Practice Chapter Quiz">
+                                                <i class="fa-solid fa-graduation-cap me-0.5"></i> Quiz
+                                            </a>
+                                        </div>
+                                        <div class="list-group list-group-flush">
+                                            {% for r in chap.rules %}
+                                                {% set is_current = active_rule and active_rule.id == r.id %}
+                                                <a href="{{ url_for('elearning.index', id=r.id) }}" 
+                                                   class="list-group-item list-group-item-action py-1 px-2 rounded mb-1 rule-sidebar-item {% if is_current %}active shadow-sm{% endif %}"
+                                                   data-rule-id="{{ r.id }}"
+                                                   data-search="{{ r.rule_no|lower }} {{ r.rule_title|lower }} {{ r.category|lower }}"
+                                                   onclick="selectRuleAjax({{ r.id }}, event)">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="badge badge-rule {% if is_current %}bg-white text-primary{% else %}bg-danger text-white{% endif %} me-1" style="font-size: 0.75rem;">
+                                                             {{ r.rule_no }}
+                                                        </span>
+                                                        <small class="text-truncate opacity-75" style="max-width: 90px;">{{ r.category }}</small>
+                                                    </div>
+                                                    <div class="text-truncate small mt-1 {% if is_current %}text-white{% else %}text-dark{% endif %}" title="{{ r.rule_title }}">
+                                                        {{ r.rule_title }}
+                                                    </div>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="border-top pt-2 mt-2 text-center text-muted small" style="font-size: 0.72rem;">
+                    <i class="fa-solid fa-train me-1"></i> Eastern Railway Operating Dept
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: MAIN RULE READING PANE (DYNAMICALLY UPDATED VIA AJAX) -->
+        <div class="col-lg-8 col-xl-9" id="readingColumn">
+            <div id="ruleContentCard" class="rail-card p-4 shadow-sm mb-4 rule-content-card">
+                {% if active_rule %}
+                    <!-- BREADCRUMB & METADATA -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-3">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0 small">
+                                <li class="breadcrumb-item"><span class="text-muted">Rule Book</span></li>
+                                <li class="breadcrumb-item text-secondary fw-semibold" id="viewChapterNo">{{ active_rule.chapter_no }}: {{ active_rule.chapter_title }}</li>
+                                <li class="breadcrumb-item active text-danger fw-bold" id="viewRuleNoBreadcrumb">{{ active_rule.rule_no }}</li>
+                            </ol>
+                        </nav>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <a href="{{ url_for('elearning.quiz', chapter=active_rule.chapter_no) }}" class="btn btn-warning btn-sm fw-bold text-dark shadow-xs" id="viewChapterQuizBtn" title="Practice quiz questions for this chapter">
+                                <i class="fa-solid fa-graduation-cap me-1"></i><span id="viewChapterQuizText">{{ active_rule.chapter_no }} Quiz</span>
+                            </a>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary" id="viewChapterTitle">
+                                <i class="fa-solid fa-folder-open me-1 text-warning"></i>{{ active_rule.chapter_no }} &bull; {{ active_rule.chapter_title }}
+                            </span>
+                            <span class="badge bg-light text-muted border" id="viewCategory">{{ active_rule.category }}</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="copyRuleBtn" title="Copy Rule text">
+                                <i class="fa-solid fa-copy me-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- RULE TITLE HEADER -->
+                    <div class="mb-4">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <span class="badge bg-danger fs-5 px-3 py-2 shadow-sm" id="viewRuleNo">{{ active_rule.rule_no }}</span>
+                            <h2 class="fw-bold text-dark mb-0 d-inline fs-4" id="viewRuleTitle">{{ active_rule.rule_title }}</h2>
+                        </div>
+                    </div>
+
+                    <!-- GENERAL RULE (GR) -->
+                    <div class="gr-card mb-4">
+                        <div class="gr-header d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-scale-balanced text-warning fs-5"></i>
+                                <h5 class="fw-bold text-white mb-0">General Rule (G.R.)</h5>
+                            </div>
+                            <span class="badge bg-white text-dark small fw-bold">Statutory Standard</span>
+                        </div>
+                        <div class="p-4 bg-white">
+                            <div class="rule-text-content" id="viewGeneralRule">
+                                {{ active_rule.general_rule or 'General Rule text referenced in General Rules 1976 (Open Lines).' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EASTERN RAILWAY SUBSIDIARY RULE (SR) -->
+                    <div class="sr-card mb-4 {% if not active_rule.subsidiary_rule %}d-none{% endif %}" id="viewSubsidiaryCard">
+                        <div class="sr-header d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-book-bookmark text-warning fs-5"></i>
+                                <h5 class="fw-bold text-white mb-0">Eastern Railway Subsidiary Rule (S.R.)</h5>
+                            </div>
+                            <span class="badge bg-warning text-dark border border-light small fw-bold">Eastern Railway Specific</span>
+                        </div>
+                        <div class="p-4" style="background: #fffdf5;">
+                            <div class="rule-text-content" id="viewSubsidiaryRule">
+                                {{ active_rule.subsidiary_rule or '' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KEY TAKEAWAY / PRACTICAL APPLICATION -->
+                    <div class="p-3 bg-warning bg-opacity-10 border border-warning rounded mb-4 shadow-sm {% if not active_rule.key_points %}d-none{% endif %}" id="viewKeyPointsContainer">
+                        <h6 class="fw-bold text-dark mb-2">
+                            <i class="fa-solid fa-lightbulb text-warning me-2"></i> Safety & Operational Compliance Takeaway:
+                        </h6>
+                        <p class="small text-secondary mb-0" id="viewKeyPoints" style="line-height: 1.6;">
+                            {{ active_rule.key_points or '' }}
+                        </p>
+                    </div>
+
+                    <!-- INTERACTIVE ANIMATION & PROCEDURAL FLOWCHART (Displayed for relevant rules) -->
+                    <div id="viewAnimationContainer" class="d-none mb-4">
+                        <div class="rail-card p-3 p-md-4 shadow-sm border-primary" style="border-left: 5px solid #2563eb; background: #ffffff;">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 border-bottom pb-2">
+                                <div>
+                                    <span class="badge bg-primary text-white mb-1"><i class="fa-solid fa-play-circle me-1"></i> Interactive Visual Demonstration</span>
+                                    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                                        <i class="fa-solid fa-diagram-project text-primary"></i> <span id="animTitle">Operational Procedure & Animated Flow</span>
+                                    </h5>
+                                    <small class="text-muted fw-semibold" id="animRuleCite"></small>
+                                </div>
+                                <!-- ANIMATION CONTROLS -->
+                                <div class="d-flex flex-wrap gap-1 align-items-center">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="animPrevBtn" onclick="prevAnimStep()" title="Previous step">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary px-3 fw-bold" id="animPlayBtn" onclick="toggleAnimAutoPlay()">
+                                        <i class="fa-solid fa-play me-1"></i> Auto Play
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="animNextBtn" onclick="nextAnimStep()" title="Next step">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="resetAnimFlow()" title="Reset to step 1">
+                                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- VISUAL TRACK SIMULATION SCHEMATIC (SVG/CSS ANIMATED) -->
+                            <div id="animSchematicContainer" class="track-schematic-box mb-3">
+                                <!-- Rendered dynamically based on schematic type -->
+                            </div>
+
+                            <!-- STEP-BY-STEP ANIMATED FLOWCHART CARDS -->
+                            <div id="animStepsContainer">
+                                <!-- Rendered dynamically by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AUDIO-VISUAL DEMONSTRATION / YOUTUBE VIDEO SECTION -->
+                    <div id="viewVideoSection" class="mb-4">
+                        <div class="rail-card p-3 p-md-4 shadow-sm border-danger" style="border-left: 5px solid #dc2626; background: #ffffff;">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 border-bottom pb-2">
+                                <div>
+                                    <span class="badge bg-danger text-white mb-1">
+                                        <i class="fa-brands fa-youtube me-1"></i> Audio-Visual Safety Demonstration
+                                    </span>
+                                    <h5 class="fw-bold text-dark mb-0">
+                                        <i class="fa-solid fa-video text-danger me-1.5"></i> Video Tutorial & Footplate Demonstration
+                                    </h5>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" id="changeVideoBtn" onclick="triggerAddVideoModal()">
+                                        <i class="fa-solid fa-link me-1"></i> <span id="changeVideoBtnText">Add / Change Video</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Active Video Card (When video is linked) -->
+                            <div id="videoCardActive" class="d-none">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-6 col-lg-5">
+                                        <div class="video-thumbnail-container" id="videoThumbnailContainer" onclick="playCurrentVideo()">
+                                            <img src="" id="videoThumbnailImg" class="video-thumbnail-img" alt="Video Thumbnail">
+                                            <div class="video-play-btn-overlay">
+                                                <i class="fa-brands fa-youtube"></i>
+                                            </div>
+                                            <div class="video-badge-overlay">
+                                                <i class="fa-solid fa-circle-play me-1 text-danger"></i> Official Demonstration
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-lg-7">
+                                        <h6 class="fw-bold text-dark mb-2" id="videoTitleDisplay" style="font-size: 1.05rem; line-height: 1.4;"></h6>
+                                        <p class="text-muted small mb-3">
+                                            Watch the footplate operational procedure and safety compliance protocol demonstrated as per Indian Railways General & Subsidiary Rules.
+                                        </p>
+                                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                                            <button type="button" class="btn btn-danger btn-sm fw-bold px-3 shadow-xs" onclick="playCurrentVideo()">
+                                                <i class="fa-solid fa-play me-1"></i> Watch Video in Portal
+                                            </button>
+                                            <a href="#" target="_blank" class="btn btn-outline-secondary btn-sm" id="watchOnYoutubeExternal">
+                                                <i class="fa-brands fa-youtube me-1 text-danger"></i> Open in YouTube <i class="fa-solid fa-arrow-up-right-from-square ms-1 small"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Placeholder when no video linked yet -->
+                            <div id="videoCardPlaceholder" class="p-4 border border-2 border-dashed rounded text-center bg-light">
+                                <i class="fa-brands fa-youtube text-danger opacity-75 fa-3x mb-2"></i>
+                                <h6 class="fw-bold text-dark mb-1">No Video Attached Yet for this Rule</h6>
+                                <p class="text-muted small mb-3">Have a relevant YouTube training video or footplate demonstration for this rule? Add it with one click.</p>
+                                <button type="button" class="btn btn-outline-danger btn-sm fw-bold" onclick="triggerAddVideoModal()">
+                                    <i class="fa-solid fa-plus me-1"></i> Link YouTube Video
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PREVIOUS & NEXT RULE FOOTER NAVIGATION -->
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-4">
+                        <button type="button" class="btn btn-outline-primary btn-sm fw-bold {% if not prev_rule %}invisible{% endif %}" id="prevRuleBtn" onclick="selectRuleAjax({{ prev_rule.id if prev_rule else 0 }}, event)">
+                            <i class="fa-solid fa-arrow-left me-1"></i> <span id="prevRuleText">Previous: {{ prev_rule.rule_no if prev_rule else '' }}</span>
+                        </button>
+
+                        <span class="text-muted small" id="currentRuleFooterIndicator">
+                            Rule {{ active_rule.rule_no }}
+                        </span>
+
+                        <button type="button" class="btn btn-primary btn-sm fw-bold {% if not next_rule %}invisible{% endif %}" id="nextRuleBtn" onclick="selectRuleAjax({{ next_rule.id if next_rule else 0 }}, event)">
+                            <span id="nextRuleText">Next: {{ next_rule.rule_no if next_rule else '' }}</span> <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                {% else %}
+                    <!-- EMPTY STATE -->
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-book-open fa-4x text-muted mb-3 opacity-50"></i>
+                        <h4 class="fw-bold text-dark">No Rule Selected</h4>
+                        <p class="text-secondary">Please pick any rule from the sidebar index to read.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VIDEO PLAYER MODAL -->
+<div class="modal fade" id="videoPlayerModal" tabindex="-1" aria-labelledby="videoPlayerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg overflow-hidden">
+            <div class="modal-header bg-dark text-white py-2 px-3 border-0">
+                <h6 class="modal-title fw-bold d-flex align-items-center gap-2" id="videoPlayerModalLabel">
+                    <i class="fa-brands fa-youtube text-danger"></i> <span id="videoModalTitle">Video Demonstration</span>
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="stopVideoModal()"></button>
+            </div>
+            <div class="modal-body p-0 bg-black">
+                <div class="ratio ratio-16x9">
+                    <iframe id="videoPlayerIframe" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ADD / EDIT VIDEO MODAL -->
+<div class="modal fade" id="addVideoModal" tabindex="-1" aria-labelledby="addVideoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light py-2 px-3">
+                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="addVideoModalLabel">
+                    <i class="fa-brands fa-youtube text-danger"></i> <span>Link Relevant YouTube Video</span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <form id="addVideoForm" onsubmit="saveVideoLink(event)">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark mb-1">YouTube Video URL or 11-char Video ID:</label>
+                        <input type="text" class="form-control form-control-sm" id="modalVideoInput" placeholder="e.g. https://www.youtube.com/watch?v=7x_dZk0fU2U or 7x_dZk0fU2U" required oninput="previewModalThumbnail(this.value)">
+                        <div class="form-text small">Supports full YouTube link, share link (youtu.be), or direct 11-char ID.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark mb-1">Video Title / Operational Caption:</label>
+                        <input type="text" class="form-control form-control-sm" id="modalVideoTitleInput" placeholder="e.g. Passing Automatic Stop Signal at 'ON' (GR 9.02)">
+                    </div>
+
+                    <!-- THUMBNAIL PREVIEW -->
+                    <div class="mb-3 d-none" id="modalThumbnailPreviewContainer">
+                        <label class="form-label small fw-bold text-muted mb-1">Thumbnail Preview:</label>
+                        <div class="position-relative rounded overflow-hidden shadow-xs border" style="max-height: 180px;">
+                            <img src="" id="modalPreviewImg" class="w-100" style="object-fit: cover; max-height: 180px;" alt="Preview">
+                            <span class="badge bg-success position-absolute bottom-0 end-0 m-2"><i class="fa-solid fa-check me-1"></i> Valid Video Found</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger btn-sm fw-bold px-3" id="saveVideoSubmitBtn">
+                            <i class="fa-solid fa-save me-1"></i> Save & Embed Video
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CLIENT-SIDE SCRIPT: RICH FORMATTER & SPA ARCHITECTURE -->
+<script>
+// Cache of fetched rules to avoid repeated network calls
+const ruleCache = new Map();
+
+// If active_rule was rendered server-side, seed cache
+{% if active_rule %}
+ruleCache.set({{ active_rule.id }}, {
+    id: {{ active_rule.id }},
+    rule_no: {{ active_rule.rule_no | tojson }},
+    rule_title: {{ active_rule.rule_title | tojson }},
+    chapter_no: {{ active_rule.chapter_no | tojson }},
+    chapter_title: {{ active_rule.chapter_title | tojson }},
+    category: {{ active_rule.category | tojson }},
+    general_rule: {{ (active_rule.general_rule or '') | tojson }},
+    subsidiary_rule: {{ (active_rule.subsidiary_rule or '') | tojson }},
+    key_points: {{ (active_rule.key_points or '') | tojson }},
+    youtube_video_id: {{ (active_rule.youtube_video_id or '') | tojson }},
+    youtube_title: {{ (active_rule.youtube_title or '') | tojson }},
+    animation: {{ (active_rule.get_animation() or None) | tojson }},
+    prev_id: {{ prev_rule.id if prev_rule else 'null' }},
+    prev_rule_no: {{ (prev_rule.rule_no if prev_rule else '') | tojson }},
+    next_id: {{ next_rule.id if next_rule else 'null' }},
+    next_rule_no: {{ (next_rule.rule_no if next_rule else '') | tojson }}
+});
+{% endif %}
+
+// Reassemble raw rule lines into structured, cohesive semantic blocks
+function reassembleRuleBlocks(rawText) {
+    if (!rawText) return [];
+    
+    // Normalize newlines
+    const lines = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    const blocks = [];
+    let currentBlock = null;
+
+    // Pattern 1: Multi-marker at start, e.g. "[d] [i]" or "[d] [1]" or "(d) (i)"
+    const multiMarkerRegex = /^\s*(\[[a-z0-9]+\]|\([a-z0-9]+\))\s*(\[[a-z0-9]+\]|\([a-z0-9]+\))\s*(.*)$/i;
+    // Pattern 2: Single marker, e.g. "(1)", "[e]", "(a)", "[iv]", "1.", "Note:" or "Note -"
+    const singleMarkerRegex = /^\s*(\(\d+\)|\[\d+\]|\([a-z]\)|\[[a-z]\]|\([ivx]+\)|\[[ivx]+\]|\b\d+\.|\bNote(?:\s*[\.:\-])?)\s*(.*)$/i;
+
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+            if (currentBlock) {
+                blocks.push(currentBlock);
+                currentBlock = null;
+            }
+            return;
+        }
+
+        const multiMatch = trimmed.match(multiMarkerRegex);
+        const singleMatch = trimmed.match(singleMarkerRegex);
+
+        if (multiMatch) {
+            if (currentBlock) blocks.push(currentBlock);
+            currentBlock = {
+                type: 'multi',
+                badge1: multiMatch[1],
+                badge2: multiMatch[2],
+                text: multiMatch[3]
+            };
+        } else if (singleMatch) {
+            if (currentBlock) blocks.push(currentBlock);
+            const marker = singleMatch[1];
+            const content = singleMatch[2];
+
+            let type = 'subclause';
+            if (/^\(\d+\)$/.test(marker)) {
+                type = 'major';
+            } else if (/^(\([ivx]+\)|\[[ivx]+\]|\d+\.)$/i.test(marker)) {
+                type = 'subsub';
+            } else if (/^Note/i.test(marker)) {
+                type = 'note';
+            }
+
+            currentBlock = {
+                type: type,
+                marker: marker,
+                text: content
+            };
+        } else {
+            // Continuation line or plain text paragraph
+            if (currentBlock) {
+                currentBlock.text += (currentBlock.text ? ' ' : '') + trimmed;
+            } else {
+                currentBlock = {
+                    type: 'paragraph',
+                    marker: '',
+                    text: trimmed
+                };
+            }
+        }
+    });
+
+    if (currentBlock) {
+        blocks.push(currentBlock);
+    }
+
+    return blocks;
+}
+
+// Beautiful Text Formatter: Parses raw rules into structured clauses, badges, and styled text
+function formatRuleContentHtml(rawText, isSubsidiary) {
+    if (!rawText || rawText.trim().length === 0) {
+        return `<p class="text-muted fst-italic mb-0">General Rule text referenced in General Rules 1976 (Open Lines).</p>`;
+    }
+
+    const blocks = reassembleRuleBlocks(rawText);
+    let html = '';
+
+    blocks.forEach(block => {
+        const highlightedText = highlightKeywords(block.text);
+
+        if (block.type === 'major') {
+            const badgeClass = isSubsidiary ? 'bg-warning text-dark border border-warning' : 'bg-primary text-white';
+            const cardBg = isSubsidiary ? '#fffdf7' : '#f8fafc';
+            const borderCol = isSubsidiary ? '#f59e0b' : '#2563eb';
+            html += `
+                <div class="rule-clause-card mb-3 p-3 rounded shadow-xs" style="background: ${cardBg}; border: 1px solid #e2e8f0; border-left: 5px solid ${borderCol};">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="flex-shrink-0">
+                            <span class="badge ${badgeClass} fs-6 px-2.5 py-1.5 shadow-sm">${block.marker}</span>
+                        </div>
+                        <div class="clause-text flex-grow-1" style="line-height: 1.85; text-align: justify; text-justify: inter-word; font-size: 1.02rem;">
+                            ${highlightedText}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (block.type === 'multi') {
+            const b1Class = isSubsidiary ? 'bg-warning text-dark border border-warning' : 'bg-primary text-white';
+            const b2Class = 'bg-secondary bg-opacity-10 text-secondary border';
+            const borderCol = isSubsidiary ? '#f59e0b' : '#3b82f6';
+            html += `
+                <div class="rule-clause-card mb-2.5 p-3 rounded shadow-xs" style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid ${borderCol};">
+                    <div class="d-flex align-items-start gap-2.5">
+                        <div class="flex-shrink-0 d-flex gap-1.5">
+                            <span class="badge ${b1Class} fw-bold px-2 py-1 shadow-sm">${block.badge1}</span>
+                            <span class="badge ${b2Class} fw-bold px-2 py-1">${block.badge2}</span>
+                        </div>
+                        <div class="clause-text flex-grow-1 ps-1" style="line-height: 1.85; text-align: justify; text-justify: inter-word; font-size: 1.01rem;">
+                            ${highlightedText}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (block.type === 'subclause') {
+            const badgeClass = isSubsidiary ? 'bg-warning bg-opacity-25 text-dark border border-warning' : 'bg-primary bg-opacity-10 text-primary border border-primary';
+            const borderCol = isSubsidiary ? '#f59e0b' : '#3b82f6';
+            html += `
+                <div class="rule-subclause-item mb-2.5 p-3 rounded shadow-xs" style="background: #ffffff; border: 1px solid #fed7aa; border-left: 4px solid ${borderCol};">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="flex-shrink-0">
+                            <span class="badge ${badgeClass} fw-bold px-2.5 py-1.5 shadow-sm" style="font-size: 0.95rem;">${block.marker}</span>
+                        </div>
+                        <div class="clause-text flex-grow-1" style="line-height: 1.85; text-align: justify; text-justify: inter-word; font-size: 1.01rem;">
+                            ${highlightedText}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (block.type === 'subsub') {
+            html += `
+                <div class="rule-subsubclause-item mb-2 ms-3 ms-md-4 p-2.5 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #94a3b8;">
+                    <div class="d-flex align-items-start gap-2.5">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-light text-secondary border px-2 py-0.5 fw-semibold">${block.marker}</span>
+                        </div>
+                        <div class="clause-text flex-grow-1 text-secondary" style="line-height: 1.8; text-align: justify; text-justify: inter-word; font-size: 0.98rem;">
+                            ${highlightedText}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (block.type === 'note') {
+            html += `
+                <div class="rule-note-card mb-3 p-3 rounded bg-info bg-opacity-10 border border-info border-opacity-25">
+                    <div class="d-flex align-items-start gap-2.5">
+                        <div class="flex-shrink-0 mt-0.5">
+                            <span class="badge bg-info text-dark fw-bold px-2 py-1"><i class="fa-solid fa-circle-info me-1"></i>${block.marker}</span>
+                        </div>
+                        <div class="clause-text flex-grow-1 text-secondary" style="line-height: 1.8; text-align: justify; text-justify: inter-word;">
+                            ${highlightedText}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Plain paragraph
+            html += `
+                <div class="rule-paragraph-block mb-3" style="line-height: 1.85; text-align: justify; text-justify: inter-word; width: 100%; font-size: 1.01rem;">
+                    ${highlightedText}
+                </div>
+            `;
+        }
+    });
+
+    return html;
+}
+
+// Inline keyword highlighter for speeds, authorities, forms, and whistle codes
+function highlightKeywords(text) {
+    // Speeds e.g. 15 km/h, 10 km/h, 75 km/h
+    text = text.replace(/\b(\d{1,3}\s*km\/?h(?:our)?|\d{1,3}\s*kmph)\b/gi, 
+        '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-0 fw-bold"><i class="fa-solid fa-gauge-high me-1"></i>$1</span>');
+
+    // Railway forms e.g. T/409, T/369(3b), T/511
+    text = text.replace(/\b(T\/(?:A|B|C|D)?\s*\d{3}(?:\([a-z0-9]+\))?)\b/gi, 
+        '<span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-0 fw-bold"><i class="fa-solid fa-file-contract me-1"></i>$1</span>');
+
+    // Key distances
+    text = text.replace(/\b(270\s*metres|10\s*metres|500\s*metres|250\s*metres|600\s*metres|1200\s*metres)\b/gi, 
+        '<strong class="text-primary">$1</strong>');
+
+    // Signal aspects
+    text = text.replace(/\b('ON'\s*aspect|Danger\s*aspect|Stop\s*signal|Automatic\s*Stop\s*signal)\b/gi, 
+        '<strong class="text-danger">$1</strong>');
+
+    return text;
+}
+
+// Main function to load and display a rule without reloading the web page
+async function selectRuleAjax(ruleId, event) {
+    if (event) {
+        event.preventDefault();
+    }
+    if (!ruleId || ruleId === 0) return;
+
+    // Fetch rule data (from cache or API)
+    let ruleData = ruleCache.get(ruleId);
+    if (!ruleData) {
+        try {
+            const resp = await fetch(`/elearning/api/rule/${ruleId}`);
+            if (!resp.ok) throw new Error('Rule not found');
+            ruleData = await resp.json();
+            ruleCache.set(ruleId, ruleData);
+        } catch (err) {
+            console.error('Error fetching rule:', err);
+            return;
+        }
+    }
+
+    // 1. Update the browser URL WITHOUT page reload
+    const newUrl = `/elearning/?id=${ruleId}`;
+    if (window.location.search !== `?id=${ruleId}`) {
+        window.history.pushState({ ruleId: ruleId }, '', newUrl);
+    }
+
+    // 2. Render the content into the reading pane
+    renderRuleData(ruleData);
+
+    // 3. Update active item in sidebar
+    updateSidebarActiveState(ruleId);
+}
+
+// Update the DOM elements in the main reading pane
+function renderRuleData(data) {
+    const card = document.getElementById('ruleContentCard');
+    if (!card) return;
+
+    // Smooth subtle opacity transition
+    card.style.opacity = '0.5';
+
+    setTimeout(() => {
+        // Document Title
+        document.title = `${data.rule_no} - ${data.rule_title} | Eastern Railway GR & SR Digital Rule Book`;
+
+        // Breadcrumb & Badges
+        document.getElementById('viewChapterNo').textContent = (data.chapter_no && data.chapter_title) ? `${data.chapter_no}: ${data.chapter_title}` : (data.chapter_no || '');
+        document.getElementById('viewRuleNoBreadcrumb').textContent = data.rule_no || '';
+        document.getElementById('viewChapterTitle').innerHTML = (data.chapter_no && data.chapter_title) ? `<i class="fa-solid fa-folder-open me-1 text-warning"></i>${data.chapter_no} &bull; ${data.chapter_title}` : (data.chapter_title || '');
+        document.getElementById('viewCategory').textContent = data.category || '';
+        document.getElementById('viewRuleNo').textContent = data.rule_no || '';
+        document.getElementById('viewRuleTitle').textContent = data.rule_title || '';
+
+        // Chapter Quiz Button
+        const quizBtn = document.getElementById('viewChapterQuizBtn');
+        const quizText = document.getElementById('viewChapterQuizText');
+        if (quizBtn && quizText) {
+            if (data.chapter_no) {
+                quizBtn.href = `/elearning/quiz?chapter=${encodeURIComponent(data.chapter_no)}`;
+                quizText.textContent = `${data.chapter_no} Quiz`;
+                quizBtn.classList.remove('d-none');
+            } else {
+                quizBtn.classList.add('d-none');
+            }
+        }
+
+        // Formatted General Rule
+        const grEl = document.getElementById('viewGeneralRule');
+        grEl.innerHTML = formatRuleContentHtml(data.general_rule, false);
+
+        // Formatted Subsidiary Rule (SR)
+        const srCard = document.getElementById('viewSubsidiaryCard');
+        const srEl = document.getElementById('viewSubsidiaryRule');
+        if (data.subsidiary_rule && data.subsidiary_rule.trim().length > 0) {
+            srEl.innerHTML = formatRuleContentHtml(data.subsidiary_rule, true);
+            srCard.classList.remove('d-none');
+        } else {
+            srEl.innerHTML = '';
+            srCard.classList.add('d-none');
+        }
+
+        // Key Points
+        const kpContainer = document.getElementById('viewKeyPointsContainer');
+        const kpEl = document.getElementById('viewKeyPoints');
+        if (data.key_points && data.key_points.trim().length > 0) {
+            kpEl.textContent = data.key_points;
+            kpContainer.classList.remove('d-none');
+        } else {
+            kpEl.textContent = '';
+            kpContainer.classList.add('d-none');
+        }
+
+        // Render YouTube Video Card
+        renderRuleVideo(data.id, data.youtube_video_id, data.youtube_title, data.rule_no);
+
+        // Render Animated Operational Flow & Track Schematic
+        renderRuleAnimation(data.animation, data.rule_no);
+
+        // Footer Navigation Buttons (Previous & Next)
+        const prevBtn = document.getElementById('prevRuleBtn');
+        const nextBtn = document.getElementById('nextRuleBtn');
+        const prevText = document.getElementById('prevRuleText');
+        const nextText = document.getElementById('nextRuleText');
+        const footerIndicator = document.getElementById('currentRuleFooterIndicator');
+
+        footerIndicator.textContent = `Rule ${data.rule_no}`;
+
+        if (data.prev_id) {
+            prevBtn.classList.remove('invisible');
+            prevText.textContent = `Previous: ${data.prev_rule_no}`;
+            prevBtn.onclick = (e) => selectRuleAjax(data.prev_id, e);
+        } else {
+            prevBtn.classList.add('invisible');
+        }
+
+        if (data.next_id) {
+            nextBtn.classList.remove('invisible');
+            nextText.textContent = `Next: ${data.next_rule_no}`;
+            nextBtn.onclick = (e) => selectRuleAjax(data.next_id, e);
+        } else {
+            nextBtn.classList.add('invisible');
+        }
+
+        card.style.opacity = '1';
+    }, 40);
+}
+
+// Update sidebar styling and ensure current chapter is expanded
+function updateSidebarActiveState(ruleId) {
+    const allSidebarItems = document.querySelectorAll('.rule-sidebar-item');
+    allSidebarItems.forEach(item => {
+        const itemRuleId = parseInt(item.getAttribute('data-rule-id'));
+        const badge = item.querySelector('.badge-rule');
+        const titleDiv = item.querySelector('.text-truncate.small');
+
+        if (itemRuleId === ruleId) {
+            item.classList.add('active', 'shadow-sm');
+            if (badge) {
+                badge.classList.remove('bg-danger', 'text-white');
+                badge.classList.add('bg-white', 'text-primary');
+            }
+            if (titleDiv) {
+                titleDiv.classList.remove('text-dark');
+                titleDiv.classList.add('text-white');
+            }
+
+            // Ensure parent chapter accordion is open
+            const parentAccordionCollapse = item.closest('.accordion-collapse');
+            const parentButton = item.closest('.chapter-item')?.querySelector('.accordion-button');
+            if (parentAccordionCollapse && !parentAccordionCollapse.classList.contains('show')) {
+                parentAccordionCollapse.classList.add('show');
+                if (parentButton) parentButton.classList.remove('collapsed');
+            }
+
+            // Scroll the active item into view within the sidebar container smoothly
+            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            item.classList.remove('active', 'shadow-sm');
+            if (badge) {
+                badge.classList.add('bg-danger', 'text-white');
+                badge.classList.remove('bg-white', 'text-primary');
+            }
+            if (titleDiv) {
+                titleDiv.classList.add('text-dark');
+                titleDiv.classList.remove('text-white');
+            }
+        }
+    });
+}
+
+// Handle Browser Back / Forward buttons without reload
+window.addEventListener('popstate', function(event) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ruleId = urlParams.get('id');
+    if (ruleId) {
+        selectRuleAjax(parseInt(ruleId), null);
+    }
+});
+
+// Font Size Adjuster Buttons
+document.querySelectorAll('.font-size-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.font-size-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const size = this.dataset.size;
+        const app = document.getElementById('ruleReaderApp');
+        app.classList.remove('fs-reader-sm', 'fs-reader-md', 'fs-reader-lg');
+        app.classList.add(`fs-reader-${size}`);
+    });
+});
+
+// Copy Rule text to clipboard
+document.getElementById('copyRuleBtn')?.addEventListener('click', function() {
+    const ruleNo = document.getElementById('viewRuleNo').textContent;
+    const ruleTitle = document.getElementById('viewRuleTitle').textContent;
+    const gr = document.getElementById('viewGeneralRule').innerText;
+    const sr = document.getElementById('viewSubsidiaryRule').innerText;
+    
+    let textToCopy = `${ruleNo} - ${ruleTitle}\n\n[GENERAL RULE]\n${gr}`;
+    if (sr && sr.trim().length > 0) {
+        textToCopy += `\n\n[EASTERN RAILWAY SUBSIDIARY RULE]\n${sr}`;
+    }
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalHtml = this.innerHTML;
+        this.innerHTML = '<i class="fa-solid fa-check text-success me-1"></i> Copied!';
+        setTimeout(() => { this.innerHTML = originalHtml; }, 2000);
+    });
+});
+
+// Instant Sidebar Search Filter
+const sidebarSearchInput = document.getElementById('sidebarSearchInput');
+const clearSearchBtn = document.getElementById('clearSearchBtn');
+const visibleRulesCounter = document.getElementById('visibleRulesCounter');
+
+function filterSidebarRules(query) {
+    let matchCount = 0;
+    const chapterItems = document.querySelectorAll('.chapter-item');
+
+    chapterItems.forEach(chap => {
+        const ruleItems = chap.querySelectorAll('.rule-sidebar-item');
+        let chapHasMatch = false;
+        let chapMatchCount = 0;
+
+        ruleItems.forEach(item => {
+            const searchData = item.getAttribute('data-search') || '';
+            if (!query || searchData.includes(query)) {
+                item.style.display = '';
+                chapHasMatch = true;
+                chapMatchCount++;
+                matchCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        const collapseEl = chap.querySelector('.accordion-collapse');
+        const buttonEl = chap.querySelector('.accordion-button');
+        const counterEl = chap.querySelector('.chap-counter');
+
+        if (!query) {
+            chap.style.display = '';
+            if (counterEl) counterEl.textContent = ruleItems.length;
+        } else if (chapHasMatch) {
+            chap.style.display = '';
+            if (counterEl) counterEl.textContent = chapMatchCount;
+            // Expand matching chapters
+            if (collapseEl && !collapseEl.classList.contains('show')) {
+                collapseEl.classList.add('show');
+                if (buttonEl) buttonEl.classList.remove('collapsed');
+            }
+        } else {
+            chap.style.display = 'none';
+        }
+    });
+
+    if (visibleRulesCounter) {
+        visibleRulesCounter.textContent = query ? `${matchCount} Matches` : `{{ total_rules_count }} Rules`;
+    }
+}
+
+sidebarSearchInput?.addEventListener('input', function() {
+    filterSidebarRules(this.value.toLowerCase().trim());
+});
+
+clearSearchBtn?.addEventListener('click', function() {
+    if (sidebarSearchInput) {
+        sidebarSearchInput.value = '';
+        filterSidebarRules('');
+        sidebarSearchInput.focus();
+    }
+});
+
+// Toggle Full Scape View (Full screen reading pane vs Split Index view)
+const toggleFullWidthBtn = document.getElementById('toggleFullWidthBtn');
+const sidebarColumn = document.getElementById('sidebarColumn');
+const readingColumn = document.getElementById('readingColumn');
+
+function setFullScapeMode(isFullScape) {
+    if (!sidebarColumn || !readingColumn || !toggleFullWidthBtn) return;
+    if (isFullScape) {
+        sidebarColumn.classList.add('d-none');
+        readingColumn.classList.remove('col-lg-8', 'col-xl-9');
+        readingColumn.classList.add('col-12');
+        toggleFullWidthBtn.classList.remove('btn-outline-primary');
+        toggleFullWidthBtn.classList.add('btn-primary', 'shadow-sm');
+        toggleFullWidthBtn.innerHTML = '<i class="fa-solid fa-compress me-1"></i> <span id="fullWidthBtnText">Show Index (Split View)</span>';
+        try { localStorage.setItem('gr_sr_full_scape', '1'); } catch(e){}
+    } else {
+        sidebarColumn.classList.remove('d-none');
+        readingColumn.classList.remove('col-12');
+        readingColumn.classList.add('col-lg-8', 'col-xl-9');
+        toggleFullWidthBtn.classList.remove('btn-primary', 'shadow-sm');
+        toggleFullWidthBtn.classList.add('btn-outline-primary');
+        toggleFullWidthBtn.innerHTML = '<i class="fa-solid fa-expand me-1"></i> <span id="fullWidthBtnText">Full Scape View</span>';
+        try { localStorage.setItem('gr_sr_full_scape', '0'); } catch(e){}
+    }
+}
+
+toggleFullWidthBtn?.addEventListener('click', function() {
+    const isCurrentlyFull = sidebarColumn.classList.contains('d-none');
+    setFullScapeMode(!isCurrentlyFull);
+});
+
+// Restore saved Full Scape preference on load
+try {
+    if (localStorage.getItem('gr_sr_full_scape') === '1') {
+        setFullScapeMode(true);
+    }
+} catch(e){}
+
+// ==========================================
+// YOUTUBE VIDEO HANDLING
+// ==========================================
+let currentRuleVideo = { ruleId: null, videoId: null, title: '' };
+
+function extractYoutubeId(urlOrId) {
+    if (!urlOrId) return '';
+    const clean = urlOrId.trim();
+    const m = clean.match(/(?:v=|\/|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})/);
+    if (m) return m[1];
+    if (clean.length === 11 && /^[0-9A-Za-z_-]{11}$/.test(clean)) return clean;
+    return '';
+}
+
+function renderRuleVideo(ruleId, videoId, videoTitle, ruleNo) {
+    currentRuleVideo = { ruleId: ruleId, videoId: videoId, title: videoTitle || `${ruleNo} Safety Demonstration` };
+
+    const activeCard = document.getElementById('videoCardActive');
+    const placeholderCard = document.getElementById('videoCardPlaceholder');
+    const changeBtnText = document.getElementById('changeVideoBtnText');
+
+    if (videoId && videoId.trim().length > 0) {
+        document.getElementById('videoThumbnailImg').src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        document.getElementById('videoTitleDisplay').textContent = currentRuleVideo.title;
+        document.getElementById('watchOnYoutubeExternal').href = `https://www.youtube.com/watch?v=${videoId}`;
+        
+        activeCard.classList.remove('d-none');
+        placeholderCard.classList.add('d-none');
+        if (changeBtnText) changeBtnText.textContent = 'Change Video';
+    } else {
+        activeCard.classList.add('d-none');
+        placeholderCard.classList.remove('d-none');
+        if (changeBtnText) changeBtnText.textContent = 'Add Video';
+    }
+}
+
+function playCurrentVideo() {
+    if (!currentRuleVideo.videoId) return;
+    const iframe = document.getElementById('videoPlayerIframe');
+    iframe.src = `https://www.youtube.com/embed/${currentRuleVideo.videoId}?autoplay=1&rel=0`;
+    document.getElementById('videoModalTitle').textContent = currentRuleVideo.title;
+    const modalEl = document.getElementById('videoPlayerModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+}
+
+function stopVideoModal() {
+    const iframe = document.getElementById('videoPlayerIframe');
+    if (iframe) iframe.src = '';
+}
+
+document.getElementById('videoPlayerModal')?.addEventListener('hidden.bs.modal', function () {
+    stopVideoModal();
+});
+
+function triggerAddVideoModal() {
+    const input = document.getElementById('modalVideoInput');
+    const titleInput = document.getElementById('modalVideoTitleInput');
+    input.value = currentRuleVideo.videoId ? `https://www.youtube.com/watch?v=${currentRuleVideo.videoId}` : '';
+    titleInput.value = currentRuleVideo.title || '';
+    previewModalThumbnail(input.value);
+    const modalEl = document.getElementById('addVideoModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+}
+
+function previewModalThumbnail(val) {
+    const previewContainer = document.getElementById('modalThumbnailPreviewContainer');
+    const previewImg = document.getElementById('modalPreviewImg');
+    const videoId = extractYoutubeId(val);
+    if (videoId) {
+        previewImg.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        previewContainer.classList.remove('d-none');
+    } else {
+        previewContainer.classList.add('d-none');
+    }
+}
+
+async function saveVideoLink(e) {
+    e.preventDefault();
+    if (!currentRuleVideo.ruleId) return;
+
+    const inputVal = document.getElementById('modalVideoInput').value.trim();
+    const titleVal = document.getElementById('modalVideoTitleInput').value.trim();
+    const videoId = extractYoutubeId(inputVal);
+
+    if (!videoId) {
+        alert('Please enter a valid YouTube URL or 11-character video ID.');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`/elearning/api/rule/${currentRuleVideo.ruleId}/video`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ video_url: videoId, title: titleVal })
+        });
+        const res = await resp.json();
+        if (res.success) {
+            const cached = ruleCache.get(currentRuleVideo.ruleId);
+            if (cached) {
+                cached.youtube_video_id = res.youtube_video_id;
+                cached.youtube_title = res.youtube_title;
+            }
+            renderRuleVideo(currentRuleVideo.ruleId, res.youtube_video_id, res.youtube_title, cached?.rule_no || '');
+            
+            const modalEl = document.getElementById('addVideoModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+        } else {
+            alert('Could not save video link: ' + (res.error || 'Server error'));
+        }
+    } catch (err) {
+        alert('Error saving video link: ' + err.message);
+    }
+}
+
+// ==========================================
+// ANIMATED OPERATIONAL FLOWCHART & SCHEMATICS
+// ==========================================
+let animCurrentStep = 1;
+let animAutoPlayTimer = null;
+let currentAnimationData = null;
+
+function renderRuleAnimation(animData, ruleNo) {
+    const container = document.getElementById('viewAnimationContainer');
+    if (!animData || !animData.steps || animData.steps.length === 0) {
+        container.classList.add('d-none');
+        currentAnimationData = null;
+        if (animAutoPlayTimer) {
+            clearInterval(animAutoPlayTimer);
+            animAutoPlayTimer = null;
+        }
+        return;
+    }
+
+    currentAnimationData = animData;
+    container.classList.remove('d-none');
+
+    document.getElementById('animTitle').textContent = animData.title || `Operational Sequence: ${ruleNo}`;
+    document.getElementById('animRuleCite').textContent = animData.rule ? `Prescribed in Eastern Railway ${animData.rule}` : '';
+
+    // Render Track Schematic
+    document.getElementById('animSchematicContainer').innerHTML = generateSchematicHtml(animData.schematic, ruleNo);
+
+    // Render Flowchart Steps
+    document.getElementById('animStepsContainer').innerHTML = generateStepsHtml(animData.steps);
+
+    // Initialize Step 1
+    animCurrentStep = 1;
+    highlightAnimStep(1);
+    updateAnimPlayBtn(false);
+}
+
+function generateSchematicHtml(schematicType, ruleNo) {
+    if (schematicType === 'automatic_signal') {
+        return `
+            <div class="d-flex justify-content-between align-items-center mb-1 small text-info fw-bold">
+                <span><i class="fa-solid fa-traffic-light me-1 text-danger"></i> Automatic Block Territory &bull; Stop Signal at 'ON'</span>
+                <span>Speed: Max 15 KMPH (Clear) / 10 KMPH (Fog/Curves)</span>
+            </div>
+            <svg viewBox="0 0 800 130" class="w-100" style="max-height: 140px;">
+                <line x1="20" y1="80" x2="780" y2="80" stroke="#475569" stroke-width="6"/>
+                <line x1="20" y1="92" x2="780" y2="92" stroke="#475569" stroke-width="6"/>
+                ${Array.from({length: 38}, (_, i) => `<line x1="${30 + i*20}" y1="74" x2="${30 + i*20}" y2="98" stroke="#334155" stroke-width="3"/>`).join('')}
+
+                <!-- Signal Mast -->
+                <line x1="380" y1="20" x2="380" y2="76" stroke="#94a3b8" stroke-width="5"/>
+                <rect x="365" y="15" width="30" height="45" rx="6" fill="#1e293b" stroke="#cbd5e1" stroke-width="2"/>
+                <circle cx="380" cy="27" r="9" fill="#ef4444" class="pulse-glow"/>
+                <circle cx="380" cy="46" r="6" fill="#334155"/>
+                <circle cx="350" cy="38" r="11" fill="#ffffff" stroke="#0284c7" stroke-width="2.5"/>
+                <text x="350" y="42" fill="#0f172a" font-size="11" font-weight="bold" text-anchor="middle">A</text>
+
+                <!-- Locomotive with Headlight -->
+                <rect x="100" y="55" width="130" height="25" rx="5" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                <polygon points="230,60 250,67 230,75" fill="#facc15"/>
+                <polygon points="250,67 360,40 360,95" fill="rgba(250, 204, 21, 0.25)"/>
+                <text x="165" y="72" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">WAP-7 (LP & ALP)</text>
+
+                <text x="380" y="118" fill="#f87171" font-size="11" font-weight="bold" text-anchor="middle">STOP DEAD: Wait 1m (Day) / 2m (Night)</text>
+                <text x="590" y="70" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">Min 150m Spacing from Ahead Train</text>
+                <line x1="440" y1="86" x2="740" y2="86" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4"/>
+            </svg>
+        `;
+    } else if (schematicType === 'fog_detonators') {
+        return `
+            <div class="d-flex justify-content-between align-items-center mb-1 small text-warning fw-bold">
+                <span><i class="fa-solid fa-cloud-meatball me-1 text-warning"></i> Thick / Foggy Weather Detonator Protection</span>
+                <span>Placement: 270m & 280m (10m apart) outside First Stop Signal</span>
+            </div>
+            <svg viewBox="0 0 800 130" class="w-100" style="max-height: 140px;">
+                <line x1="20" y1="80" x2="780" y2="80" stroke="#475569" stroke-width="6"/>
+                <line x1="20" y1="92" x2="780" y2="92" stroke="#475569" stroke-width="6"/>
+                ${Array.from({length: 38}, (_, i) => `<line x1="${30 + i*20}" y1="74" x2="${30 + i*20}" y2="98" stroke="#334155" stroke-width="3"/>`).join('')}
+
+                <line x1="720" y1="20" x2="720" y2="76" stroke="#94a3b8" stroke-width="5"/>
+                <rect x="705" y="15" width="30" height="40" rx="4" fill="#1e293b" stroke="#ffffff" stroke-width="1.5"/>
+                <circle cx="720" cy="28" r="8" fill="#ef4444" class="pulse-glow"/>
+                <text x="720" y="115" fill="#f87171" font-size="11" font-weight="bold" text-anchor="middle">Home Signal</text>
+
+                <line x1="320" y1="108" x2="720" y2="108" stroke="#f59e0b" stroke-width="2"/>
+                <text x="520" y="122" fill="#fbbf24" font-size="11" font-weight="bold" text-anchor="middle">&larr; At Least 270 Metres Outside &rarr;</text>
+
+                <rect x="310" y="30" width="12" height="46" fill="#facc15" stroke="#000" stroke-width="1"/>
+                <text x="316" y="24" fill="#facc15" font-size="10" font-weight="bold" text-anchor="middle">FSP</text>
+
+                <circle cx="320" cy="80" r="7" fill="#ef4444" stroke="#ffffff" stroke-width="2" class="pulse-glow"/>
+                <text x="320" y="66" fill="#ef4444" font-size="10" font-weight="bold" text-anchor="middle">1st Det (270m)</text>
+
+                <circle cx="270" cy="80" r="7" fill="#ef4444" stroke="#ffffff" stroke-width="2" class="pulse-glow"/>
+                <text x="270" y="66" fill="#ef4444" font-size="10" font-weight="bold" text-anchor="middle">2nd Det (10m)</text>
+
+                <rect x="40" y="55" width="120" height="25" rx="5" fill="#3b82f6" stroke="#ffffff" stroke-width="2"/>
+                <text x="100" y="72" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">Train in Fog</text>
+                <text x="100" y="115" fill="#93c5fd" font-size="10" font-weight="bold" text-anchor="middle">Max 75 / 60 KMPH</text>
+            </svg>
+        `;
+    } else if (schematicType === 'neutral_section') {
+        return `
+            <div class="d-flex justify-content-between align-items-center mb-1 small text-info fw-bold">
+                <span><i class="fa-solid fa-bolt me-1 text-warning"></i> 25 kV AC Electric Traction &bull; Neutral Section Coasting</span>
+                <span>Open DJ Board &rarr; Coast with Panto UP &rarr; Close DJ Board</span>
+            </div>
+            <svg viewBox="0 0 800 130" class="w-100" style="max-height: 140px;">
+                <line x1="20" y1="25" x2="330" y2="25" stroke="#38bdf8" stroke-width="4" stroke-dasharray="6 2"/>
+                <text x="160" y="18" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">Live 25 kV AC OHE</text>
+                
+                <line x1="330" y1="25" x2="470" y2="25" stroke="#64748b" stroke-width="5"/>
+                <rect x="330" y="18" width="140" height="14" fill="rgba(100, 116, 139, 0.4)" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3"/>
+                <text x="400" y="18" fill="#f87171" font-size="11" font-weight="bold" text-anchor="middle">DEAD ZONE (0 kV)</text>
+
+                <line x1="470" y1="25" x2="780" y2="25" stroke="#38bdf8" stroke-width="4" stroke-dasharray="6 2"/>
+                <text x="620" y="18" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">Live 25 kV AC OHE</text>
+
+                <line x1="20" y1="90" x2="780" y2="90" stroke="#475569" stroke-width="6"/>
+                <line x1="20" y1="102" x2="780" y2="102" stroke="#475569" stroke-width="6"/>
+
+                <rect x="70" y="50" width="45" height="24" fill="#ffffff" stroke="#000" stroke-width="1.5"/>
+                <text x="92" y="66" fill="#000000" font-size="9" font-weight="bold" text-anchor="middle">500m</text>
+                <rect x="180" y="50" width="45" height="24" fill="#ffffff" stroke="#000" stroke-width="1.5"/>
+                <text x="202" y="66" fill="#000000" font-size="9" font-weight="bold" text-anchor="middle">250m</text>
+                
+                <rect x="300" y="46" width="30" height="30" fill="#ffffff" stroke="#dc2626" stroke-width="2.5"/>
+                <line x1="305" y1="51" x2="325" y2="71" stroke="#dc2626" stroke-width="3"/>
+                <text x="315" y="90" fill="#f87171" font-size="10" font-weight="bold" text-anchor="middle">OPEN DJ</text>
+                
+                <rect x="470" y="46" width="30" height="30" fill="#ffffff" stroke="#16a34a" stroke-width="2.5"/>
+                <circle cx="485" cy="61" r="9" fill="none" stroke="#16a34a" stroke-width="3"/>
+                <text x="485" y="90" fill="#4ade80" font-size="10" font-weight="bold" text-anchor="middle">CLOSE DJ</text>
+
+                <rect x="360" y="70" width="90" height="20" rx="4" fill="#e11d48"/>
+                <line x1="400" y1="70" x2="410" y2="28" stroke="#facc15" stroke-width="2.5"/>
+                <line x1="420" y1="70" x2="410" y2="28" stroke="#facc15" stroke-width="2.5"/>
+                <text x="405" y="118" fill="#facc15" font-size="10" font-weight="bold" text-anchor="middle">Coasting (Panto UP &bull; Current 0A)</text>
+            </svg>
+        `;
+    } else if (schematicType === 'track_protection') {
+        return `
+            <div class="d-flex justify-content-between align-items-center mb-1 small text-danger fw-bold">
+                <span><i class="fa-solid fa-triangle-exclamation me-1 text-danger"></i> Double Line Accident / Fouling Protection</span>
+                <span>Flasher ON + 1 Detonator at 600m + 3 Detonators at 1200m</span>
+            </div>
+            <svg viewBox="0 0 800 130" class="w-100" style="max-height: 140px;">
+                <line x1="20" y1="50" x2="780" y2="50" stroke="#475569" stroke-width="5"/>
+                <line x1="20" y1="60" x2="780" y2="60" stroke="#475569" stroke-width="5"/>
+                <text x="50" y="42" fill="#94a3b8" font-size="10" font-weight="bold">DOWN LINE</text>
+
+                <line x1="20" y1="95" x2="780" y2="95" stroke="#475569" stroke-width="5"/>
+                <line x1="20" y1="105" x2="780" y2="105" stroke="#475569" stroke-width="5"/>
+                <text x="50" y="88" fill="#f87171" font-size="10" font-weight="bold">UP LINE (Adjacent Track Protected)</text>
+
+                <rect x="120" y="43" width="110" height="20" rx="4" fill="#dc2626" stroke="#ffffff" stroke-width="1.5"/>
+                <circle cx="230" cy="53" r="8" fill="#f59e0b" class="pulse-glow"/>
+                <text x="175" y="57" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">FLASHER ON</text>
+
+                <circle cx="340" cy="100" r="6" fill="#facc15"/>
+                <text x="340" y="85" fill="#facc15" font-size="10" font-weight="bold" text-anchor="middle">ALP (Red Flag)</text>
+
+                <circle cx="480" cy="100" r="7" fill="#ef4444" stroke="#fff" stroke-width="2" class="pulse-glow"/>
+                <text x="480" y="85" fill="#ef4444" font-size="10" font-weight="bold" text-anchor="middle">1 Det (600m)</text>
+
+                <circle cx="680" cy="100" r="6" fill="#ef4444" stroke="#fff" stroke-width="1.5" class="pulse-glow"/>
+                <circle cx="700" cy="100" r="6" fill="#ef4444" stroke="#fff" stroke-width="1.5" class="pulse-glow"/>
+                <circle cx="720" cy="100" r="6" fill="#ef4444" stroke="#fff" stroke-width="1.5" class="pulse-glow"/>
+                <text x="700" y="85" fill="#ef4444" font-size="10" font-weight="bold" text-anchor="middle">3 Detonators (1200m)</text>
+            </svg>
+        `;
+    }
+
+    // Default stylized schematic
+    return `
+        <div class="d-flex justify-content-between align-items-center mb-1 small text-primary fw-bold">
+            <span><i class="fa-solid fa-code-fork me-1"></i> Official Operational Flow Diagram & Track Simulation</span>
+            <span>Eastern Railway Standard Operating Procedure</span>
+        </div>
+        <svg viewBox="0 0 800 70" class="w-100" style="max-height: 80px;">
+            <line x1="20" y1="35" x2="780" y2="35" stroke="#3b82f6" stroke-width="4" stroke-dasharray="8 4"/>
+            <circle cx="80" cy="35" r="14" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>
+            <text x="80" y="39" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">1</text>
+            <circle cx="280" cy="35" r="14" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>
+            <text x="280" y="39" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">2</text>
+            <circle cx="480" cy="35" r="14" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>
+            <text x="480" y="39" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">3</text>
+            <circle cx="680" cy="35" r="14" fill="#10b981" stroke="#ffffff" stroke-width="2" class="pulse-glow"/>
+            <text x="680" y="39" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">&#10003;</text>
+        </svg>
+    `;
+}
+
+// Format initial rule text on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    {% if active_rule %}
+    const initialRule = ruleCache.get({{ active_rule.id }});
+    if (initialRule) {
+        renderRuleData(initialRule);
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

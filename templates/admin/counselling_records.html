@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% block title %}Counselling Records — Admin{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Page Header -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center"
+         style="width:56px;height:56px;font-size:1.4rem;">
+      <i class="fas fa-clipboard-list"></i>
+    </div>
+    <div>
+      <h2 class="mb-0 fw-bold text-danger">Crew Counselling Records</h2>
+      <p class="mb-0 text-muted">Master Counselling Sheet — {{ total }} record(s) found</p>
+    </div>
+    <div class="ms-auto d-flex gap-2">
+      <a href="{{ url_for('admin.upload_excel') }}" class="btn btn-outline-danger">
+        <i class="fas fa-upload me-1"></i> Upload / Update
+      </a>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+      <div class="alert alert-{{ cat }} alert-dismissible fade show">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <!-- Filters -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <form method="GET" class="row g-3 align-items-end">
+        <div class="col-12 col-md-3 col-lg-2">
+          <label class="form-label small fw-semibold">HQ / Lobby</label>
+          <select name="hq" class="form-select form-select-sm">
+            <option value="ALL" {% if hq_filter=='ALL' %}selected{% endif %}>All HQs</option>
+            {% for h in all_hqs %}
+            <option value="{{ h }}" {% if hq_filter==h %}selected{% endif %}>{{ h }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-3 col-lg-2">
+          <label class="form-label small fw-semibold">Grade</label>
+          <select name="grade" class="form-select form-select-sm">
+            <option value="ALL" {% if grade_filter=='ALL' %}selected{% endif %}>All Grades</option>
+            {% for g in all_grades %}
+            <option value="{{ g }}" {% if grade_filter==g %}selected{% endif %}>Grade {{ g }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-3 col-lg-3">
+          <label class="form-label small fw-semibold">CLI Name</label>
+          <input type="text" name="cli" class="form-control form-control-sm"
+                 placeholder="Search CLI..." value="{{ cli_filter }}">
+        </div>
+        <div class="col-12 col-md-3 col-lg-3">
+          <label class="form-label small fw-semibold">Search Crew</label>
+          <input type="text" name="q" class="form-control form-control-sm"
+                 placeholder="Name / Crew ID / PF No..." value="{{ search_q }}">
+        </div>
+        <div class="col-12 col-md-auto">
+          <button type="submit" class="btn btn-danger btn-sm px-4">
+            <i class="fas fa-filter me-1"></i> Filter
+          </button>
+          <a href="{{ url_for('admin.counselling_records') }}" class="btn btn-outline-secondary btn-sm ms-1">
+            Clear
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Records Table -->
+  {% if records %}
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0" id="counselTable">
+          <thead class="table-dark">
+            <tr>
+              <th>#</th>
+              <th>Crew ID</th>
+              <th>Crew Name</th>
+              <th>HQ</th>
+              <th>Desg</th>
+              <th>Grade</th>
+              <th>CLI</th>
+              <th>Last Footplate</th>
+              <th>Tech. Counsel.</th>
+              <th>Safety Counsel.</th>
+              <th>BA Fail</th>
+              <th>SPAD</th>
+              <th>DA Case</th>
+              <th>Linked User</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rec in records %}
+            <tr>
+              <td class="text-muted small">{{ loop.index }}</td>
+              <td><span class="badge bg-secondary">{{ rec.crew_id_str }}</span></td>
+              <td class="fw-semibold">{{ rec.crew_name }}</td>
+              <td><span class="badge bg-primary">{{ rec.crew_hq }}</span></td>
+              <td>{{ rec.designation }}</td>
+              <td>
+                {% if rec.grade == 'A' %}
+                  <span class="badge bg-success">A</span>
+                {% elif rec.grade == 'B' %}
+                  <span class="badge bg-warning text-dark">B</span>
+                {% elif rec.grade == 'C' %}
+                  <span class="badge bg-danger">C</span>
+                {% else %}
+                  <span class="badge bg-light text-dark">{{ rec.grade or '—' }}</span>
+                {% endif %}
+              </td>
+              <td class="small">{{ rec.cli_name or '—' }}</td>
+              <td class="small">{{ rec.last_footplate or '—' }}</td>
+              <td class="small">{{ rec.technical_counselling or '—' }}</td>
+              <td class="small">{{ rec.safety_counselling or '—' }}</td>
+              <td class="small">
+                {% if rec.ba_fail_history and rec.ba_fail_history not in ['NA', '', 'No', 'NO'] %}
+                  <span class="badge bg-danger">{{ rec.ba_fail_history[:20] }}</span>
+                {% else %}
+                  <span class="text-muted">NA</span>
+                {% endif %}
+              </td>
+              <td class="small">
+                {% if rec.spad_history and rec.spad_history not in ['NA', '', 'No', 'NO'] %}
+                  <span class="badge bg-warning text-dark">{{ rec.spad_history[:20] }}</span>
+                {% else %}
+                  <span class="text-muted">NA</span>
+                {% endif %}
+              </td>
+              <td class="small">
+                {% if rec.da_case and rec.da_case not in ['NA', '', 'No', 'NO'] %}
+                  <span class="badge bg-danger">Yes</span>
+                {% else %}
+                  <span class="text-muted">No</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if rec.crew_user %}
+                  <span class="badge bg-success"><i class="fas fa-check me-1"></i>Linked</span>
+                {% else %}
+                  <span class="badge bg-light text-muted">Not linked</span>
+                {% endif %}
+              </td>
+              <td>
+                <button class="btn btn-outline-secondary btn-sm py-0 px-2"
+                        data-bs-toggle="modal" data-bs-target="#detailModal{{ rec.id }}">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-warning text-center py-5">
+    <i class="fas fa-inbox fa-3x mb-3 text-muted d-block"></i>
+    <h5>No counselling records found.</h5>
+    <p class="mb-3">Upload the Crew Counselling Master Sheet from the
+      <a href="{{ url_for('admin.upload_excel') }}">Excel Upload Centre</a>.
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Detail Modals -->
+{% for rec in records %}
+<div class="modal fade" id="detailModal{{ rec.id }}" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-user me-2"></i>{{ rec.crew_name }} — {{ rec.crew_id_str }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <table class="table table-sm table-bordered">
+              <tbody>
+                <tr><th class="table-light">Crew ID</th><td>{{ rec.crew_id_str }}</td></tr>
+                <tr><th class="table-light">Name</th><td>{{ rec.crew_name }}</td></tr>
+                <tr><th class="table-light">CLI</th><td>{{ rec.cli_name or '—' }}</td></tr>
+                <tr><th class="table-light">HQ</th><td>{{ rec.crew_hq }}</td></tr>
+                <tr><th class="table-light">CUG</th><td>{{ rec.cug or '—' }}</td></tr>
+                <tr><th class="table-light">Designation</th><td>{{ rec.designation }}</td></tr>
+                <tr><th class="table-light">Desg. Since</th><td>{{ rec.designation_since or '—' }}</td></tr>
+                <tr><th class="table-light">PF No</th><td>{{ rec.pf_no or '—' }}</td></tr>
+                <tr><th class="table-light">Grade</th><td><strong>{{ rec.grade or '—' }}</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <table class="table table-sm table-bordered">
+              <tbody>
+                <tr><th class="table-light">Last Footplate</th><td>{{ rec.last_footplate or '—' }}</td></tr>
+                <tr><th class="table-light">Tech. Counselling</th><td>{{ rec.technical_counselling or '—' }}</td></tr>
+                <tr><th class="table-light">Safety Counselling</th><td>{{ rec.safety_counselling or '—' }}</td></tr>
+                <tr><th class="table-light">Verified By</th><td>{{ rec.counselling_verified_by or '—' }}</td></tr>
+                <tr><th class="table-light">Last SPM Check</th><td>{{ rec.last_spm_check or '—' }}</td></tr>
+                <tr><th class="table-light">Last CVVRS Check</th><td>{{ rec.last_cvvrs_check or '—' }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-12">
+            <h6 class="fw-semibold text-danger">Safety / Risk Profile</h6>
+            <table class="table table-sm table-bordered">
+              <tbody>
+                <tr>
+                  <th class="table-light">BA Fail History</th>
+                  <td>{{ rec.ba_fail_history or 'NA' }}</td>
+                  <th class="table-light">Mobile Habit</th>
+                  <td>{{ rec.mobile_habit or 'NA' }}</td>
+                </tr>
+                <tr>
+                  <th class="table-light">SPAD History</th>
+                  <td>{{ rec.spad_history or 'NA' }}</td>
+                  <th class="table-light">DA Case</th>
+                  <td>{{ rec.da_case or 'NA' }}</td>
+                </tr>
+                <tr>
+                  <th class="table-light">Family Issue</th>
+                  <td>{{ rec.family_issue or 'NA' }}</td>
+                  <th class="table-light">Health Issue</th>
+                  <td>{{ rec.health_issue or 'NA' }}</td>
+                </tr>
+                <tr>
+                  <th class="table-light">Baby &lt; 6 months</th>
+                  <td>{{ rec.baby_below_6_months or 'NA' }}</td>
+                  <th class="table-light">Accident Prone</th>
+                  <td>{{ rec.accident_prone or 'NA' }}</td>
+                </tr>
+                <tr>
+                  <th class="table-light">Remarks</th>
+                  <td colspan="3">{{ rec.remarks or '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
