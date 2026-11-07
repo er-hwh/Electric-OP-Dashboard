@@ -16,17 +16,18 @@ def seed():
 
         # 1. Seed Lobbies
         lobby_data = [
-            ("HWH", "Howrah Lobby", "033-2660-1234", "Sri S. K. Roy (CCC/HWH)", "Headquarters Main Electric & EMU Running Lobby"),
-            ("BWN", "Barddhaman Lobby", "0342-2621-234", "Sri P. K. Ghosh (CCC/BWN)", "Main Line & Chord Junction Lobby"),
-            ("RPH", "Rampurhat Lobby", "03461-255-321", "Sri A. Banerjee (CCC/RPH)", "Loop Line Operation & Freight Lobby"),
+            ("HWH", "Howrah Lobby", "033-2660-1234", "Sri Prasanta Panja (CCC/HWH)", "Headquarters Main Electric & EMU Running Lobby"),
+            ("BWN", "Barddhaman Lobby", "0342-2621-234", "Sri Brajesh Kumar Sinha (CCC/BWN)", "Main Line & Chord Junction Lobby"),
+            ("RPH", "Rampurhat Lobby", "03461-255-321", "Sri Badal Mondal (CCC/RPH)", "Loop Line Operation & Freight Lobby"),
             ("PKR", "Pakur Lobby", "06435-222-111", "Sri D. K. Sharma (CCC/PKR)", "Stone Loading & Heavy Freight Operation Lobby"),
-            ("AZ", "Azimganj Lobby", "03483-253-400", "Sri R. N. Dutta (CCC/AZ)", "Murshidabad Section Branch & Main Operation"),
-            ("KWAE", "Katwa Lobby", "03453-255-120", "Sri M. C. Das (CCC/KWAE)", "Bandel-Katwa-Azimganj Section Lobby"),
-            ("NHT", "Nalhati Lobby", "03465-257-890", "Sri S. Mondal (CCC/NHT)", "Nalhati-Azimganj Link Crew Base"),
+            ("AZ", "Azimganj Lobby", "03483-253-400", "Sri Amalendu Malakar (CCC/AZ)", "Murshidabad Section Branch & Main Operation"),
+            ("KWAE", "Katwa Lobby", "03453-255-120", "Sri Bidhan Chandra Ray (CCC/KWAE)", "Bandel-Katwa-Azimganj Section Lobby"),
+            ("NHT", "Nalhati Lobby", "03465-257-890", "No Supervisor", "Nalhati-Azimganj Link Crew Base (No Resident Supervisor - Under RPH/AZ)"),
             ("BHP", "Bolpur Shantiniketan Lobby", "03463-252-440", "Sri T. K. Sen (CCC/BHP)", "Passenger & Express Crew Booking Depot"),
-            ("TAK", "Tarakeswar Lobby", "03212-276-300", "Sri B. K. Paul (CCC/TAK)", "Suburban EMU High Frequency Line Lobby"),
-            ("KURV", "Khurtha / Khana Lobby", "0342-2700-111", "Sri P. Biswas (CCC/KURV)", "Freight Marshalling & Yard Operation"),
-            ("DKAE", "Dankuni Lobby", "033-2659-9988", "Sri H. K. Mukherjee (CCC/DKAE)", "Freight Complex & Coaching Yard Base")
+            ("TAK", "Tarakeswar Lobby", "03212-276-300", "Sri Mintu Pal (CCC/TAK)", "Suburban EMU High Frequency Line Lobby"),
+            ("KURV", "KURVA Lobby", "0342-2700-111", "No Supervisor", "KURVA Freight Marshalling & Yard Operation (No Resident Supervisor)"),
+            ("DKAE", "Dankuni Lobby", "033-2659-9988", "Mr. Pijush Ghosh (CCC/DKAE)", "Freight Complex & Coaching Yard Base"),
+            ("SNT", "Sainthia Lobby", "03462-222-100", "No Supervisor", "Sainthia Junction Loop & Freight Operational Base (No Resident Supervisor - Under RPH)")
         ]
 
         lobbies = {}
@@ -36,10 +37,15 @@ def seed():
                 lobby = Lobby(code=code, name=name, phone=phone, ccc_name=ccc, description=desc)
                 db.session.add(lobby)
                 db.session.flush()
+            else:
+                lobby.name = name
+                lobby.ccc_name = ccc
+                lobby.phone = phone
+                lobby.description = desc
             lobbies[code] = lobby
 
         db.session.commit()
-        print("11 Lobbies created/verified.")
+        print("12 Lobbies created/verified.")
 
         # 2. Seed Admin & Officers
         # Admin

@@ -51,8 +51,8 @@
                         <svg class="bd-placeholder-img w-100 h-100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false">
                             <rect width="100%" height="100%" fill="#082c4d"></rect>
                             <circle cx="50%" cy="40%" r="90" fill="#0b487e"></circle>
-                            <text x="50%" y="42%" fill="#58d68d" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="28" text-anchor="middle">🚆 11 RUNNING LOBBIES NETWORK 🚆</text>
-                            <text x="50%" y="54%" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="18" text-anchor="middle">HWH &bull; BWN &bull; RPH &bull; PKR &bull; AZ &bull; KWAE &bull; NHT &bull; BHP &bull; TAK &bull; KURV &bull; DKAE</text>
+                            <text x="50%" y="42%" fill="#58d68d" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="28" text-anchor="middle">🚆 12 RUNNING LOBBIES & OUTPOSTS 🚆</text>
+                            <text x="50%" y="54%" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="16" text-anchor="middle">HWH &bull; BWN &bull; RPH &bull; PKR &bull; AZ &bull; KWAE &bull; NHT &bull; BHP &bull; TAK &bull; KURV &bull; DKAE &bull; SNT</text>
                         </svg>
                         <div class="carousel-caption-custom">
                             <h4 class="text-warning fw-bold mb-1">Seamless Crew Management & Footplate Inspection</h4>
@@ -242,26 +242,65 @@
         </div>
     </div>
 
-    <!-- 11 LOBBIES DIRECTORY CARDS -->
+    <!-- 12 LOBBIES DIRECTORY CARDS & STRENGTH -->
     <div class="mb-5">
-        <div class="border-bottom pb-2 mb-3">
-            <h4 class="fw-bold text-dark mb-0">
-                <i class="fa-solid fa-building-flag text-primary me-2"></i> Running Lobbies of Howrah Division
-            </h4>
-            <small class="text-muted">Chief Crew Controller (CCC) In-Charges & Operational Depots</small>
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+            <div>
+                <h4 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-building-flag text-primary me-2"></i> Running Lobbies & Outposts of Howrah Division
+                </h4>
+                <small class="text-muted">Chief Crew Controller (CCC) In-Charges, Operational Depots & On-Roll Cadre Strength</small>
+            </div>
+            <div class="d-none d-md-block">
+                <a href="{{ url_for('public.about') }}" class="btn btn-sm btn-outline-primary rounded-pill">
+                    <i class="fa-solid fa-chart-pie me-1"></i> Full Strength Matrix &rarr;
+                </a>
+            </div>
         </div>
 
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-            {% for l in lobbies %}
+            {% for item in lobby_strengths %}
                 <div class="col">
-                    <div class="p-3 bg-white rounded border shadow-sm h-100">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-primary fs-6">{{ l.code }}</span>
-                            <small class="text-muted"><i class="fa-solid fa-phone me-1"></i>{{ l.phone }}</small>
+                    <div class="p-3 bg-white rounded border shadow-sm h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-primary fs-6">{{ item.code }}</span>
+                                <small class="text-muted"><i class="fa-solid fa-phone me-1"></i>{{ item.phone }}</small>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">{{ item.name }}</h6>
+                            <div class="mb-2">
+                                {% if item.has_supervisor %}
+                                    <p class="small text-muted mb-0">
+                                        <i class="fa-solid fa-user-tie me-1 text-primary"></i>
+                                        <span class="fw-semibold text-dark">{{ item.supervisor_name }}</span>
+                                        {% if item.code == 'DKAE' %}
+                                            <span class="badge bg-info-subtle text-info border border-info ms-1" style="font-size: 0.68rem;">Updated</span>
+                                        {% endif %}
+                                    </p>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary" style="font-size: 0.72rem;">
+                                        <i class="fa-solid fa-user-slash me-1 text-danger"></i>No Supervisor (Outpost)
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <small class="text-secondary d-block mb-3" style="font-size: 0.78rem;">{{ item.remarks }}</small>
                         </div>
-                        <h6 class="fw-bold text-dark mb-1">{{ l.name }}</h6>
-                        <p class="small text-muted mb-2"><i class="fa-solid fa-user-tie me-1 text-warning"></i>{{ l.ccc_name }}</p>
-                        <small class="text-secondary d-block">{{ l.description }}</small>
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+                            {% if item.crew_count > 0 %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                    <i class="fa-solid fa-users me-1"></i>{{ item.crew_count }} Running Staff
+                                </span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border px-2 py-1">
+                                    <i class="fa-solid fa-arrows-split-up-and-left me-1"></i>Floating Base
+                                </span>
+                            {% endif %}
+                            {% if item.cli_count > 0 %}
+                                <span class="badge bg-warning text-dark px-2 py-1" title="Nominated CLIs">
+                                    {{ item.cli_count }} CLI
+                                </span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             {% endfor %}

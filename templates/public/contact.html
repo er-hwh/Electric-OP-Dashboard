@@ -80,30 +80,56 @@
             </div>
         </div>
 
-        <!-- 11 LOBBIES DIRECTORY -->
+        <!-- 12 LOBBIES DIRECTORY & CREW STRENGTH -->
         <div>
-            <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">
-                <i class="fa-solid fa-building-flag me-2 text-warning"></i> 11 Running Lobbies & Chief Crew Controllers (CCC)
-            </h5>
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <h5 class="fw-bold text-primary mb-0">
+                    <i class="fa-solid fa-building-flag me-2 text-warning"></i> {{ lobbies|length }} Running Lobbies & Operational Depots
+                </h5>
+                <span class="badge bg-primary px-3 py-1 fs-7">
+                    <i class="fa-solid fa-users me-1"></i> Total Running Crew: {{ strength_summary.total_crew }}
+                </span>
+            </div>
             <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle small">
-                    <thead class="table-primary">
+                    <thead class="table-primary text-center">
                         <tr>
-                            <th>Lobby Code</th>
+                            <th style="width: 80px;">Lobby Code</th>
                             <th>Lobby Name</th>
-                            <th>Chief Crew Controller (CCC) In-Charge</th>
+                            <th>Chief Crew Controller (CCC) / Supervisor</th>
+                            <th style="width: 110px;">On-Roll Crew</th>
                             <th>Contact / Intercom</th>
                             <th>Jurisdiction / Operation Profile</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for l in lobbies %}
-                            <tr>
-                                <td><span class="badge bg-primary fs-6">{{ l.code }}</span></td>
-                                <td class="fw-bold text-dark">{{ l.name }}</td>
-                                <td><i class="fa-solid fa-user-tie text-secondary me-1"></i>{{ l.ccc_name }}</td>
-                                <td><i class="fa-solid fa-phone text-muted me-1"></i>{{ l.phone }}</td>
-                                <td class="text-secondary">{{ l.description }}</td>
+                        {% for item in lobby_strengths %}
+                            <tr class="{% if not item.has_supervisor %}table-light{% endif %}">
+                                <td class="text-center"><span class="badge bg-primary fs-6">{{ item.code }}</span></td>
+                                <td class="fw-bold text-dark">{{ item.name }}</td>
+                                <td>
+                                    {% if item.has_supervisor %}
+                                        <i class="fa-solid fa-user-tie text-primary me-1"></i>
+                                        <span class="fw-semibold text-dark">{{ item.ccc_full }}</span>
+                                        {% if item.code == 'DKAE' %}
+                                            <span class="badge bg-info-subtle text-info border border-info ms-1">Updated</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary">
+                                            <i class="fa-solid fa-user-slash me-1 text-danger"></i>No Supervisor
+                                        </span>
+                                        <small class="text-muted ms-1">(Outpost)</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if item.crew_count > 0 %}
+                                        <span class="badge bg-primary-subtle text-primary border border-primary px-2 fs-7 fw-bold">{{ item.crew_count }}</span>
+                                    {% else %}
+                                        <span class="text-muted small">&mdash;</span>
+                                    {% endif %}
+                                </td>
+                                <td><i class="fa-solid fa-phone text-muted me-1"></i>{{ item.phone }}</td>
+                                <td class="text-secondary">{{ item.remarks }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

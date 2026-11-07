@@ -24,7 +24,7 @@ TEMP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 DIVISION_LOBBIES = {
-    "HWH": ["HWH", "BWN", "RPH", "PKR", "AZ", "KWAE", "NHT", "BHP", "TAK", "KURV", "DKAE"],
+    "HWH": ["HWH", "BWN", "RPH", "PKR", "AZ", "KWAE", "NHT", "BHP", "TAK", "KURV", "DKAE", "SNT"],
     "ASN": ["ASN", "UDL", "STN", "MDP", "JSME"],
     "MLDT": ["MLDT", "SBG", "BHW", "JMP", "NFK"],
     "SDAH": ["SDAH", "RHA", "CP", "KOAA", "NH", "DDJ"]

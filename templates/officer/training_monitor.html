@@ -28,7 +28,7 @@
             </div>
             <div class="col-md-4">
                 <select name="lobby" class="form-select">
-                    <option value="ALL" {% if current_lobby == 'ALL' %}selected{% endif %}>All 11 Lobbies</option>
+                    <option value="ALL" {% if current_lobby == 'ALL' %}selected{% endif %}>All Lobbies ({{ lobbies|length }})</option>
                     {% for l in lobbies %}
                         <option value="{{ l.id }}" {% if current_lobby == l.id|string %}selected{% endif %}>{{ l.code }} - {{ l.name }}</option>
                     {% endfor %}

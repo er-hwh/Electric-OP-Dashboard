@@ -40,21 +40,188 @@
                     </div>
 
                     <div class="text-center mb-3">
-                        <div class="d-inline-block px-4 py-2 bg-secondary text-white rounded-pill fw-bold">
-                            <i class="fa-solid fa-arrows-down-to-people me-2"></i> 11 Running Lobbies & Chief Crew Controllers (CCC)
+                        <div class="d-inline-block px-4 py-2 bg-secondary text-white rounded-pill fw-bold shadow-sm">
+                            <i class="fa-solid fa-arrows-down-to-people me-2"></i> {{ lobbies|length }} Running Lobbies & Chief Crew Controllers (CCC)
                         </div>
                     </div>
 
                     <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-2 text-center mb-4">
                         {% for l in lobbies %}
                             <div class="col">
-                                <div class="p-2 bg-white rounded border small">
-                                    <strong class="text-primary">{{ l.code }}</strong><br>
-                                    <span class="text-muted">{{ l.name }}</span><br>
-                                    <span class="badge bg-light text-dark border">{{ l.ccc_name.split('(')[0] }}</span>
+                                <div class="p-2 bg-white rounded border small h-100 shadow-sm d-flex flex-column justify-content-between">
+                                    <div>
+                                        <strong class="text-primary fs-6">{{ l.code }}</strong><br>
+                                        <span class="text-dark fw-semibold" style="font-size: 0.82rem;">{{ l.name }}</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        {% if l.code in ['KURV', 'NHT', 'SNT'] or not l.ccc_name or l.ccc_name == 'No Supervisor' %}
+                                            <span class="badge bg-light text-secondary border border-secondary" title="No resident supervisor; operated under controlling depot">
+                                                <i class="fa-solid fa-user-slash me-1 text-danger"></i>No Supervisor
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark border border-primary-subtle" title="{{ l.ccc_name }}">
+                                                <i class="fa-solid fa-user-tie text-primary me-1"></i>{{ l.ccc_name.split('(')[0].strip() }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
+                    </div>
+
+                    <!-- NEW SEGMENT: LOBBY INFORMATION & RUNNING STAFF STRENGTH -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden border-top border-4 border-primary">
+                        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0">
+                                    <i class="fa-solid fa-chart-pie text-primary me-2"></i> Running Lobby Information & Cadre Strength Matrix
+                                </h5>
+                                <small class="text-muted">Live on-roll deployment, supervisory hierarchy, and cadre distribution across Howrah Division</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary px-3 py-2 fs-7 rounded-pill">
+                                    <i class="fa-solid fa-users me-1"></i> Total Division Crew: {{ strength_summary.total_crew }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-body p-3 bg-light-subtle">
+                            <!-- STAT SUMMARY TILES -->
+                            <div class="row g-2 mb-3 text-center">
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 bg-white rounded border shadow-xs">
+                                        <div class="text-muted small fw-semibold">On-Roll Crew</div>
+                                        <div class="fs-4 fw-bold text-primary">{{ strength_summary.total_crew }}</div>
+                                        <small class="text-muted" style="font-size: 0.72rem;">Running Staff Base</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 bg-white rounded border shadow-xs">
+                                        <div class="text-muted small fw-semibold">Chief Loco Inspectors</div>
+                                        <div class="fs-4 fw-bold text-warning">{{ strength_summary.total_cli }}</div>
+                                        <small class="text-muted" style="font-size: 0.72rem;">Field Supervisors</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 bg-white rounded border shadow-xs">
+                                        <div class="text-muted small fw-semibold">Supervised Depots</div>
+                                        <div class="fs-4 fw-bold text-success">{{ strength_summary.supervised_lobbies }}</div>
+                                        <small class="text-muted" style="font-size: 0.72rem;">Resident CCC in-charge</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 bg-white rounded border shadow-xs">
+                                        <div class="text-muted small fw-semibold">Sub-Bases / Outposts</div>
+                                        <div class="fs-4 fw-bold text-secondary">{{ strength_summary.outpost_lobbies }}</div>
+                                        <small class="text-danger fw-semibold" style="font-size: 0.72rem;">KURVA, NHT, SNT (No Sup)</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CADRE DISTRIBUTION BAR -->
+                            <div class="bg-white p-2 rounded border mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-bold text-dark"><i class="fa-solid fa-layer-group me-1 text-primary"></i> Divisional Running Cadre Split:</span>
+                                    <span class="small text-muted" style="font-size: 0.75rem;">Mail/Pass/Goods &bull; Motorman &bull; Shunters &bull; ALPs</span>
+                                </div>
+                                <div class="progress" style="height: 18px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 38%" title="Loco Pilots (LPM, LPP, LPG, SGDP): {{ strength_summary.total_lp }}">
+                                        LP ({{ strength_summary.total_lp }})
+                                    </div>
+                                    <div class="progress-bar bg-warning text-dark" role="progressbar" style="width: 10%" title="Motormen (EMU/MEMU): {{ strength_summary.total_mman }}">
+                                        MMAN ({{ strength_summary.total_mman }})
+                                    </div>
+                                    <div class="progress-bar bg-secondary" role="progressbar" style="width: 10%" title="Shunting Drivers (LPS-I, LPS-II, SHT): {{ strength_summary.total_sht }}">
+                                        SHT ({{ strength_summary.total_sht }})
+                                    </div>
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 42%" title="Assistant Loco Pilots (ALP & Sr. ALP): {{ strength_summary.total_alp }}">
+                                        ALP/Sr.ALP ({{ strength_summary.total_alp }})
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 justify-content-between mt-2 pt-1 border-top small" style="font-size: 0.76rem;">
+                                    <span><span class="badge bg-danger">LPM / LPP / LPG</span> <strong>{{ strength_summary.total_lp }}</strong></span>
+                                    <span><span class="badge bg-warning text-dark">Motorman (EMU)</span> <strong>{{ strength_summary.total_mman }}</strong></span>
+                                    <span><span class="badge bg-secondary">Shunter (LPS/SHT)</span> <strong>{{ strength_summary.total_sht }}</strong></span>
+                                    <span><span class="badge bg-primary">ALP / Sr. ALP</span> <strong>{{ strength_summary.total_alp }}</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- DETAILED LOBBY MATRIX TABLE -->
+                            <div class="table-responsive bg-white rounded border">
+                                <table class="table table-sm table-hover table-bordered align-middle mb-0" style="font-size: 0.83rem;">
+                                    <thead class="table-dark text-center align-middle">
+                                        <tr>
+                                            <th style="width: 80px;">Lobby</th>
+                                            <th style="min-width: 140px;">Lobby Name</th>
+                                            <th style="min-width: 190px;">Supervisor / CCC In-Charge</th>
+                                            <th style="width: 100px;">On-Roll Crew</th>
+                                            <th style="min-width: 180px;">Cadre Breakdown (LP / MMAN / SHT / ALP)</th>
+                                            <th style="width: 80px;">CLIs</th>
+                                            <th style="min-width: 120px;">Contact</th>
+                                            <th style="min-width: 220px;">Operational Jurisdiction & Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in lobby_strengths %}
+                                            <tr class="{% if not item.has_supervisor %}table-light{% endif %}">
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary fs-7">{{ item.code }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-dark">{{ item.name }}</span>
+                                                </td>
+                                                <td>
+                                                    {% if item.has_supervisor %}
+                                                        <span class="badge bg-success-subtle text-success border border-success me-1">Supervised</span>
+                                                        <strong class="text-dark">{{ item.supervisor_name }}</strong>
+                                                        {% if item.code == 'DKAE' %}
+                                                            <span class="badge bg-info-subtle text-info border border-info ms-1">Updated</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary me-1">Outpost</span>
+                                                        <span class="text-danger fw-semibold"><i class="fa-solid fa-user-slash me-1"></i>No Supervisor</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if item.crew_count > 0 %}
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary fs-7 px-2">
+                                                            <strong>{{ item.crew_count }}</strong>
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-muted small fst-italic">Linked</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if item.crew_count > 0 %}
+                                                        <div class="d-flex flex-wrap gap-1" style="font-size: 0.72rem;">
+                                                            {% if item.cadre.lp > 0 %}<span class="badge bg-danger-subtle text-danger border" title="Loco Pilots">LP: {{ item.cadre.lp }}</span>{% endif %}
+                                                            {% if item.cadre.mman > 0 %}<span class="badge bg-warning-subtle text-dark border" title="Motormen">MM: {{ item.cadre.mman }}</span>{% endif %}
+                                                            {% if item.cadre.sht > 0 %}<span class="badge bg-secondary-subtle text-dark border" title="Shunters">SHT: {{ item.cadre.sht }}</span>{% endif %}
+                                                            {% if item.cadre.alp > 0 %}<span class="badge bg-primary-subtle text-primary border" title="Assistant Loco Pilots">ALP: {{ item.cadre.alp }}</span>{% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted small">Floating / Attached to parent depot</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if item.cli_count > 0 %}
+                                                        <span class="badge bg-warning text-dark fw-bold">{{ item.cli_count }}</span>
+                                                    {% else %}
+                                                        <span class="text-muted">&mdash;</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted font-monospace"><i class="fa-solid fa-phone me-1 text-primary"></i>{{ item.phone }}</small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-secondary">{{ item.remarks }}</small>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="text-center mb-3">
