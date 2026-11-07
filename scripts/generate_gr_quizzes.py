@@ -1,0 +1,1354 @@
+"""
+Script to generate authentic, comprehensive Eastern Railway GR & SR Quiz Question Bank
+Covering all 18 Chapters of General & Subsidiary Rules + Safety Circulars.
+Saves to static/data/gr_sr_quizzes.json
+"""
+import json
+import os
+
+QUIZ_DATA = [
+    # ==========================================
+    # CHAPTER I: PRELIMINARY
+    # ==========================================
+    {
+        "id": "Q-01-01",
+        "chapter_no": "CHAPTER I",
+        "chapter_title": "PRELIMINARY",
+        "rule_ref": "GR 1.02(5)",
+        "question": "Under GR 1.02(5), who is the competent statutory authority to issue 'Approved special instructions'?",
+        "options": [
+            "Chief Operations Manager (COM)",
+            "Commissioner of Railway Safety (CRS)",
+            "Divisional Railway Manager (DRM)",
+            "Chief Electrical Engineer (CEE)"
+        ],
+        "correct_index": 1,
+        "explanation": "As per GR 1.02(5), 'Approved special instructions' means instructions approved by the Commissioner of Railway Safety (CRS) or other such authority as may be prescribed.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-01-02",
+        "chapter_no": "CHAPTER I",
+        "chapter_title": "PRELIMINARY",
+        "rule_ref": "GR 1.02(54)",
+        "question": "What is the official definition of 'Station Limits' as defined under GR 1.02(54)?",
+        "options": [
+            "The portion of a railway which is under the control of a Station Master and is situated between the outermost signals of the station or as specified by special instructions",
+            "The platform perimeter and passenger circulating area only",
+            "The yard area strictly between the Home Signal and the Starter Signal",
+            "A standard distance of 1 kilometre measured in both directions from the station building"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 1.02(54), 'Station limits' means the portion of a railway which is under the control of a Station Master and is situated between the outermost signals of the station or as may be specified by special instructions.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-01-03",
+        "chapter_no": "CHAPTER I",
+        "chapter_title": "PRELIMINARY",
+        "rule_ref": "GR 1.02(22)",
+        "question": "Under GR 1.02(22), when are points defined as 'Facing points' for an approaching train?",
+        "options": [
+            "When a train passes over them from the trailing crossings towards the switch rail",
+            "When their operation provides a route where a train approaches the switch toe ends before the crossings",
+            "Only when the turn-out points are motor-operated with clamp locks",
+            "When points lead exclusively into a dead-end sand hump siding"
+        ],
+        "correct_index": 1,
+        "explanation": "Points are 'facing points' when their points face in the direction from which a train is approaching, such that the train negotiates the points before the crossings.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-01-04",
+        "chapter_no": "CHAPTER I",
+        "chapter_title": "PRELIMINARY",
+        "rule_ref": "GR 1.02(47)",
+        "question": "According to GR 1.02(47), what constitutes a 'Running Train'?",
+        "options": [
+            "Any train moving at or above its Maximum Permissible Speed (MPS)",
+            "A train which has started under an authority to proceed and has not completed its journey",
+            "Only a train that is currently physically in motion along the main track",
+            "A locomotive shunting inside a loco shed or sick siding"
+        ],
+        "correct_index": 1,
+        "explanation": "GR 1.02(47) defines a 'running train' as a train which has started under an authority to proceed and has not completed its journey, whether it is running or temporarily stopped on a running line.",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # CHAPTER II: RULES APPLYING TO RAILWAY SERVANTS GENERALLY
+    # ==========================================
+    {
+        "id": "Q-02-01",
+        "chapter_no": "CHAPTER II",
+        "chapter_title": "RULES APPLYING TO RAILWAY SERVANTS GENERALLY",
+        "rule_ref": "GR 2.09 & Board Policy",
+        "question": "Under GR 2.09 and Railway Board safety directives, what is the permissible blood alcohol concentration for Loco Pilots and running staff on duty?",
+        "options": [
+            "Up to 20 mg / 100 ml of blood",
+            "Up to 30 mg / 100 ml of blood",
+            "Strictly Zero (0.00 mg / 100 ml) at all times",
+            "Permitted if off-duty rest was more than 12 hours"
+        ],
+        "correct_index": 2,
+        "explanation": "Under GR 2.09, no railway servant connected with the movement of trains shall consume alcohol or intoxicants within 8 hours before duty or while on duty. The tolerance limit is strictly Zero.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-02-02",
+        "chapter_no": "CHAPTER II",
+        "chapter_title": "RULES APPLYING TO RAILWAY SERVANTS GENERALLY",
+        "rule_ref": "GR 2.03",
+        "question": "As per GR 2.03, what obligation is placed on every railway servant supplied with a copy of the Rule Book?",
+        "options": [
+            "Keep it in their home locker and only consult it before promotional exams",
+            "Carry it while on duty, keep it up to date with all correction slips, produce it when inspected, and thoroughly understand its contents",
+            "Hand it over to the Station Master at the end of each trip",
+            "Return it to the DRM Office at the end of every calendar year"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 2.03, staff must carry their rule book on duty, keep all correction slips pasted and indexed, and produce it whenever demanded by inspecting officials.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-02-03",
+        "chapter_no": "CHAPTER II",
+        "chapter_title": "RULES APPLYING TO RAILWAY SERVANTS GENERALLY",
+        "rule_ref": "GR 2.11",
+        "question": "According to GR 2.11, if an employee observes an unusual defect in track, bridge, or OHE likely to endanger a train, what must he do?",
+        "options": [
+            "Wait until reaching the terminus and register a routine memo",
+            "Immediately take all possible steps to stop approaching trains, protect the line, and alert the nearest Station Master / Controller",
+            "Inform the supervisor only if scheduled train detention exceeds 30 minutes",
+            "Continue working and mention it in the periodic safety seminar"
+        ],
+        "correct_index": 1,
+        "explanation": "GR 2.11 places an absolute duty on every railway servant to immediately exhibit stop hand signals to approaching trains, protect the line, and alert the nearest Station Master.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-02-04",
+        "chapter_no": "CHAPTER II",
+        "chapter_title": "RULES APPLYING TO RAILWAY SERVANTS GENERALLY",
+        "rule_ref": "GR 2.08",
+        "question": "Under GR 2.08, what is required before a railway servant engaged in safety operations leaves his post?",
+        "options": [
+            "He can leave immediately once his 8-hour shift clock expires",
+            "He must not leave until he has been properly relieved or duly authorized by his immediate supervisor",
+            "He may leave by leaving a handwritten note on the table",
+            "He can leave provided the section block is currently clear of trains"
+        ],
+        "correct_index": 1,
+        "explanation": "GR 2.08 strictly forbids any railway servant entrusted with safety duties from leaving his post until properly relieved or authorized by a competent superior.",
+        "difficulty": "Basic"
+    },
+
+    # ==========================================
+    # CHAPTER III: SIGNALS
+    # ==========================================
+    {
+        "id": "Q-03-01",
+        "chapter_no": "CHAPTER III",
+        "chapter_title": "SIGNALS",
+        "rule_ref": "GR 3.07(4)",
+        "question": "In Multiple-Aspect Colour Light Signalling (MACLS), what indication does the 'Attention' aspect (Double Yellow) on a Distant Signal convey to the Loco Pilot?",
+        "options": [
+            "Stop dead before the signal",
+            "Proceed at line speed; next Stop Signal is displaying Green",
+            "Proceed and be prepared to pass next signal at restricted speed (such as turn-out onto loop line)",
+            "Apply emergency brake immediately"
+        ],
+        "correct_index": 2,
+        "explanation": "The Attention aspect (Two Yellow lights vertically arranged) indicates: 'Proceed and be prepared to pass next signal at such restricted speed as may be prescribed by special instructions' (usually turn-out speed).",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-03-02",
+        "chapter_no": "CHAPTER III",
+        "chapter_title": "SIGNALS",
+        "rule_ref": "GR 3.14 & SR 3.14",
+        "question": "What aspect does a Calling-On Signal show when taken 'OFF', and what is the maximum speed permitted after passing it?",
+        "options": [
+            "Green light, line speed",
+            "Miniature Yellow light; proceed with caution not exceeding 15 kmph and be prepared to stop short of any obstruction",
+            "Flashing Red light, maximum 25 kmph",
+            "Steady White light, maximum 30 kmph"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 3.14, a Calling-on signal displays a miniature yellow light when OFF. The Loco Pilot is authorized to draw ahead with extreme caution at a speed not exceeding 15 kmph, prepared to stop short of any obstruction.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-03-03",
+        "chapter_no": "CHAPTER III",
+        "chapter_title": "SIGNALS",
+        "rule_ref": "GR 3.61 & SR 3.61(1)",
+        "question": "During dense fog or thick weather, how many detonators (fog signals) are placed on the track and at what distance outside the first Stop Signal?",
+        "options": [
+            "1 detonator placed at 500 metres outside",
+            "2 detonators, placed 10 metres apart, at least 270 metres outside the first Stop Signal",
+            "3 detonators, placed 20 metres apart, at 600 metres outside",
+            "4 detonators placed 50 metres apart at 1000 metres outside"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 3.61 and Eastern Railway SR, two detonators are placed 10 metres apart on the rail, at least 270 metres outside the first Stop Signal (FSS), to warn approaching drivers.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-03-04",
+        "chapter_no": "CHAPTER III",
+        "chapter_title": "SIGNALS",
+        "rule_ref": "GR 3.75 & SR 3.75",
+        "question": "When a Loco Pilot encounters an Intermediate Block Stop Signal (IBSS) at 'ON', what is the immediate prescribed procedure?",
+        "options": [
+            "Pass the signal immediately at 30 kmph sounding continuous horn",
+            "Stop dead, contact the rear Station Master on the post telephone; if line clear is confirmed, pass at restricted speed; if phone fails, wait 5 min, then proceed at 15 kmph (day) / 8 kmph (night)",
+            "Push the train back immediately to the rear station",
+            "Wait until dawn before moving forward"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 3.75, the LP stops at the IBSS and contacts the rear SM on the telephone. If communication fails, after waiting 5 minutes the LP sounds one long continuous whistle and proceeds cautiously at 15 kmph (day/clear) or 8 kmph (night/fog).",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "Q-03-05",
+        "chapter_no": "CHAPTER III",
+        "chapter_title": "SIGNALS",
+        "rule_ref": "GR 3.40",
+        "question": "Under GR 3.40, what is the minimum standard Signal Overlap required for taking 'OFF' the Home Signal in Multiple-Aspect Signalling (MAS)?",
+        "options": [
+            "60 metres",
+            "120 metres",
+            "180 metres",
+            "300 metres"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 3.40, the Signal Overlap shall not be less than 180 metres in Two-Aspect Signalling, and not less than 120 metres in Multiple-Aspect Signalling.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-03-06",
+        "chapter_no": "CHAPTER III",
+        "chapter_title": "SIGNALS",
+        "rule_ref": "GR 3.69 / 3.70",
+        "question": "What is the official written authority given to a Loco Pilot to pass a defective Home Signal at 'ON'?",
+        "options": [
+            "Form T/409 (Caution Order)",
+            "Form T/369(3b) along with Proceed Hand Signal (PHS) exhibited at the foot of the defective signal",
+            "Form T/512 (Shunting Order)",
+            "Verbal clearance from the Guard over Walkie-Talkie"
+        ],
+        "correct_index": 1,
+        "explanation": "Form T/369(3b) is the prescribed authority to pass an operative defective Home signal at 'ON', supported by a Proceed Hand Signal (PHS) at the post.",
+        "difficulty": "Basic"
+    },
+
+    # ==========================================
+    # CHAPTER IV: WORKING OF TRAINS GENERALLY
+    # ==========================================
+    {
+        "id": "Q-04-01",
+        "chapter_no": "CHAPTER IV",
+        "chapter_title": "WORKING OF TRAINS GENERALLY",
+        "rule_ref": "GR 4.08",
+        "question": "Under GR 4.08, who is the statutory authority empowered to sanction the Maximum Permissible Speed (MPS) on any railway section?",
+        "options": [
+            "Senior Divisional Operations Manager (Sr. DOM)",
+            "Commissioner of Railway Safety (CRS)",
+            "Principal Chief Engineer (PCE)",
+            "Traction Loco Controller (TLC 22328)"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 4.08, the Maximum Permissible Speed of any section is sanctioned by the Commissioner of Railway Safety (CRS) based on track, bridge, signalling, and rolling stock parameters.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-04-02",
+        "chapter_no": "CHAPTER IV",
+        "chapter_title": "WORKING OF TRAINS GENERALLY",
+        "rule_ref": "GR 4.19",
+        "question": "Under GR 4.19, what must be attached to the rear of the last vehicle of a train during day and night to indicate train completeness?",
+        "options": [
+            "A red flag by day and a red flag by night",
+            "A Tail Board with 'LV' inscribed by day, and an illuminated/flashing Red Tail Lamp by night",
+            "A yellow indicator board by day and white light by night",
+            "Two flashing amber lights at all times"
+        ],
+        "correct_index": 1,
+        "explanation": "GR 4.19 stipulates that an 'LV' (Last Vehicle) board must be fixed by day and a red tail lamp (flashing LED) exhibited by night to verify the train is complete.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-04-03",
+        "chapter_no": "CHAPTER IV",
+        "chapter_title": "WORKING OF TRAINS GENERALLY",
+        "rule_ref": "SR 4.50",
+        "question": "What is the official engine whistle code prescribed for approaching a Level Crossing Whistle Board (W/L)?",
+        "options": [
+            "0 0 (Two short whistles)",
+            "— 0 — 0 (Intermittent Long-Short-Long-Short whistle)",
+            "— — — (Three continuous long whistles)",
+            "0 — 0 (Short-Long-Short whistle)"
+        ],
+        "correct_index": 1,
+        "explanation": "Under SR 4.50, '— 0 — 0' is the intermittent whistle code sounded when approaching whistle boards (W/L), level crossing gates, or gangs working on the track.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-04-04",
+        "chapter_no": "CHAPTER IV",
+        "chapter_title": "WORKING OF TRAINS GENERALLY",
+        "rule_ref": "GR 4.35",
+        "question": "Under GR 4.35, what conditions must be satisfied before a Loco Pilot starts a passenger train from a station platform?",
+        "options": [
+            "Loco Pilot must obtain correct Authority to Proceed (ATP), ensure line is clear, and receive starting hand signal from the Guard",
+            "Loco Pilot can start independently as soon as the scheduled departure time arrives",
+            "Loco Pilot starts upon receiving a bell from the booking clerk",
+            "Loco Pilot starts when headlamp is switched to high beam"
+        ],
+        "correct_index": 0,
+        "explanation": "GR 4.35 mandates that the Loco Pilot shall not start the train without obtaining proper Authority to Proceed and receiving the departure signal from the Guard.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-04-05",
+        "chapter_no": "CHAPTER IV",
+        "chapter_title": "WORKING OF TRAINS GENERALLY",
+        "rule_ref": "SR 4.62",
+        "question": "When is a fresh Brake Continuity Test mandatory under SR 4.62?",
+        "options": [
+            "Only at the primary originating terminal once per day",
+            "Whenever a locomotive is attached/detached, vehicles are marshalled, or BP pipe continuity has been interrupted",
+            "Only when train speed drops below 15 kmph",
+            "Whenever the Guard takes rest"
+        ],
+        "correct_index": 1,
+        "explanation": "SR 4.62 mandates a brake pipe continuity test whenever the loco is changed, additional vehicles are coupled/uncoupled, or hosepipe continuity is disrupted.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-04-06",
+        "chapter_no": "CHAPTER IV",
+        "chapter_title": "WORKING OF TRAINS GENERALLY",
+        "rule_ref": "GR 4.49",
+        "question": "Under GR 4.49, who must exchange 'All-Right' signals when a train runs through a station without stopping?",
+        "options": [
+            "Station Master (or platform staff), Loco Pilot, and Guard",
+            "Station Master and Gateman only",
+            "Guard and Section Controller",
+            "Loco Pilot and Assistant Loco Pilot only"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 4.49, the Station Master on duty, the Loco Pilot, and the Guard must exchange hand signals as the train passes through the station to ensure safety.",
+        "difficulty": "Basic"
+    },
+
+    # ==========================================
+    # CHAPTER V: CONTROL AND WORKING OF STATIONS
+    # ==========================================
+    {
+        "id": "Q-05-01",
+        "chapter_no": "CHAPTER V",
+        "chapter_title": "CONTROL AND WORKING OF STATIONS",
+        "rule_ref": "GR 5.06",
+        "question": "Under GR 5.06, which document governs the specific operating layout, signalling interlocking, and safety procedures of a particular station?",
+        "options": [
+            "Working Time Table (WTT)",
+            "Station Working Rules (SWR)",
+            "General Rules Book",
+            "Divisional Safety Circular"
+        ],
+        "correct_index": 1,
+        "explanation": "Station Working Rules (SWR) are issued under GR 5.06 for each station, signed jointly by Sr. DOM and Sr. DSTE, specifying local operating rules and interlocking.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-05-02",
+        "chapter_no": "CHAPTER V",
+        "chapter_title": "CONTROL AND WORKING OF STATIONS",
+        "rule_ref": "GR 5.23 & SR 5.23",
+        "question": "What precautions are mandatory under GR 5.23 when stabling vehicles or train loads in a station yard?",
+        "options": [
+            "Keep train brakes fully released to allow easy shunting",
+            "Apply hand brakes of adequate vehicles, secure wheels with wooden wedges/skids, lock safety chains with padlocks, and set points away from running lines",
+            "Switch off all station yard floodlights",
+            "Keep the locomotive attached and idling continuously"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 5.23, stabled stock must be secured against roll-down by applying hand brakes, pinning wedges, locking with safety chains, and isolating points/traps.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-05-03",
+        "chapter_no": "CHAPTER V",
+        "chapter_title": "CONTROL AND WORKING OF STATIONS",
+        "rule_ref": "GR 5.16",
+        "question": "Under GR 5.16, whose authorization is strictly required before any shunting movement is carried out on or across a running line?",
+        "options": [
+            "The Guard of the train only",
+            "The Station Master on duty, with necessary signals/points properly set and locked",
+            "The Section Controller alone over phone",
+            "The pointsman on the ground"
+        ],
+        "correct_index": 1,
+        "explanation": "GR 5.16 specifies that shunting on or across running lines shall only be carried out under the direct orders and supervision of the Station Master.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-05-04",
+        "chapter_no": "CHAPTER V",
+        "chapter_title": "CONTROL AND WORKING OF STATIONS",
+        "rule_ref": "GR 5.15",
+        "question": "As per GR 5.15, what is the maximum speed permitted during shunting operations unless otherwise sanctioned by special instructions?",
+        "options": [
+            "10 kmph",
+            "15 kmph",
+            "25 kmph",
+            "30 kmph"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 5.15 and SR, the speed of shunting operations shall not exceed 15 kmph, and impact shunting onto passenger stock is strictly prohibited.",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # CHAPTER VI: ACCIDENTS AND UNUSUAL OCCURRENCES
+    # ==========================================
+    {
+        "id": "Q-06-01",
+        "chapter_no": "CHAPTER VI",
+        "chapter_title": "ACCIDENTS AND UNUSUAL OCCURRENCES",
+        "rule_ref": "GR 6.03 & SR 6.03",
+        "question": "When a train stops due to an accident on a double line and the adjacent track is fouled, what is the Loco Pilot's FIRST action?",
+        "options": [
+            "Sound 4 short whistles, switch ON the Flasher Light immediately, and rush forward to protect the adjacent line with detonators",
+            "Wait in the cab for the Guard to arrive and discuss",
+            "Check the locomotive logbook and call TLC 22328 after 10 minutes",
+            "Step down and examine the transformer oil level"
+        ],
+        "correct_index": 0,
+        "explanation": "The LP must immediately switch ON the flasher light, sound the hazard whistle, and immediately protect the adjacent line in front with detonators.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-06-02",
+        "chapter_no": "CHAPTER VI",
+        "chapter_title": "ACCIDENTS AND UNUSUAL OCCURRENCES",
+        "rule_ref": "GR 6.03(2)",
+        "question": "What are the standard distances for placing detonators when protecting an obstructed Broad Gauge track under GR 6.03?",
+        "options": [
+            "1 detonator at 250m and 2 at 500m",
+            "1 detonator at 600 metres and 3 detonators, 10 metres apart, at 1200 metres from the obstruction",
+            "2 detonators at 100 metres and 2 at 200 metres",
+            "1 detonator at 180 metres and 1 at 360 metres"
+        ],
+        "correct_index": 1,
+        "explanation": "On Broad Gauge under GR 6.03, one detonator is placed at 600 metres, and three detonators 10 metres apart at 1200 metres from the point of obstruction.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-06-03",
+        "chapter_no": "CHAPTER VI",
+        "chapter_title": "ACCIDENTS AND UNUSUAL OCCURRENCES",
+        "rule_ref": "GR 6.09",
+        "question": "If a Loco Pilot discovers while running that the train has parted into two portions, what should he do?",
+        "options": [
+            "Apply emergency brakes at maximum force immediately",
+            "Keep the locomotive moving forward steadily, sound the parting whistle code, avoid sudden stopping, and prevent the rear portion from colliding into the front",
+            "Immediately reverse the traction direction",
+            "Lower the pantograph and jump off the locomotive"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 6.09, sudden braking would cause the detached rear portion to collide violently into the front portion. The LP must maintain headway until the rear portion stops.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-06-04",
+        "chapter_no": "CHAPTER VI",
+        "chapter_title": "ACCIDENTS AND UNUSUAL OCCURRENCES",
+        "rule_ref": "GR 6.10",
+        "question": "Under GR 6.10, when a fire breaks out in a passenger coach on an electrified section, where should the train NOT be stopped?",
+        "options": [
+            "On a straight open track",
+            "On bridges, inside tunnels, or within 50 metres of high-tension power lines",
+            "Inside a large station yard with fire hydrants",
+            "On level ground with clear road access"
+        ],
+        "correct_index": 1,
+        "explanation": "GR 6.10 strictly forbids stopping a burning train on bridges or inside tunnels where evacuation and firefighting are severely impeded.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-06-05",
+        "chapter_no": "CHAPTER VI",
+        "chapter_title": "ACCIDENTS AND UNUSUAL OCCURRENCES",
+        "rule_ref": "GR 6.05",
+        "question": "Under GR 6.05, if a train is brought to an unexpected stop in a block section, after how many minutes of detention must the Guard proceed to protect the rear of the train?",
+        "options": [
+            "After 5 minutes",
+            "After 15 minutes (or immediately if on a gradient/poor visibility)",
+            "After 45 minutes",
+            "Only when authorized by TLC"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 6.05 and SR, if the train cannot proceed within 15 minutes (or immediately in case of obstruction/steep grade), the Guard must protect the train in the rear.",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # CHAPTER VII: SYSTEMS OF WORKING
+    # ==========================================
+    {
+        "id": "Q-07-01",
+        "chapter_no": "CHAPTER VII",
+        "chapter_title": "SYSTEMS OF WORKING",
+        "rule_ref": "GR 7.01",
+        "question": "Which of the following is NOT a recognized System of Working under GR 7.01 of Indian Railways?",
+        "options": [
+            "The Absolute Block System",
+            "The Automatic Block System",
+            "The Free Uncontrolled Running System",
+            "The One Train Only System"
+        ],
+        "correct_index": 2,
+        "explanation": "GR 7.01 recognizes only six specific systems: Absolute Block, Automatic Block, Following Trains, Pilot Guard, Train-staff & Ticket, and One Train Only.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-07-02",
+        "chapter_no": "CHAPTER VII",
+        "chapter_title": "SYSTEMS OF WORKING",
+        "rule_ref": "GR 7.02",
+        "question": "Which system of working is adopted as the primary standard system on the trunk and main lines of Indian Railways unless specifically sanctioned?",
+        "options": [
+            "The Absolute Block System",
+            "The Following Trains System",
+            "The Pilot Guard System",
+            "The Train-Staff and Ticket System"
+        ],
+        "correct_index": 0,
+        "explanation": "The Absolute Block System is the standard default system of train working across Indian Railways except where Automatic Block Signalling is provided.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-07-03",
+        "chapter_no": "CHAPTER VII",
+        "chapter_title": "SYSTEMS OF WORKING",
+        "rule_ref": "GR 7.01",
+        "question": "Who has the authority to sanction the introduction of any system of working other than Absolute Block?",
+        "options": [
+            "Chief Loco Inspector (CLI)",
+            "Railway Board with the approval of Commissioner of Railway Safety (CRS)",
+            "Loco Lobby Supervisor",
+            "Station Master on duty"
+        ],
+        "correct_index": 1,
+        "explanation": "Systems of working require statutory approval from the Railway Board and Commissioner of Railway Safety (CRS).",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # CHAPTER VIII: THE ABSOLUTE BLOCK SYSTEM
+    # ==========================================
+    {
+        "id": "Q-08-01",
+        "chapter_no": "CHAPTER VIII",
+        "chapter_title": "THE ABSOLUTE BLOCK SYSTEM",
+        "rule_ref": "GR 8.01",
+        "question": "What is the cardinal principle of the Absolute Block System under GR 8.01?",
+        "options": [
+            "Trains follow each other by sight at 5-minute intervals",
+            "No train shall enter a block section until Line Clear has been obtained from the block station ahead, ensuring only one train is in the block section at any time",
+            "Trains run solely under radio instructions from TLC 22328",
+            "Speed must not exceed 25 kmph at any time"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 8.01, no train is permitted to leave a block station until Line Clear is received from the station in advance, guaranteeing exclusive track occupancy.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-08-02",
+        "chapter_no": "CHAPTER VIII",
+        "chapter_title": "THE ABSOLUTE BLOCK SYSTEM",
+        "rule_ref": "GR 8.03",
+        "question": "At a Class 'B' station on Double Line with MAS, what portion of track must be clear before granting Line Clear under GR 8.03?",
+        "options": [
+            "The platform line only",
+            "The line must be clear up to the Home Signal and for an adequate distance of at least 120 metres beyond it (Signal Overlap)",
+            "Only the track circuit up to the outer distant signal",
+            "The entire station yard up to the starter signal"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 8.03, Line Clear cannot be granted unless the line is clear up to the Home Signal plus the prescribed 120-metre signal overlap beyond it.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-08-03",
+        "chapter_no": "CHAPTER VIII",
+        "chapter_title": "THE ABSOLUTE BLOCK SYSTEM",
+        "rule_ref": "GR 8.09",
+        "question": "Under GR 8.09, what restriction is placed on shunting outside the Home Signal on a Single Line at a Class 'B' station?",
+        "options": [
+            "Shunting is freely permitted at all times",
+            "No obstruction or shunting outside the Home Signal is permitted if Line Clear has already been granted to an approaching train",
+            "Shunting is allowed if Guard gives a green flag",
+            "Shunting is allowed only during daytime"
+        ],
+        "correct_index": 1,
+        "explanation": "GR 8.09 strictly prohibits obstructing or shunting on the single line outside the Home signal once Line Clear has been granted to a train from the opposite station.",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "Q-08-04",
+        "chapter_no": "CHAPTER VIII",
+        "chapter_title": "THE ABSOLUTE BLOCK SYSTEM",
+        "rule_ref": "GR 8.13",
+        "question": "Under GR 8.13, what is the normal aspect of fixed signals in the Absolute Block System?",
+        "options": [
+            "Normal aspect is Proceed (Green)",
+            "Normal aspect is Danger (Red) for Stop signals, and Caution for Distant signals",
+            "Normal aspect is Yellow",
+            "Normal aspect is unlit"
+        ],
+        "correct_index": 1,
+        "explanation": "Fixed stop signals in the Absolute Block System normally display the 'ON' (Danger) aspect and are only taken 'OFF' for approaching trains.",
+        "difficulty": "Basic"
+    },
+
+    # ==========================================
+    # CHAPTER IX: THE AUTOMATIC BLOCK SYSTEM
+    # ==========================================
+    {
+        "id": "Q-09-01",
+        "chapter_no": "CHAPTER IX",
+        "chapter_title": "THE AUTOMATIC BLOCK SYSTEM",
+        "rule_ref": "GR 9.02",
+        "question": "In Automatic Block territory, after stopping at an Automatic Stop Signal at 'ON' (with lit 'A' marker) for 1 min (day) / 2 min (night), what is the maximum permitted speed in clear weather?",
+        "options": [
+            "10 kmph",
+            "15 kmph",
+            "25 kmph",
+            "30 kmph"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 9.02, after waiting 1 minute by day / 2 minutes by night, the LP may proceed with extreme caution at a speed not exceeding 15 kmph (or 10 kmph in dense fog/curves), prepared to stop short of any obstruction.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-09-02",
+        "chapter_no": "CHAPTER IX",
+        "chapter_title": "THE AUTOMATIC BLOCK SYSTEM",
+        "rule_ref": "SR 9.02(3)",
+        "question": "When following a preceding train after passing an Automatic Stop Signal at 'ON', what minimum distance must the Loco Pilot maintain from the train ahead?",
+        "options": [
+            "At least 50 metres",
+            "At least 150 metres (or two OHE spans)",
+            "At least 500 metres",
+            "At least 1 kilometre"
+        ],
+        "correct_index": 1,
+        "explanation": "Under SR 9.02(3), a following train moving past an Automatic Stop signal at 'ON' must maintain a minimum distance of 150 metres or two OHE spans from the train ahead.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-09-03",
+        "chapter_no": "CHAPTER IX",
+        "chapter_title": "THE AUTOMATIC BLOCK SYSTEM",
+        "rule_ref": "GR 9.12 & SR 9.12",
+        "question": "During total failure of communications on Double Line in Automatic Block territory, which Authority to Proceed is issued to the Loco Pilot?",
+        "options": [
+            "Form T/A 912",
+            "Form T/B 912",
+            "Form T/C 912 (Authority to proceed without Line Clear)",
+            "Paper Line Clear Ticket (T/32)"
+        ],
+        "correct_index": 2,
+        "explanation": "Form T/C 912 is the prescribed authority during total failure of all communications on Double Line in Automatic territory. Permitted speed is 25 kmph by day, 10 kmph by night.",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "Q-09-04",
+        "chapter_no": "CHAPTER IX",
+        "chapter_title": "THE AUTOMATIC BLOCK SYSTEM",
+        "rule_ref": "GR 9.01",
+        "question": "What does an illuminated letter 'A' marker on a Semi-Automatic Stop Signal indicate?",
+        "options": [
+            "The signal is working as a Manual Stop Signal",
+            "The signal is working as a fully Automatic Stop Signal with all route points set and locked",
+            "The signal has suffered a power failure",
+            "The signal is exclusively for suburban EMU trains"
+        ],
+        "correct_index": 1,
+        "explanation": "When the illuminated 'A' marker is lit, the semi-automatic signal functions as an automatic stop signal, and rules for passing automatic signals at ON (GR 9.02) apply.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-09-05",
+        "chapter_no": "CHAPTER IX",
+        "chapter_title": "THE AUTOMATIC BLOCK SYSTEM",
+        "rule_ref": "GR 9.03",
+        "question": "What is the normal aspect of an Automatic Stop Signal when the block section ahead is completely clear?",
+        "options": [
+            "Red (Danger)",
+            "Yellow (Caution)",
+            "Green (Clear / Proceed)",
+            "Double Yellow (Attention)"
+        ],
+        "correct_index": 2,
+        "explanation": "Unlike manual absolute block signals, Automatic Stop signals are controlled by track circuits and stand normally at 'Clear' (Green) when the section ahead is unoccupied.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-09-06",
+        "chapter_no": "CHAPTER IX",
+        "chapter_title": "THE AUTOMATIC BLOCK SYSTEM",
+        "rule_ref": "GR 9.08",
+        "question": "Under GR 9.08, what is the procedure if a train stops inside an automatic block section and cannot proceed immediately?",
+        "options": [
+            "The Guard must immediately protect the rear of the train by placing detonators at 90m and 180m",
+            "The Loco Pilot must reverse immediately",
+            "The ALP climbs onto the roof of the loco",
+            "The Guard switches off his tail lamp"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 9.08 and SR, the Guard must immediately protect the train in rear with detonators (one at 90m and two 10m apart at 180m) if disabled in an automatic section.",
+        "difficulty": "Advanced"
+    },
+
+    # ==========================================
+    # CHAPTER X: THE FOLLOWING TRAINS SYSTEM
+    # ==========================================
+    {
+        "id": "Q-10-01",
+        "chapter_no": "CHAPTER X",
+        "chapter_title": "THE FOLLOWING TRAINS SYSTEM",
+        "rule_ref": "GR 10.01",
+        "question": "Under what condition is the Following Trains System permitted under GR 10.01?",
+        "options": [
+            "On any high-speed passenger section during peak rush hours",
+            "Only on specially sanctioned sections where traffic is light and speeds are low, under approved special instructions of the CRS",
+            "On all electrified double lines",
+            "Whenever Automatic Signalling fails"
+        ],
+        "correct_index": 1,
+        "explanation": "The Following Trains System is a special system restricted to lines where sanctioned by the Commissioner of Railway Safety under approved special instructions.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-10-02",
+        "chapter_no": "CHAPTER X",
+        "chapter_title": "THE FOLLOWING TRAINS SYSTEM",
+        "rule_ref": "GR 10.04",
+        "question": "What is the maximum permissible speed of a train working under the Following Trains System as per GR 10.04?",
+        "options": [
+            "15 kmph",
+            "25 kmph",
+            "40 kmph",
+            "50 kmph"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 10.04, the speed of trains following each other shall not exceed 25 kmph, and a prescribed minimum distance of 800 metres must be maintained.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-10-03",
+        "chapter_no": "CHAPTER X",
+        "chapter_title": "THE FOLLOWING TRAINS SYSTEM",
+        "rule_ref": "GR 10.03",
+        "question": "In the Following Trains System, what interval of time must elapse before a second train is allowed to follow the preceding train?",
+        "options": [
+            "At least 15 minutes",
+            "At least 3 minutes",
+            "At least 30 minutes",
+            "At least 1 hour"
+        ],
+        "correct_index": 0,
+        "explanation": "GR 10.03 requires that trains shall not follow one another at an interval of less than 15 minutes unless specially authorized.",
+        "difficulty": "Advanced"
+    },
+
+    # ==========================================
+    # CHAPTER XI: THE PILOT GUARD SYSTEM
+    # ==========================================
+    {
+        "id": "Q-11-01",
+        "chapter_no": "CHAPTER XI",
+        "chapter_title": "THE PILOT GUARD SYSTEM",
+        "rule_ref": "GR 11.01",
+        "question": "Under GR 11.01, when is the Pilot Guard System normally introduced on a railway section?",
+        "options": [
+            "During total failure of communications or introduction of temporary single-line working",
+            "For scheduled VIP inspection runs",
+            "During foggy weather automatically",
+            "Whenever the loco headlight is defective"
+        ],
+        "correct_index": 0,
+        "explanation": "The Pilot Guard System is an emergency operational method introduced during failure of block instruments, prolonged communication breakdown, or single line working on double line.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-11-02",
+        "chapter_no": "CHAPTER XI",
+        "chapter_title": "THE PILOT GUARD SYSTEM",
+        "rule_ref": "GR 11.02",
+        "question": "Under GR 11.02, how is a train authorized to enter the block section under the Pilot Guard System?",
+        "options": [
+            "The Pilot Guard must personally ride on the engine, or deliver a Pilot Guard's Ticket and follow on the last train",
+            "By a telephone call from TLC 22328",
+            "By waving a green flag from the platform",
+            "By sounding two short whistles"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 11.02, no train can enter the section unless the designated Pilot Guard is either on the locomotive footplate or issues a written ticket and rides the final train.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-11-03",
+        "chapter_no": "CHAPTER XI",
+        "chapter_title": "THE PILOT GUARD SYSTEM",
+        "rule_ref": "GR 11.04",
+        "question": "What is the maximum speed permitted under the Pilot Guard System as per GR 11.04?",
+        "options": [
+            "Booked speed, not exceeding 25 kmph",
+            "MPS of the section",
+            "50 kmph",
+            "10 kmph"
+        ],
+        "correct_index": 0,
+        "explanation": "GR 11.04 stipulates that trains running under the Pilot Guard System shall run at booked speed, but shall not exceed 25 kmph unless otherwise prescribed by special instructions.",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # CHAPTER XII: THE TRAIN-STAFF AND TICKET SYSTEM
+    # ==========================================
+    {
+        "id": "Q-12-01",
+        "chapter_no": "CHAPTER XII",
+        "chapter_title": "THE TRAIN-STAFF AND TICKET SYSTEM",
+        "rule_ref": "GR 12.01",
+        "question": "Under GR 12.01, what is the single physical object that guarantees safety against head-on collisions in this system?",
+        "options": [
+            "A single unique Train-Staff bearing the names of both stations of the section",
+            "A battery torch",
+            "A wooden flag pole",
+            "A key to the station safe"
+        ],
+        "correct_index": 0,
+        "explanation": "Only one physical Train-Staff exists for the entire section. No train can enter unless the Loco Pilot is in possession of this staff or a valid Train-Staff Ticket.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-12-02",
+        "chapter_no": "CHAPTER XII",
+        "chapter_title": "THE TRAIN-STAFF AND TICKET SYSTEM",
+        "rule_ref": "GR 12.06",
+        "question": "When a Train-Staff Ticket is handed to a Loco Pilot under GR 12.06, what MUST the Station Master show to the Loco Pilot?",
+        "options": [
+            "The actual physical Train-Staff for the section to prove it is physically present at the station",
+            "The station clock",
+            "The Guard's certificate",
+            "The cash chest"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 12.06, the Station Master must physically show the actual Train-Staff to the LP before handing over the Train-Staff Ticket, proving the staff is retained.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-12-03",
+        "chapter_no": "CHAPTER XII",
+        "chapter_title": "THE TRAIN-STAFF AND TICKET SYSTEM",
+        "rule_ref": "GR 12.08",
+        "question": "Under GR 12.08, which train must carry the physical Train-Staff when several trains are dispatched in the same direction?",
+        "options": [
+            "The very first train",
+            "The last train in that series",
+            "Any randomly selected goods train",
+            "The train with the highest load"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 12.08, preceding trains carry Train-Staff Tickets, but the physical Train-Staff itself MUST be carried by the last train of the batch.",
+        "difficulty": "Advanced"
+    },
+
+    # ==========================================
+    # CHAPTER XIII: THE ONE TRAIN ONLY SYSTEM
+    # ==========================================
+    {
+        "id": "Q-13-01",
+        "chapter_no": "CHAPTER XIII",
+        "chapter_title": "THE ONE TRAIN ONLY SYSTEM",
+        "rule_ref": "GR 13.01",
+        "question": "What is the fundamental operating condition of the One Train Only System under GR 13.01?",
+        "options": [
+            "Only one train is allowed to be present on the entire branch section between two base stations at any one time",
+            "Only one passenger train is allowed per calendar week",
+            "Trains can only run at night",
+            "Only steam engines are permitted"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 13.01, only one train is permitted on the entire line between the base stations at any given moment, eliminating the possibility of collision.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-13-02",
+        "chapter_no": "CHAPTER XIII",
+        "chapter_title": "THE ONE TRAIN ONLY SYSTEM",
+        "rule_ref": "GR 13.02",
+        "question": "What is the sole Authority to Proceed (ATP) issued to a Loco Pilot under the One Train Only System (GR 13.02)?",
+        "options": [
+            "Form T/369(3b)",
+            "A single unique Metal Token or Staff specially designated for that section",
+            "Verbal clearance from the Guard",
+            "A green aspect on the Advanced Starter"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 13.02, a single distinctive metal token or staff is the sole authority to enter and occupy the section.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-13-03",
+        "chapter_no": "CHAPTER XIII",
+        "chapter_title": "THE ONE TRAIN ONLY SYSTEM",
+        "rule_ref": "GR 13.04",
+        "question": "In the event of an engine breakdown on a section worked under the One Train Only System, how can a relief locomotive be dispatched (GR 13.04)?",
+        "options": [
+            "Relief loco enters immediately at full speed",
+            "Relief locomotive can only be dispatched after obtaining the single metal token or upon written memo signed by the disabled train's Loco Pilot/Guard",
+            "Relief loco is not permitted under any circumstances",
+            "Section Controller sends relief without any token"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 13.04, the relief engine can only enter if in possession of the section token or a written memo from the LP of the disabled engine authorizing its entry.",
+        "difficulty": "Advanced"
+    },
+
+    # ==========================================
+    # CHAPTER XIV: BLOCK WORKING - GENERAL PROVISIONS
+    # ==========================================
+    {
+        "id": "Q-14-01",
+        "chapter_no": "CHAPTER XIV",
+        "chapter_title": "BLOCK WORKING - GENERAL PROVISIONS",
+        "rule_ref": "GR 14.08",
+        "question": "Under GR 14.08, what confirms the statutory grant or cancellation of Line Clear between two block stations?",
+        "options": [
+            "Exchange of unique Private Numbers recorded in the Train Register Book (TBR)",
+            "A casual phone conversation between Station Masters",
+            "The Guard's verbal confirmation over walkie-talkie",
+            "A green flag shown by the station porter"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 14.08, every grant, denial, or cancellation of Line Clear must be supported by an exchange of unique Private Numbers entered in the block registers.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-14-02",
+        "chapter_no": "CHAPTER XIV",
+        "chapter_title": "BLOCK WORKING - GENERAL PROVISIONS",
+        "rule_ref": "GR 14.13",
+        "question": "As per GR 14.13, when must the 'Train Entering Section' (TES) bell code/signal be transmitted to the station in advance?",
+        "options": [
+            "Before lowering the starting signal",
+            "Immediately as the train passes past the Last Stop Signal (Advanced Starter) into the block section",
+            "Only when the train reaches the mid-point of the section",
+            "After the train arrives at the destination"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 14.13, the Station Master must transmit the 'Train Entering Section' signal immediately as the train enters the block section.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-14-03",
+        "chapter_no": "CHAPTER XIV",
+        "chapter_title": "BLOCK WORKING - GENERAL PROVISIONS",
+        "rule_ref": "GR 14.25 & SR 14.25",
+        "question": "Under GR 14.25 & SR, what verification is mandatory before resetting a failed Digital Axle Counter (DAC) for a block section?",
+        "options": [
+            "The Station Master can press the reset button immediately while a train is running",
+            "Complete physical verification that the block section is totally clear of all vehicles, followed by cooperative resetting with exchange of Private Numbers",
+            "TLC 22328 presses a remote button without checking",
+            "Reset happens automatically after 2 minutes"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 14.25 & SR, the SMs at both ends must verify through physical checks and last vehicle register that the section is empty before initiating cooperative reset with Private Numbers.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-14-04",
+        "chapter_no": "CHAPTER XIV",
+        "chapter_title": "BLOCK WORKING - GENERAL PROVISIONS",
+        "rule_ref": "GR 14.14",
+        "question": "What is the standard bell code for 'Call Attention / Attend Telephone' on the block instrument as per GR 14.14?",
+        "options": [
+            "1 stroke",
+            "2 strokes",
+            "3 strokes",
+            "5 strokes"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 14.14 standard bell code chart, 1 stroke signifies 'Call Attention or Attend Telephone'.",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # CHAPTER XV: PERMANENT WAY AND WORKS
+    # ==========================================
+    {
+        "id": "Q-15-01",
+        "chapter_no": "CHAPTER XV",
+        "chapter_title": "PERMANENT WAY AND WORKS",
+        "rule_ref": "GR 15.09",
+        "question": "At what distance from a temporary engineering speed restriction work site is the 'Caution Indicator' board erected on Broad Gauge lines?",
+        "options": [
+            "200 metres",
+            "800 metres",
+            "1200 metres",
+            "2000 metres"
+        ],
+        "correct_index": 2,
+        "explanation": "Under GR 15.09 and Indian Railways Way & Works manual, the Caution Indicator board is placed 1200 metres in advance of the Speed Indicator board on BG routes.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-15-02",
+        "chapter_no": "CHAPTER XV",
+        "chapter_title": "PERMANENT WAY AND WORKS",
+        "rule_ref": "GR 15.09(2)",
+        "question": "When a passenger train passes the 'T/P' (Termination Passenger) board, when may the Loco Pilot resume normal section speed?",
+        "options": [
+            "As soon as the front wheels of the locomotive cross the T/P board",
+            "Only when the entire train (including the last vehicle / Guard's brake van) has completely cleared the T/P board",
+            "Immediately after sounding one short whistle",
+            "After waiting 3 minutes"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 15.09(2), the speed restriction remains in force until the entire train has cleared the speed restriction zone and its last vehicle passes the termination indicator.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-15-03",
+        "chapter_no": "CHAPTER XV",
+        "chapter_title": "PERMANENT WAY AND WORKS",
+        "rule_ref": "GR 15.17",
+        "question": "Under GR 15.17, how must engineering gangmen protect an unexpected rail fracture on Broad Gauge?",
+        "options": [
+            "Exhibiting a Red flag, placing a banner flag at 600m, and 3 detonators 10m apart at 1200m from the fault",
+            "Erecting a 10 kmph caution board at the spot",
+            "Calling the PWI on mobile phone and walking away",
+            "Placing one detonator at 50 metres"
+        ],
+        "correct_index": 0,
+        "explanation": "GR 15.17 prescribes immediate danger hand signal at the spot, banner flag at 600 metres, and three detonators 10 metres apart at 1200 metres.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-15-04",
+        "chapter_no": "CHAPTER XV",
+        "chapter_title": "PERMANENT WAY AND WORKS",
+        "rule_ref": "GR 15.06",
+        "question": "Under GR 15.06, who is authorized to issue and cancel a Caution Order (T/409)?",
+        "options": [
+            "Station Master on duty based on instructions from the Engineering/Operating Department",
+            "Head Constable of RPF",
+            "Booking Clerk",
+            "Commercial Inspector"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 15.06, Caution Orders (Form T/409) are prepared and served by the Station Master under advice from the Engineering official and Section Controller.",
+        "difficulty": "Basic"
+    },
+
+    # ==========================================
+    # CHAPTER XVI: LEVEL CROSSINGS
+    # ==========================================
+    {
+        "id": "Q-16-01",
+        "chapter_no": "CHAPTER XVI",
+        "chapter_title": "LEVEL CROSSINGS",
+        "rule_ref": "GR 16.05 & SR 16.05",
+        "question": "When a Loco Pilot encounters a Gate Stop Signal at 'ON' (with illuminated 'G' marker), what is the mandatory procedure under GR 16.05?",
+        "options": [
+            "Pass the signal immediately at 40 kmph",
+            "Stop dead for 1 min (day) / 2 min (night); if gateman does not exhibit hand signal, draw ahead cautiously at max 15 kmph to the gate, verify gate is locked, and proceed",
+            "Wait for 1 hour and reverse train",
+            "Sound horn continuously and pass at line speed"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 16.05 & SR, the LP waits 1 min/2 min, proceeds cautiously at 15 kmph to the gate, ensures the boom is closed and locked against road traffic, and proceeds.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-16-02",
+        "chapter_no": "CHAPTER XVI",
+        "chapter_title": "LEVEL CROSSINGS",
+        "rule_ref": "GR 16.07",
+        "question": "At what distance from an approaching Level Crossing is the Whistle Board (W/L) installed?",
+        "options": [
+            "150 metres",
+            "300 metres",
+            "600 metres",
+            "1000 metres"
+        ],
+        "correct_index": 2,
+        "explanation": "Under GR 16.07 and the Indian Railways Permanent Way Manual, Whistle Boards (W/L) are placed at a distance of 600 metres from the level crossing.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-16-03",
+        "chapter_no": "CHAPTER XVI",
+        "chapter_title": "LEVEL CROSSINGS",
+        "rule_ref": "GR 16.03",
+        "question": "Which of the following items is NOT part of the mandatory safety equipment of a Level Crossing Gatekeeper under GR 16.03?",
+        "options": [
+            "10 Detonators (fog signals)",
+            "Red and Green hand signal flags & Tri-colour hand signal lamp",
+            "Laser rangefinder and radar speed gun",
+            "Spare safety chains and padlocks"
+        ],
+        "correct_index": 2,
+        "explanation": "A gateman is equipped with detonators, signal flags, lamps, spare chains, padlocks, and a tommy bar, but not radar speed guns.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-16-04",
+        "chapter_no": "CHAPTER XVI",
+        "chapter_title": "LEVEL CROSSINGS",
+        "rule_ref": "GR 16.08",
+        "question": "Under GR 16.08, what is the duty of a Gateman if a road vehicle breaks down and obstructs the railway track at the level crossing?",
+        "options": [
+            "Wait for the vehicle owner to tow it away",
+            "Immediately protect the railway line in both directions with danger hand signals and detonators, and alert the Station Master",
+            "Attempt to lift the vehicle alone without showing any signals",
+            "Open the opposite gate to allow more road traffic"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 16.08, the Gateman must instantly exhibit stop hand signals and protect the track on both sides with detonators (at 600m and 1200m) to stop approaching trains.",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # CHAPTER XVII: WORKING OF TRAINS ON ELECTRIFIED SECTIONS
+    # ==========================================
+    {
+        "id": "Q-17-01",
+        "chapter_no": "CHAPTER XVII",
+        "chapter_title": "WORKING OF TRAINS ON ELECTRIFIED SECTIONS OF RAILWAYS",
+        "rule_ref": "GR 17.05 & SR 17.05",
+        "question": "Under GR 17.05 & SR, what is the mandatory sequence of action when a Loco Pilot approaches a Neutral Section in 25 kV AC territory?",
+        "options": [
+            "Accelerate to top speed and keep DJ/VCB closed",
+            "Acknowledge 500m & 250m warning boards; open DJ/VCB at 'Open DJ' board; coast through with pantograph raised; re-close DJ/VCB after 'Close DJ' board",
+            "Lower both pantographs completely while running at 100 kmph",
+            "Apply emergency brakes and stop inside the neutral section"
+        ],
+        "correct_index": 1,
+        "explanation": "The LP observes 500m/250m boards, opens DJ/VCB at the Open board to avoid heavy arcing across phase differences, coasts through, and recloses DJ after passing the Close board.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-17-02",
+        "chapter_no": "CHAPTER XVII",
+        "chapter_title": "WORKING OF TRAINS ON ELECTRIFIED SECTIONS OF RAILWAYS",
+        "rule_ref": "GR 17.07 & SR 17.07",
+        "question": "If a Loco Pilot observes flashing, entangling, or a hanging wire in the Overhead Equipment (OHE), what must he do immediately under GR 17.07?",
+        "options": [
+            "Continue running and inform the station master at the next scheduled halt",
+            "Instantly lower both pantographs (open DJ, lower panto), apply emergency brakes, switch ON flasher light, and alert Traction Loco Controller (TLC 22328)",
+            "Increase speed to pass under the fault quickly",
+            "Switch over to emergency battery mode"
+        ],
+        "correct_index": 1,
+        "explanation": "Under GR 17.07, immediate lowering of the pantograph prevents destructive entanglement and pulling down of spans of catenary/contact wires. TLC 22328 must be notified instantly.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-17-03",
+        "chapter_no": "CHAPTER XVII",
+        "chapter_title": "WORKING OF TRAINS ON ELECTRIFIED SECTIONS OF RAILWAYS",
+        "rule_ref": "GR 17.03 & ACTM",
+        "question": "What is the minimum safe clearance distance that all persons, materials, and uninsulated tools must maintain from live 25 kV AC OHE equipment?",
+        "options": [
+            "0.5 metre",
+            "1.0 metre",
+            "2.0 metres (6 feet 7 inches)",
+            "5.0 metres"
+        ],
+        "correct_index": 2,
+        "explanation": "Under GR 17.03 and AC Traction Manual, no person, tool, or ladder shall be brought within 2 metres of live 25,000 Volt equipment unless a Power Block is taken and lines are earthed.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-17-04",
+        "chapter_no": "CHAPTER XVII",
+        "chapter_title": "WORKING OF TRAINS ON ELECTRIFIED SECTIONS OF RAILWAYS",
+        "rule_ref": "GR 17.09",
+        "question": "Under GR 17.09, what dual authorization is required before an OHE Tower Wagon can occupy the block section for overhead line repairs?",
+        "options": [
+            "Traffic Block from Section Controller and Power Block from Traction Loco Controller (TLC 22328), along with regular Authority to Proceed",
+            "Verbal consent from the nearest gateman",
+            "Green flag shown by the station sweeper",
+            "A written note from the coaching depot"
+        ],
+        "correct_index": 0,
+        "explanation": "Working on OHE requires both a Traffic Block (for track occupancy) from the Section Controller and a Power Block (for electrical isolation/earthing) from TLC 22328.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-17-05",
+        "chapter_no": "CHAPTER XVII",
+        "chapter_title": "WORKING OF TRAINS ON ELECTRIFIED SECTIONS OF RAILWAYS",
+        "rule_ref": "SR 17.08",
+        "question": "In a 3-Phase electric locomotive (WAP-7 / WAG-9), when should the rear pantograph normally be raised for train working?",
+        "options": [
+            "Rear pantograph is always raised in normal operation to prevent pantograph debris from fouling the rear cab or trailing loco equipment",
+            "Front pantograph is always raised at high speed",
+            "Both pantographs must be raised simultaneously",
+            "Pantograph selection is immaterial"
+        ],
+        "correct_index": 0,
+        "explanation": "As per standard Electric Traction rules, the rear pantograph is raised in trailing direction to protect the locomotive roof insulators and avoid pantograph collector strip debris falling on trailing equipment.",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # CHAPTER XVIII: MISCELLANEOUS
+    # ==========================================
+    {
+        "id": "Q-18-01",
+        "chapter_no": "CHAPTER XVIII",
+        "chapter_title": "MISCELLANEOUS",
+        "rule_ref": "GR 18.01",
+        "question": "Under GR 18.01, when an amendment or correction slip is issued to the General and Subsidiary Rules, from what date does it take statutory effect?",
+        "options": [
+            "From the exact date specified in the official notification or correction slip",
+            "Only after a lapse of 365 calendar days",
+            "Only when a new printed edition of the book is distributed",
+            "After approval by labour unions"
+        ],
+        "correct_index": 0,
+        "explanation": "Under GR 18.01, every rule change, addition, or correction slip takes effect from the date notified by the Railway Administration.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-18-02",
+        "chapter_no": "CHAPTER XVIII",
+        "chapter_title": "MISCELLANEOUS",
+        "rule_ref": "GR 18.01 & Preamble",
+        "question": "In case of any doubt or ambiguity between the English and Hindi texts of the General Rules, which text is legally authoritative?",
+        "options": [
+            "The English text published under the authority of the Ministry of Railways",
+            "The Hindi text only",
+            "The regional language version of the division",
+            "The local station working rules"
+        ],
+        "correct_index": 0,
+        "explanation": "Under the Railways Act and the General Rules preamble, the English version issued under statutory notification is the authoritative legal text.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-18-03",
+        "chapter_no": "CHAPTER XVIII",
+        "chapter_title": "MISCELLANEOUS",
+        "rule_ref": "GR 18.01",
+        "question": "Under GR 18.01, who is authorized to issue Subsidiary Rules (SR) supplementary to the General Rules (GR)?",
+        "options": [
+            "The Authorized Officer of the Zonal Railway (Principal Chief Operations Manager - PCOM)",
+            "The Chief Medical Officer",
+            "The Station Superintendent",
+            "The Loco Foreman"
+        ],
+        "correct_index": 0,
+        "explanation": "Under the definition in GR 1.02(6) & Chapter XVIII, the 'Authorized Officer' empowered to issue Subsidiary Rules is the Principal Chief Operations Manager (PCOM) of the Zonal Railway.",
+        "difficulty": "Intermediate"
+    },
+
+    # ==========================================
+    # SPECIAL SAFETY CIRCULARS & POLICIES
+    # ==========================================
+    {
+        "id": "Q-CIRC-01",
+        "chapter_no": "SPECIAL CIRCULARS",
+        "chapter_title": "RAILWAY BOARD SAFETY POLICIES",
+        "rule_ref": "Railway Board Policy 2012",
+        "question": "As per Railway Board's revised Policy on Drunkenness on Duty (2012), what is the penalty for running staff if blood alcohol level exceeds 21 mg / 100 ml (or on repeat offense)?",
+        "options": [
+            "Removal from Service under D&AR",
+            "Warning letter and transfer to another depot",
+            "Withholding of increment for one year",
+            "Forfeiture of 10 days privilege pass"
+        ],
+        "correct_index": 0,
+        "explanation": "Railway Board policy strictly mandates Removal from Service under D&AR if alcohol level exceeds 21 mg/100 ml or upon a repeated positive breathalyzer reading.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-CIRC-02",
+        "chapter_no": "SPECIAL CIRCULARS",
+        "chapter_title": "RAILWAY BOARD SAFETY POLICIES",
+        "rule_ref": "RSRC 1998 / Railway Board",
+        "question": "Under Railway Board safety instructions, what action MUST be taken if a Loco Pilot becomes overdue for mandatory Refresher Training?",
+        "options": [
+            "He may continue working trains with a caution order for 30 days",
+            "He must be taken off running duty immediately until completion of the refresher course",
+            "He can work goods trains during daylight only",
+            "He is allowed to run with an experienced Assistant Loco Pilot"
+        ],
+        "correct_index": 1,
+        "explanation": "Safety category running staff who become overdue for Refresher Training or PME cannot be booked on train duty under any circumstances.",
+        "difficulty": "Basic"
+    },
+    {
+        "id": "Q-CIRC-03",
+        "chapter_no": "SPECIAL CIRCULARS",
+        "chapter_title": "RAILWAY BOARD SAFETY POLICIES",
+        "rule_ref": "Railway Board 2015",
+        "question": "Under Railway Board directives, can premium trains like Rajdhani, Shatabdi, or Duronto Express be worked by an empanelled Loco Pilot (Goods) in an operational emergency?",
+        "options": [
+            "Yes, if he holds an 'A' grade certificate",
+            "No, under NO circumstances (regular Mail/Express LPs must be withdrawn from other links)",
+            "Yes, with verbal approval from the Section Controller",
+            "Yes, if accompanied by a Chief Loco Inspector"
+        ],
+        "correct_index": 1,
+        "explanation": "Railway Board instructions strictly forbid Goods Drivers from piloting premium high-speed trains like Rajdhani/Shatabdi/Duronto under any circumstances.",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "Q-CIRC-04",
+        "chapter_no": "SPECIAL CIRCULARS",
+        "chapter_title": "RAILWAY BOARD SAFETY POLICIES",
+        "rule_ref": "Railway Board 2007",
+        "question": "Psychological Aptitude Screening (Psycho test) is mandatory before deploying Loco Pilots on trains operating at what speed?",
+        "options": [
+            "Trains operating above 110 KMPH",
+            "Trains operating above 90 KMPH",
+            "Only bullet trains above 200 KMPH",
+            "All trains regardless of speed"
+        ],
+        "correct_index": 0,
+        "explanation": "Railway Board directives mandate Psychological Aptitude Testing for Loco Pilots deployed on High-Speed trains operating at speeds above 110 kmph.",
+        "difficulty": "Intermediate"
+    }
+]
+
+def main():
+    target_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'data')
+    os.makedirs(target_dir, exist_ok=True)
+    target_path = os.path.join(target_dir, 'gr_sr_quizzes.json')
+    
+    with open(target_path, 'w', encoding='utf-8') as f:
+        json.dump(QUIZ_DATA, f, indent=2, ensure_ascii=False)
+        
+    print(f"Successfully generated {len(QUIZ_DATA)} quiz questions across all 18 Chapters of GR & SR!")
+    
+    # Print summary
+    counts = {}
+    for q in QUIZ_DATA:
+        c = f"{q['chapter_no']}: {q['chapter_title']}"
+        counts[c] = counts.get(c, 0) + 1
+    for c, cnt in counts.items():
+        print(f"  {c}: {cnt} questions")
+
+if __name__ == '__main__':
+    main()

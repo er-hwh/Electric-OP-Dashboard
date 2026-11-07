@@ -1,0 +1,1225 @@
+
+--- TOC PAGE 11 ---
+i
+ARRANGEMENT OF RULES.
+INDEX
+CHAPTER - I
+PRELIMINARY
+GR
+No.
+Rules
+Pages
+1.01
+Short title and Commencement
+1
+1.02
+Definitions
+1
+1.03
+Classification of stations.
+8
+CHAPTER - II
+RULES APPLYING TO RAILWAY SERVANTS GENERALLY
+2.01
+Supply of copies of rules - The Railway Administration shall supply
+9
+2.02
+Upkeep of the copy of rules
+9
+2.03
+Knowledge of rules
+9
+2.04
+Assistance in observance of rules
+10
+2.05
+Prevention of trespass, damage or loss
+10
+2.06
+Obedience to rules and orders.
+10
+2.07
+Attendance for duty
+10
+2.08
+Absence from duty -
+10
+2.09
+Taking alcoholic drink, sedative, narcotic, stimulant drug or
+Preparation
+10
+2.10
+Conduct of railway servants.
+11
+2.11
+Duty for securing safety
+11
+CHAPTER - III
+SIGNALS
+A. General Provisions
+3.01
+General use of signals
+13
+3.02
+Kinds of signals
+13
+3.03
+Use of night signals by day
+13
+3.04
+Placing of signals and signal arms; painting of signal arms
+13
+B. Description of Fixed Signals
+3.05
+Use of fixed signals.-
+13
+3.06
+Description of Warner signals and their indications
+14
+3.07
+Description of Distant signals and their indications.
+17
+3.08
+Description of Stop signals and their indications.
+20
+3.09
+Kinds of fixed Stop signals for approaching trains
+22
+3.10
+Kinds of fixed Stop signals for departing trains.
+22
+3.11
+Intermediate Block Stop Signal
+23
+3.12
+Kinds of fixed Stop signals in Automatic Block territories
+23
+3.13
+Calling-on signals- their description and indications
+23
+3.14
+Shunt signals
+25
+3.15
+Co-acting signals.
+28
+3.16
+Repeating signals
+28
+3.17
+Distinguishing markers and signs for signals
+29
+3.18
+Signals out of use
+31
+3.19
+Placing of Stop signals at diverging junctions
+31
+3.20
+Placing of Stop signals at converging junctions.
+32
+3.21
+Signals on bracket post or signal bridge or gantry
+32
+3.22
+Placing of more than one signal on the same post
+32
+
+--- TOC PAGE 12 ---
+ii
+GR
+No.
+Rules
+Pages
+3.23
+Electric repeater
+32
+3.24
+Back-lights
+32
+C. Equipment of signals
+3.25
+Obligation to provide fixed signals at stations
+33
+3.26
+Commissioning of fixed signals
+33
+3.27
+Minimum equipment of fixed signals at stations provided with manually
+operated multiple-aspect signalling
+33
+3.28
+Minimum equipment of fixed signals at stations provided with modified lower
+quadrant signalling
+33
+3.29
+Minimum equipment of fixed signals at other stations provided with two-
+aspect signalling
+33
+3.30
+Additional fixed signals at stations generally
+33
+3.31
+Signals at class 'D' stations
+35
+3.32
+Provision of an Advanced Starter, Shunting Limit Board or Block Section Limit Board
+35
+3.33
+Exceptions to Rules 3.27, 3.28, 3.29 and 3.32 :-
+35
+3.34
+Fixed signals at level crossings
+36
+3.35
+Protection and working of points of outlying sidings
+36
+D.  Working of Signals and Points
+3.36
+Fixed signals generally
+36
+3.37
+Normal aspect of signals
+38
+3.38
+Points affecting movement of train
+38
+3.39
+Locking of facing points
+38
+3.40
+Conditions for taking 'off' Home signal.
+40
+3.41
+Conditions for taking 'off' Outer signal
+41
+3.42
+Conditions for taking 'off' last Stop signal or Intermediate Block Stop signal
+41
+3.43
+Conditions for taking 'off' Warner signal .
+42
+3.44
+Conditions for taking 'off gate Stop signal.
+42
+3.45
+Conditions for taking 'off' Calling
+42
+3.46
+Use of fixed signals for shunting.
+42
+3.47
+Taking 'off' signals for more than one train at a time
+42
+3.48
+Stoppage of trains out of course at stations provided with two-aspect signalling.
+42
+3.49
+Care and lighting of signal lamps
+43
+3.50
+Traps, slip sidings and catch sidings
+44
+3.51
+Points
+44
+E. Hand Signals
+3.52
+Exhibition of hand signals.
+45
+3.53
+Stop hand signal.
+46
+3.54
+Proceed hand signal.
+46
+3.55
+Proceed with caution hand signal.
+47
+3.56
+Hand signals for shunting.
+48
+3.57
+Banner flags.
+50
+3.58
+Knowledge and possession of hand signals
+50
+F. Detonating Signals
+3.59
+Description of detonating signals
+51
+3.60
+Method of using detonators
+51
+3.61
+Placing of detonators in thick, foggy or tempestuous weather impairing visibility
+51
+3.62
+Placing of detonators in case of obstructions
+55
+3.63
+Replacement of  detonators on the line
+56
+
+--- TOC PAGE 13 ---
+iii
+GR
+No.
+Rules
+Pages
+3.64
+Knowledge and possession of detonators
+56
+G.  Signals to warn incoming train of danger ahead:
+3.65
+The signals to be used to warn the incoming train of an obstruction
+59
+3.66
+Use of warning signals
+59
+3.67
+Knowledge and possession of warning signals
+59
+H. Defective fixed Signals and Points
+3.68
+Duties of Station Master generally when a signal is defective
+59
+3.69
+Duties of Station Master when an approach Stop signal is defective
+62
+3.70
+Duties of Station Master when a departure Stop signal is defective
+64
+3.71
+Warner or Distant signals defective in the 'off' position
+65
+3.72
+Warner not to be used when Stop signal is defective
+65
+3.73
+Passing of a gate Stop signal at 'on'
+65
+3.74
+Absence of a fixed signal or a signal without a light
+66
+3.75
+Passing of Intermediate Block Stop signal at 'on'
+66
+3.76
+Intimation to officials when defects remedied
+69
+3.77
+Defective or damaged points etc
+69
+3.78
+Duties of engine crew in respect of signals
+70
+3.79
+Duties of Loco Pilot in respect of a Calling-on signal
+72
+3.80
+Duties of Loco Pilot when an approach Stop signal is 'on' or defective
+72
+3.81
+Duties of Loco Pilot when a departure Stop signal is 'on' or defective
+73
+3.82
+Permission before entering on or crossing a running line
+74
+3.83
+Assistance of the engine crew regarding signals
+74
+3.84
+Duties of Loco Pilots as to signals when two or more engines are attached to train
+75
+3.85
+Reporting of defects in signals
+75
+CHAPTER - IV
+WORKING OF TRAINS GENERALLY
+A.    Timing and Running of Trains
+4.01
+Standard time
+76
+4.02
+Adherence to advertised time
+76
+4.03
+Setting watch
+76
+4.04
+Time of attendance for train crew
+76
+4.05
+Proper running line
+76
+4.06
+Direction of running
+76
+4.07
+Supply of Working Time Table and Schedule of Standard Dimensions
+76
+B. Speed of Trains
+4.08
+Limits of speed generally
+77
+4.09
+Caution order
+78
+4.10
+Limits of speed over facing points
+78
+4.11
+Limits of speed while running through stations
+78
+4.12
+Engine pushing
+79
+4.13
+Limits of speed with engine tender foremost
+79
+C. Equipment of Trains and Train Crew
+4.14
+Head light and marker lights
+80
+4.15
+Tail and side lights
+81
+4.16
+Tail board or tail lamp
+82
+4.17
+Responsibility of Station Master regarding tail board or tail lamp of passing trains
+83
+4.18
+Means of communication
+84
+4.19
+Guard's and Loco Pilot's equipment
+84
+
+--- TOC PAGE 14 ---
+iv
+GR
+No.
+Rules
+Pages
+4.20
+Manning of engine in motion
+88
+4.21
+Driving an electric train
+88
+4.22
+Riding on engine or tender
+97
+4.23
+Brake-vans
+97
+4.24
+Position of brake-van on train
+99
+4.25
+Guards
+100
+4.26
+Couplings
+100
+D. Vehicles and Crane
+4.27
+Cranes
+100
+4.28
+Loading of vehicles
+101
+4.29
+Damaged or defective vehicles
+102
+E. Precautions before Starting Train
+4.30
+Loco Pilot and Guard to examine notices before starting
+104
+4.31
+Examination of trains before starting
+104
+4.32
+Examination of train by Loco Pilot
+105
+4.33
+Examination of single and multiple units by Loco Pilot
+106
+4.34
+Duties of Guard when taking over charge of a train
+107
+4.35
+Starting of trains
+107
+4.36
+Guard to be in charge of train
+109
+4.37
+Subordination of Guards in station limits
+110
+4.38
+Firemen and Assistant Loco Pilots to obey Loco Pilots
+110
+4.39
+Loco Pilot to obey certain orders
+110
+F. Duties of Staff Working Trains during Journey
+4.40
+Loco Pilots and Fireman or Assistant Loco Pilot to keep a good look-out
+110
+4.41
+Loco Pilot and Fireman or Assistant Loco Pilot to look back
+110
+4.42
+Exchange of signals between Loco Pilot, Guard and station staff
+110
+4.43
+Guard to keep a good look-out
+113
+4.44
+Train held up at first Stop signal
+113
+4.45
+Attracting attention of Loco Pilot
+113
+4.46
+Assistance from Guard's hand brake
+114
+4.47
+Application of Guard's hand brake
+114
+4.48
+Permission of Guard to detach engine from train
+114
+4.49
+Starting and stopping of train
+114
+4.50
+Sounding of engine whistle
+114
+4.51
+Bell signals between Loco Pilot and Guard
+118
+4.52
+Throwing out water, fire or cinders
+118
+4.53
+Hose or water crane
+118
+4.54
+Passengers
+118
+G. Duties of Staff on Arrival
+4.55
+Shutting off power
+118
+4.56
+Guard to see that train is stopped clear of fouling marks
+119
+4.57
+Detaching engine
+119
+4.58
+Loco Pilot to see that train is stopped clear of fouling marks
+119
+4.59
+Moving of train carrying passengers after it has been stopped at a station
+120
+4.60
+Guard not to leave train till handed over
+120
+4.61
+Loco Pilot not to leave engine when on duty
+120
+H. Working of Material Trains
+4.62
+Working of a material train in a block section
+120
+
+--- TOC PAGE 15 ---
+v
+GR
+No.
+Rules
+Pages
+4.63
+Workers on material train
+122
+4.64
+Protection of material train when stabled
+122
+4.65
+Working of track maintenance machines
+122
+I. Private Engines and Vehicles
+4.66
+Private engines and vehicles
+131
+CHAPTER - V
+CONTROL AND WORKING OF STATIONS
+5.01
+Responsibility of the Station Master for working
+133
+5.02
+Supply of copies of rules and distribution or exhibition of other documents
+134
+5.03
+Obedience to orders and keeping of books and returns
+134
+5.04
+Signal cabins
+134
+5.05
+Report of neglect of duty
+134
+5.06
+Station Working Rules
+135
+5.07
+Forms
+137
+5.08
+Access to and operation of equipment
+137
+5.09
+Reception of a train on an obstructed line
+137
+5.10
+Reception of a train on a non-signalled line
+138
+5.11
+Departure of a train from a non-signalled line
+138
+5.12
+Departure of a train from a line provided with a common departure signal
+138
+5.13
+Control of shunting
+139
+5.14
+Responsibility for shunting
+139
+5.15
+Shunting at stations under Centralised Traffic Control
+142
+5.16
+Shunting during reception of trains
+142
+5.17
+Shunting near level crossing
+142
+5.18
+Drawing of a train to an advanced position at night or in thick, foggy
+or tempestuous weather impairing visibility
+142
+5.19
+Obstruction of running line
+143
+5.20
+Shunting on gradients
+144
+5.21
+Loose shunting
+144
+5.22
+Leaving vehicles in sidings outside station limits
+144
+5.23
+Securing of vehicles at station
+145
+CHAPTER – VI
+ACCIDENTS AND UNUSUAL OCCURRENCES
+6.01
+Accident or obstruction
+147
+6.02
+Working in case of accident or failure of communications
+147
+6.03
+Protection of trains stopped between stations
+147
+6.04
+Trains unusually delayed
+153
+6.05
+Sending advice of accident or breakdown
+153
+6.06
+Train in a block section without authority to proceed
+154
+6.07
+Report of conditions likely to affect running of trains to Controller or
+Centralised Traffic Control Operator
+154
+6.08
+Train parting
+156
+6.09
+Portion of train left in a block section
+158
+6.10
+Fire
+159
+6.11
+Vehicles escaping from station
+161
+
+--- TOC PAGE 16 ---
+vi
+CHAPTER - VII
+SYSTEMS   OF   WORKING
+7.01
+Systems   of  working
+162
+7.02
+Applicability  of General  Rules  referring  to the  working  of signals and trains
+162
+GR
+No.
+Rules
+Pages
+CHAPTER – VIII
+THE ABSOLUTE BLOCK SYSTEM
+A.    Essentials
+8.01
+Essentials of the Absolute Block System
+163
+B. Conditions for granting Line Clear
+8.02
+Conditions for granting Line Clear at a class 'A' station
+163
+8.03
+Conditions for granting Line Clear at a class 'B' station
+163
+8.04
+Conditions for granting Line Clear at a class 'C' station
+164
+C. Obstruction - Double line
+8.05
+Obstruction on double line at a block station when a train is approaching
+165
+8.06
+Obstruction on double line in the block section
+165
+D. Obstruction-Single Line
+D.1. Class 'A' Stations
+8.07
+Obstruction on single line at a class 'A' station when a train is approaching
+166
+8.08
+Obstructing the block section at a class 'A' station on single line
+166
+D. 2. Class 'B' Stations
+8.09
+Obstruction in the face of approaching train at a class 'B' station on single line
+166
+8.10
+Obstruction within station section at a class 'B' station on single line
+166
+8.11
+Obstruction outside station section at a class 'B' single line station equipped with two-aspect
+signals
+167
+8.12
+Obstruction outside station section at a class "B' single line station equipped with
+manually operated multiple aspect signal.
+167
+8.13
+Obstruction outside the first Stop signal at a class 'B' station on single line
+167
+E. General Provisions
+8.14
+Block back or Block forward
+167
+8.15
+Authority for shunting or obstruction in block section
+167
+8.16
+Illustrative diagrams
+167
+CHAPTER - IX
+THE AUTOMATIC BLOCK SYSTEM
+A.
+Rules applicable to Double Line
+9.01
+Essentials of the Automatic Block System on single line
+176
+9.02
+Duties of Loco Pilot and Guard when an Automatic Stop signal on
+double line is to be passed at 'on'
+176
+B.
+Rules applicable to Single Line
+9.03
+Essentials of the Automatic Block System on single line
+178
+9.04
+Minimum equipment of fixed signals in Automatic Block territory on
+single line
+179
+9.05
+Additional fixed signals in Automatic Block territory on single line
+179
+
+--- TOC PAGE 17 ---
+vii
+GR
+No.
+Rules
+Pages
+9.06
+Conditions for taking 'off' Manual Stop signals in Automatic Block
+territory on single line
+179
+9.07
+Duties of Loco Pilot and Guard when an Automatic Stop signal on
+single line is to be passed at 'on'
+179
+9.08
+Person in charge of working trains on Automatic Block System on single line
+181
+C.    Rules applicable to both Double and Single Lines
+9.09
+Working of trains on Centralised Traffic Control territory
+181
+9.10
+Protection of a train stopped in an Automatic block  signalling section
+181
+9.11
+Loco Pilot to report failures
+181
+9.12
+Procedure during failure of Automatic signalling
+182
+9.13
+Movement of trains against the direction of traffic on the Automatic
+Block System
+182
+9.14
+Procedure when Semi-Automatic Stop signal is 'on'
+182
+9.15
+Passing a gate Stop signal at 'on 'in Automatic signalling territory
+182
+9.16
+Illustrative diagrams
+183
+CHAPTER – X
+THE FOLLOWING TRAINS SYSTEM
+10.01
+Essentials of the Following Trains System
+184
+10.02
+Report to the commissioner of Railway Safety
+184
+10.03
+Conditions to be observed in working trains on the Following Trains System
+184
+10.04
+Delivery of authority to proceed to Loco Pilot or Guard on the
+Following Trains System
+185
+10.05
+Authority to proceed on the Following Trains System
+186
+10.06
+Responsibility as to proper preparation of authority to proceed on the
+Following Trains System
+187
+10.07
+Obstruction in face of approaching train or trains on the Following Trains
+System
+187
+10.08
+Cessation of working on the Following Trains System
+187
+10.09
+Protection of trains on the Following Trains System
+187
+CHAPTER - XI
+THE PILOT GUARD SYSTEM
+11.01
+Essentials of the Pilot Guard System
+188
+11.02
+Conditions to be observed for following trains on the Pilot Guard
+System
+188
+11.03
+Pilot Guard's dress or badge
+188
+11.04
+Pilot Guard to accompany train or give authority to Proceed
+188
+11.05
+Pilot Guard's Tickets
+188
+11.06
+Protection of trains on the Pilot Guard System
+188
+CHAPTER - XII
+THE TRAIN-STAFF AND TICKET SYSTEM
+12.01
+Essentials of the Train-staff and Ticket System
+189
+12.02
+System where applicable
+189
+12.03
+Conditions to be observed for following trains  on the train-staff and Ticket
+System
+189
+12.04
+Loco Pilot to have Train-staff or Train-staff Ticket
+189
+
+--- TOC PAGE 18 ---
+viii
+GR
+No.
+Rules
+Pages
+12.05
+Train-staff or Train-staff Ticket: by whom to be delivered to Loco Pilot
+189
+12.06
+Train-staff or Train-staff Ticket: when to be delivered to Loco Pilot
+189
+12.07
+Train-staff to be kept on engine
+190
+12.08
+Trains not to be started until Train-staff returned
+190
+12.09
+Train-staff or Train staff Ticket to be given up and Ticket to be Cancelled on
+arrival of train
+190
+12.10
+Procedure when engine is disabled on the Train-staff and Ticket System
+190
+12.11
+Train-staff Tickets: how kept
+190
+12.12
+Train-staff: how kept
+191
+12.13
+Distinguishing marks on train-staff Tickets and boxes
+191
+12.14
+Form of Train-staff Ticket
+191
+12.15
+Record of Train-staff Tickets issued
+192
+12.16
+Obstruction outside the Home signal
+192
+12.17
+Protection of trains on the Train-staff and Ticket System
+192
+CHAPTER - XIII
+THE ONE TRAIN ONLY SYSTEM
+13.01
+Use of the One Train Only System
+193
+13.02
+Essentials of the One Train Only System
+193
+13.03
+Authority to enter the section
+193
+13.04
+Procedure in case of accident or disablement on the One Train Only System
+193
+CHAPTER - XIV
+BLOCK WORKING
+A. General Provisions
+14.01
+Certificate of competency
+194
+14.02
+Provision of instruments
+194
+14.03
+Consent required before interfering with block working equipment
+194
+B. Block Stations at which Electrical Block Instruments,
+Track Circuits or Axle Counters are provided
+14.04
+Certificate of competency
+194
+14.05
+Bell code
+195
+14.06
+Acknowledgement of signals
+197
+14.07
+Train Signal Register
+197
+14.08
+Authority to proceed
+198
+14.09
+Loco Pilot to examine authority to proceed
+198
+14.10
+Conditions for closing the block section
+198
+14.11
+Responsibility of Station Master as to authority to proceed
+199
+14.12
+Special responsibility as to electrical token instruments and to the token
+199
+14.13
+Failure of electrical block instruments or track circuits or axle counters
+200
+14.14
+Closing of Intermediate Block Post
+200
+C.   Block Stations at which Electrical Block Instruments are not provided
+14.15
+Transmission of signals
+200
+14.16
+Train Signal Register
+200
+14.17
+Forms for messages and written authority to proceed
+200
+14.18
+Distinction of messages
+200
+14.19
+Writing and signing of messages and written authorities  to proceed
+201
+
+--- TOC PAGE 19 ---
+ix
+GR
+No.
+Rules
+Page
+s
+14.20
+completion of messages
+201
+14.21
+Preservation of  messages and written authorities to  proceed
+201
+14.22
+Cancellation of Line Clear
+201
+14.23
+Loco Pilot to have authority to proceed
+201
+14.24
+Authority to proceed : when to be given to Loco Pilot
+201
+D. Line Clear Tickets
+14.25
+Line Clear Tickets
+201
+E.  Use and Operation of Block Working Equipment
+14.26
+Use and operation of block working equipment
+206
+CHAPTER - XV
+PERMANENT WAY AND WORKS
+A.   Railway Servants Employed on the Permanent Way or Works
+15.01
+Condition of Permanent Way and Works
+207
+15.02
+Maintenance of line
+207
+15.03
+Keeping of material
+207
+15.04
+Inspection of Permanent Way and Works
+207
+15.05
+Patrolling of lines
+208
+15.06
+Work involving danger to trains or traffic
+208
+15.07
+Work in thick, foggy or tempestuous weather impairing visibility
+209
+15.08
+Precautions before commencing operations which would obstruct the line
+209
+15.09
+Showing of signals
+212
+15.10
+Assistance in protection of trains
+216
+15.11
+Gangmate in each gang
+216
+15.12
+Knowledge of signals and equipment of gang
+216
+15.13
+Inspection of gauges, signals, tools and implements
+216
+15.14
+Responsibility of Gangmate as to safety of line
+216
+15.15
+Blasting
+217
+15.16
+Putting in or removing points  or crossings
+217
+15.17
+Duties of Gangmate and Gangman when  apprehending danger
+217
+B.
+The Working of Lorries, Trollies and Motor Trollies
+15.18
+Distinction between trolley, lorry and motor trolley
+217
+15.19
+Red flag or light to be shown
+218
+15.20
+Equipment of trolley, lorry or motor trolley
+219
+15.21
+Efficient brakes
+219
+15.22
+Qualified person to be in charge of lorry or   trolley when on the line
+220
+15.23
+Attachment to train prohibited
+222
+15.24
+Time of running
+223
+15.25
+Motor trolley
+224
+15.26
+Protection of trolley on the line
+228
+15.27
+Protection of lorry on the line
+229
+15.28
+Lorries and trollies out of use
+231
+CHAPTER - XVI
+LEVEL CROSSINGS
+16.01
+Knowledge of signals
+232
+
+--- TOC PAGE 20 ---
+x
+GR
+No.
+Rules
+Pages
+16.02
+Supply and care of equipment
+233
+16.03
+Road traffic
+233
+16.04
+Gateman to observe passing trains
+237
+16.05
+Channel for flange of wheels
+237
+16.06
+Defects at level crossings
+237
+16.07
+Obstructions at level crossings
+237
+16.08
+Parting of a train
+238
+16.09
+Trespassing
+239
+16.10
+Transfer of charge of gate
+239
+16.11
+Height gauges
+239
+CHAPTER - XVII
+WORKING OF TRAINS ON ELECTRIFIED  SECTIONS OF RAILWAYS
+17.01
+Applicability of General Rules
+240
+17.02
+Special definitions applicable to this chapter
+240
+17.03
+Inspection of electrical way and works
+241
+17.04
+Permit-to-work on electrical equipment
+250
+17.05
+Warning to staff and public
+255
+17.06
+Alterations to track
+257
+17.07
+Tripping of circuit breakers of locomotives and electrical multiple units
+at neutral sections
+258
+17.08
+Tower wagon
+259
+17.09
+Additional rules for electrified sections
+261
+CHAPTER - XVII
+MISCELLANEOUS
+18.01
+Repeal and Saving
+266
+APPENDIX—‘A’
+Unified Rules. regarding Caution Order
+APPENDIX— ‘B’
+Station Detonator Register
+Supply and use of Detonating (fog) signals
+Duties of Fog Signalman
+APPENDIX—'C'
+General and Subsidiary Rules, applying to certain Categories of Staff
+Part
+Category of Staff
+I.
+Station Masters and Asstt. Station Masters
+II.
+Guards
+III.
+Cabinmaster
+IV.
+Cabinman, Leverman, Pointsman and Shunting Staff
+V.
+Loco Running Staff
+VI.
+Signalling Staff
+VII.
+Engineering Staff
+VIII.
+Electrical Staff
