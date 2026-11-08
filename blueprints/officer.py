@@ -6,16 +6,40 @@ from werkzeug.utils import secure_filename
 from database import db
 from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, 
-    CounsellingAcknowledgement, TrainingRecord, Message, FootplateInspection
+    CounsellingAcknowledgement, TrainingRecord, Message, FootplateInspection,
+    CLIMovement, CrewCounsellingRecord
 )
 from blueprints.auth import role_required
 
 officer_bp = Blueprint('officer', __name__)
 
+def parse_date_value(val):
+    if not val:
+        return None
+    if isinstance(val, (datetime, date)):
+        return val.date() if isinstance(val, datetime) else val
+    s = str(val).strip()
+    if not s or s.upper() in ('NA', 'N/A', '-', '#N/A', 'NONE', 'NIL', 'NULL', 'UNKNOWN', '0'):
+        return None
+    for fmt in [
+        "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d",
+        "%d.%m.%Y", "%d-%b-%Y", "%d-%B-%Y", "%d-%b-%y"
+    ]:
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            pass
+    return None
+
 @officer_bp.before_request
-@role_required('officer')
 def officer_protection():
-    pass
+    if 'user_id' not in session:
+        flash('Operational authorization required. Please sign in.', 'warning')
+        return redirect(url_for('auth.login', next=request.url))
+    user = User.query.get(session['user_id'])
+    if not user or not (user.is_officer() or user.is_control() or user.is_admin()):
+        flash('Access restricted to Officers and Operational Control (TLC / PCNL).', 'danger')
+        return redirect(url_for('public.index'))
 
 @officer_bp.route('/')
 def dashboard():
@@ -356,4 +380,224 @@ def training_monitor():
         lobbies=lobbies,
         current_status=status_filter,
         current_lobby=lobby_filter
+    )
+
+
+# ---------------------------------------------------------------------------
+# CLI DAILY MOVEMENT MONITORING & PERFORMANCE (PHASE 3)
+# ---------------------------------------------------------------------------
+
+@officer_bp.route('/cli-movements')
+def cli_movements():
+    officer = User.query.get(session['user_id'])
+    
+    cli_id_filter = request.args.get('cli_id', 'ALL').strip()
+    lobby_id_filter = request.args.get('lobby_id', 'ALL').strip()
+    activity_type_filter = request.args.get('activity_type', 'ALL').strip()
+    date_from_str = request.args.get('date_from', '').strip()
+    date_to_str = request.args.get('date_to', '').strip()
+    q = request.args.get('q', '').strip()
+
+    # Scope to 90 days retention window
+    retention_cutoff = date.today() - timedelta(days=90)
+    query = CLIMovement.query.filter(CLIMovement.activity_date >= retention_cutoff)
+
+    if cli_id_filter != 'ALL' and cli_id_filter.isdigit():
+        query = query.filter(CLIMovement.cli_id == int(cli_id_filter))
+
+    if lobby_id_filter != 'ALL' and lobby_id_filter.isdigit():
+        query = query.filter(CLIMovement.lobby_id == int(lobby_id_filter))
+
+    if activity_type_filter != 'ALL' and activity_type_filter:
+        query = query.filter(CLIMovement.activity_type == activity_type_filter)
+
+    if date_from_str:
+        d_from = parse_date_value(date_from_str)
+        if d_from:
+            query = query.filter(CLIMovement.activity_date >= d_from)
+
+    if date_to_str:
+        d_to = parse_date_value(date_to_str)
+        if d_to:
+            query = query.filter(CLIMovement.activity_date <= d_to)
+
+    if q:
+        q_wild = f"%{q}%"
+        query = query.filter(
+            (CLIMovement.crew_name_manual.ilike(q_wild)) |
+            (CLIMovement.crew_id_str.ilike(q_wild)) |
+            (CLIMovement.train_no.ilike(q_wild)) |
+            (CLIMovement.loco_no.ilike(q_wild)) |
+            (CLIMovement.location.ilike(q_wild)) |
+            (CLIMovement.observations_irregularities.ilike(q_wild)) |
+            (CLIMovement.corrective_action.ilike(q_wild))
+        )
+
+    movements = query.order_by(CLIMovement.activity_date.desc(), CLIMovement.created_at.desc()).all()
+
+    # Summary metrics across entire division within retention window
+    division_90d = CLIMovement.query.filter(CLIMovement.activity_date >= retention_cutoff).all()
+    total_activities = len(division_90d)
+    total_footplates = sum(1 for m in division_90d if m.activity_type == 'Footplate Inspection')
+    total_fp_km = sum([m.footplate_km or 0.0 for m in division_90d if m.activity_type == 'Footplate Inspection'])
+    total_spm = sum(1 for m in division_90d if m.activity_type == 'SPM Analysis')
+    total_cvvrs = sum(1 for m in division_90d if m.activity_type == 'CVVRS Inspection')
+    total_failures = sum(1 for m in division_90d if m.activity_type == 'Locomotive Failure Attendance')
+    total_problems = sum(1 for m in division_90d if m.activity_type == 'Crew Problem Attendance')
+    total_counsel = sum(1 for m in division_90d if m.activity_type == 'Crew Counselling')
+
+    all_clis = User.query.filter_by(role='supervisor', sub_role='CLI', is_active=True).order_by(User.full_name).all()
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+
+    return render_template(
+        'officer/cli_movements.html',
+        officer=officer,
+        movements=movements,
+        total_activities=total_activities,
+        total_footplates=total_footplates,
+        total_fp_km=round(total_fp_km, 1),
+        total_spm=total_spm,
+        total_cvvrs=total_cvvrs,
+        total_failures=total_failures,
+        total_problems=total_problems,
+        total_counsel=total_counsel,
+        all_clis=all_clis,
+        lobbies=lobbies,
+        retention_cutoff=retention_cutoff,
+        current_cli_id=cli_id_filter,
+        current_lobby_id=lobby_id_filter,
+        current_activity_type=activity_type_filter,
+        current_date_from=date_from_str,
+        current_date_to=date_to_str,
+        current_q=q
+    )
+
+
+@officer_bp.route('/cli-movements/<int:movement_id>/remark', methods=['POST'])
+def add_cli_movement_remark(movement_id):
+    officer = User.query.get(session['user_id'])
+    movement = CLIMovement.query.get_or_404(movement_id)
+    remark = request.form.get('officer_remarks', '').strip()
+
+    # Rule: Officers only modify officer_remarks field, CLI factual data is immutable by officers
+    movement.officer_remarks = remark
+    movement.officer_remarked_by_id = officer.id
+    movement.officer_remarked_at = datetime.utcnow()
+    db.session.commit()
+
+    flash(f'Officer remark successfully recorded for CLI {movement.cli.full_name if movement.cli else "Supervisor"}.', 'success')
+    return redirect(request.referrer or url_for('officer.cli_movements'))
+
+
+@officer_bp.route('/cli-performance')
+def cli_performance():
+    officer = User.query.get(session['user_id'])
+    clis = User.query.filter_by(role='supervisor', sub_role='CLI', is_active=True).order_by(User.full_name).all()
+    
+    retention_cutoff = date.today() - timedelta(days=90)
+    cli_perf_list = []
+
+    for cli in clis:
+        cli_movs = CLIMovement.query.filter(
+            CLIMovement.cli_id == cli.id,
+            CLIMovement.activity_date >= retention_cutoff
+        ).all()
+
+        fp_count = sum(1 for m in cli_movs if m.activity_type == 'Footplate Inspection')
+        fp_km = sum([m.footplate_km or 0.0 for m in cli_movs if m.activity_type == 'Footplate Inspection'])
+        spm_count = sum(1 for m in cli_movs if m.activity_type == 'SPM Analysis')
+        cvvrs_count = sum(1 for m in cli_movs if m.activity_type == 'CVVRS Inspection')
+        counsel_count = sum(1 for m in cli_movs if m.activity_type == 'Crew Counselling')
+        failures_count = sum(1 for m in cli_movs if m.activity_type == 'Locomotive Failure Attendance')
+        problems_count = sum(1 for m in cli_movs if m.activity_type == 'Crew Problem Attendance')
+
+        assigned_crews = User.query.filter_by(cli_id=cli.id, is_active=True).all()
+        crew_count = len(assigned_crews)
+        distinct_days = len(set([m.activity_date for m in cli_movs]))
+        last_act = max([m.activity_date for m in cli_movs]) if cli_movs else None
+
+        cli_perf_list.append({
+            'cli': cli,
+            'assigned_crews': crew_count,
+            'total_movements': len(cli_movs),
+            'fp_count': fp_count,
+            'fp_km': round(fp_km, 1),
+            'spm_count': spm_count,
+            'cvvrs_count': cvvrs_count,
+            'counsel_count': counsel_count,
+            'failures_count': failures_count,
+            'problems_count': problems_count,
+            'active_days': distinct_days,
+            'last_active': last_act
+        })
+
+    return render_template(
+        'officer/cli_performance.html',
+        officer=officer,
+        cli_perf_list=cli_perf_list,
+        retention_cutoff=retention_cutoff
+    )
+
+
+@officer_bp.route('/crew-performance', methods=['GET', 'POST'])
+def crew_performance():
+    officer = User.query.get(session['user_id'])
+    
+    if request.method == 'POST':
+        # Add officer remark to crew
+        record_id = request.form.get('record_id')
+        remark = request.form.get('officer_remarks', '').strip()
+        if record_id and record_id.isdigit():
+            c_rec = CrewCounsellingRecord.query.get(int(record_id))
+            if c_rec:
+                c_rec.officer_remarks = remark
+                c_rec.officer_remarked_by_id = officer.id
+                c_rec.officer_remarked_at = datetime.utcnow()
+                db.session.commit()
+                flash(f'Officer observation/remark saved for crew {c_rec.crew_name}.', 'success')
+        return redirect(request.referrer or url_for('officer.crew_performance'))
+
+    lobby_id_filter = request.args.get('lobby', 'ALL').strip()
+    cli_id_filter = request.args.get('cli', 'ALL').strip()
+    grade_filter = request.args.get('grade', 'ALL').strip().upper()
+    category_filter = request.args.get('category', 'ALL').strip().upper()
+    q = request.args.get('q', '').strip()
+
+    records = CrewCounsellingRecord.query.all()
+    all_clis = User.query.filter_by(role='supervisor', sub_role='CLI', is_active=True).order_by(User.full_name).all()
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+
+    # Filter in memory
+    filtered = []
+    for r in records:
+        if lobby_id_filter != 'ALL' and (r.crew_hq or '').upper() != lobby_id_filter.upper():
+            continue
+        if grade_filter != 'ALL' and (r.grade or '').upper() != grade_filter:
+            continue
+        if category_filter != 'ALL' and (r.designation or '').upper() != category_filter:
+            continue
+        if cli_id_filter != 'ALL':
+            cli_obj = User.query.get(int(cli_id_filter)) if cli_id_filter.isdigit() else None
+            if cli_obj and (cli_obj.full_name.lower() not in (r.cli_name or '').lower()):
+                continue
+        if q:
+            q_lower = q.lower()
+            if (q_lower not in (r.crew_name or '').lower() and 
+                q_lower not in (r.crew_id_str or '').lower() and 
+                q_lower not in (r.pf_no or '').lower() and 
+                q_lower not in (r.cug or '').lower()):
+                continue
+        filtered.append(r)
+
+    return render_template(
+        'officer/crew_performance.html',
+        officer=officer,
+        records=filtered,
+        all_clis=all_clis,
+        lobbies=lobbies,
+        current_lobby=lobby_id_filter,
+        current_cli=cli_id_filter,
+        current_grade=grade_filter,
+        current_category=category_filter,
+        current_q=q
     )

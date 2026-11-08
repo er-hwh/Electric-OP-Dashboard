@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}CLI Daily Movement & Operational Monitoring | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- PAGE TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary px-3 py-2 fs-6">
+                    <i class="fa-solid fa-person-walking me-1"></i> Divisional Supervision
+                </span>
+                <span class="badge bg-secondary">
+                    3-Month Data Retention (Active from: {{ retention_cutoff.strftime('%d-%b-%Y') }})
+                </span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Chief Loco Inspector (CLI) Daily Movement Monitor</h3>
+            <p class="text-muted small mb-0">
+                Divisional review of footplate inspections, SPM checks, CVVRS monitoring, loco failures & safety counselling across HWH Division.
+            </p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('officer.cli_performance') }}" class="btn btn-outline-success fw-bold">
+                <i class="fa-solid fa-chart-line me-1"></i> CLI Performance Summary
+            </a>
+            <a href="{{ url_for('officer.crew_performance') }}" class="btn btn-outline-info fw-bold">
+                <i class="fa-solid fa-users me-1"></i> Crew Performance Monitor
+            </a>
+            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-shield-halved me-1"></i> Officer Desk
+            </a>
+        </div>
+    </div>
+
+    <!-- DIVISION SUMMARY METRICS (90 DAYS) -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-primary border-4">
+                <div class="text-muted small text-uppercase fw-bold">Total Logs (90d)</div>
+                <div class="fs-3 fw-bold text-primary mt-1">{{ total_activities }}</div>
+                <small class="text-muted">Division-wide</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-success border-4">
+                <div class="text-muted small text-uppercase fw-bold">Footplate KM</div>
+                <div class="fs-3 fw-bold text-success mt-1">{{ total_fp_km }}</div>
+                <small class="text-muted">{{ total_footplates }} Footplates</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-warning border-4">
+                <div class="text-muted small text-uppercase fw-bold">SPM Checks</div>
+                <div class="fs-3 fw-bold text-warning mt-1">{{ total_spm }}</div>
+                <small class="text-muted">Analyses done</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-info border-4">
+                <div class="text-muted small text-uppercase fw-bold">CVVRS Checks</div>
+                <div class="fs-3 fw-bold text-info mt-1">{{ total_cvvrs }}</div>
+                <small class="text-muted">Cabin videos</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-danger border-4">
+                <div class="text-muted small text-uppercase fw-bold">Loco Failures</div>
+                <div class="fs-3 fw-bold text-danger mt-1">{{ total_failures }}</div>
+                <small class="text-muted">Attended in field</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-secondary border-4">
+                <div class="text-muted small text-uppercase fw-bold">Crew Problems</div>
+                <div class="fs-3 fw-bold text-secondary mt-1">{{ total_problems }}</div>
+                <small class="text-muted">Grievances logged</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- MULTI-PARAMETER FILTER CONSOLE -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light py-2">
+            <span class="small fw-bold text-uppercase text-muted"><i class="fa-solid fa-filter me-1"></i> Filter Operational Movement Records</span>
+        </div>
+        <div class="card-body p-3">
+            <form method="GET" action="{{ url_for('officer.cli_movements') }}" class="row g-2 align-items-center">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">CLI In-Charge</label>
+                    <select name="cli_id" class="form-select form-select-sm">
+                        <option value="ALL" {% if current_cli_id == 'ALL' %}selected{% endif %}>-- All CLIs --</option>
+                        {% for cli in all_clis %}
+                            <option value="{{ cli.id }}" {% if current_cli_id == cli.id|string %}selected{% endif %}>
+                                {{ cli.full_name }} ({{ cli.username }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Lobby</label>
+                    <select name="lobby_id" class="form-select form-select-sm">
+                        <option value="ALL" {% if current_lobby_id == 'ALL' %}selected{% endif %}>-- All Lobbies --</option>
+                        {% for l in lobbies %}
+                            <option value="{{ l.id }}" {% if current_lobby_id == l.id|string %}selected{% endif %}>
+                                {{ l.code }} - {{ l.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Activity Type</label>
+                    <select name="activity_type" class="form-select form-select-sm">
+                        <option value="ALL" {% if current_activity_type == 'ALL' %}selected{% endif %}>-- All Activities --</option>
+                        <option value="Footplate Inspection" {% if current_activity_type == 'Footplate Inspection' %}selected{% endif %}>Footplate Inspection</option>
+                        <option value="SPM Analysis" {% if current_activity_type == 'SPM Analysis' %}selected{% endif %}>SPM Analysis</option>
+                        <option value="CVVRS Inspection" {% if current_activity_type == 'CVVRS Inspection' %}selected{% endif %}>CVVRS Inspection</option>
+                        <option value="Crew Counselling" {% if current_activity_type == 'Crew Counselling' %}selected{% endif %}>Crew Counselling</option>
+                        <option value="Locomotive Failure Attendance" {% if current_activity_type == 'Locomotive Failure Attendance' %}selected{% endif %}>Locomotive Failure Attendance</option>
+                        <option value="Crew Problem Attendance" {% if current_activity_type == 'Crew Problem Attendance' %}selected{% endif %}>Crew Problem Attendance</option>
+                        <option value="Yard Inspection" {% if current_activity_type == 'Yard Inspection' %}selected{% endif %}>Yard Inspection</option>
+                        <option value="Station Inspection" {% if current_activity_type == 'Station Inspection' %}selected{% endif %}>Station Inspection</option>
+                        <option value="Safety Seminar / Drive" {% if current_activity_type == 'Safety Seminar / Drive' %}selected{% endif %}>Safety Seminar / Drive</option>
+                        <option value="Other Supervisory Duties" {% if current_activity_type == 'Other Supervisory Duties' %}selected{% endif %}>Other Supervisory Duties</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ current_date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ current_date_to }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Search Keywords</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="q" class="form-control" placeholder="Crew, Loco, Train..." value="{{ current_q }}">
+                        <button type="submit" class="btn btn-primary" title="Filter"><i class="fa-solid fa-filter"></i></button>
+                        <a href="{{ url_for('officer.cli_movements') }}" class="btn btn-outline-secondary" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MOVEMENTS MONITOR TABLE -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-list-check me-2 text-primary"></i>Movement Records Feed ({{ movements|length }})
+            </h5>
+            <small class="text-muted"><i class="fa-solid fa-shield-halved me-1 text-primary"></i>Officer Remark Mode Active (CLI records are immutable by officers)</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="table-light text-uppercase small">
+                    <tr>
+                        <th class="ps-3">Date</th>
+                        <th>CLI In-Charge</th>
+                        <th>Lobby</th>
+                        <th>Activity Type</th>
+                        <th>Section / Location</th>
+                        <th>Train / Loco</th>
+                        <th>Crew Attended</th>
+                        <th>Grade</th>
+                        <th>Observations & Deficiencies</th>
+                        <th>Corrective Action</th>
+                        <th>Officer Remarks & Directives</th>
+                        <th class="text-end pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in movements %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-dark">
+                                {{ m.activity_date.strftime('%d-%b-%Y') }}
+                                {% if m.departure_time or m.arrival_time %}
+                                    <div class="text-muted small fw-normal">{{ m.departure_time or '--' }} - {{ m.arrival_time or '--' }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold text-primary">{{ m.cli.full_name if m.cli else 'Unknown CLI' }}</div>
+                                <small class="text-muted">{{ m.cli.username if m.cli else '' }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ m.lobby.code if m.lobby else (m.cli.lobby.code if m.cli and m.cli.lobby else 'HWH') }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if m.activity_type == 'Footplate Inspection' %}
+                                    <span class="badge bg-primary text-white"><i class="fa-solid fa-train me-1"></i>Footplate</span>
+                                    {% if m.footplate_km %}
+                                        <div class="small text-muted">{{ m.footplate_km }} KM</div>
+                                    {% endif %}
+                                {% elif m.activity_type == 'SPM Analysis' %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-chart-line me-1"></i>SPM Check</span>
+                                {% elif m.activity_type == 'CVVRS Inspection' %}
+                                    <span class="badge bg-info text-dark"><i class="fa-solid fa-video me-1"></i>CVVRS</span>
+                                {% elif m.activity_type == 'Locomotive Failure Attendance' %}
+                                    <span class="badge bg-danger text-white"><i class="fa-solid fa-triangle-exclamation me-1"></i>Loco Failure</span>
+                                {% elif m.activity_type == 'Crew Problem Attendance' %}
+                                    <span class="badge bg-secondary text-white"><i class="fa-solid fa-user-doctor me-1"></i>Crew Problem</span>
+                                {% elif m.activity_type == 'Crew Counselling' %}
+                                    <span class="badge bg-success text-white"><i class="fa-solid fa-comments me-1"></i>Counselling</span>
+                                {% else %}
+                                    <span class="badge bg-dark text-white">{{ m.activity_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if m.section_from or m.section_to %}
+                                    <strong>{{ m.section_from or '?' }}</strong> <i class="fa-solid fa-arrow-right-long text-muted small mx-1"></i> <strong>{{ m.section_to or '?' }}</strong>
+                                {% else %}
+                                    {{ m.location or '--' }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if m.train_no or m.loco_no %}
+                                    <div><i class="fa-solid fa-train text-muted me-1"></i>{{ m.train_no or 'N/A' }}</div>
+                                    <small class="text-muted"><i class="fa-solid fa-bolt text-warning me-1"></i>{{ m.loco_no or 'N/A' }}</small>
+                                {% else %}
+                                    <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if m.crew or m.crew_name_manual %}
+                                    <div class="fw-bold text-dark">{{ m.crew.full_name if m.crew else m.crew_name_manual }}</div>
+                                    <small class="text-muted">
+                                        <span class="badge bg-light text-dark border">{{ m.crew_category or (m.crew.sub_role if m.crew else '') }}</span>
+                                        PF: {{ m.crew_id_str or (m.crew.pf_number if m.crew else '') }}
+                                    </small>
+                                {% else %}
+                                    <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if m.grading %}
+                                    <span class="badge {% if m.grading == 'A' %}bg-success{% elif m.grading == 'B' %}bg-primary{% elif m.grading == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %} fw-bold">
+                                        {{ m.grading }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                            <td style="max-width: 250px; white-space: normal;">
+                                <small class="text-dark">{{ m.observations_irregularities or (m.remarks or '--') }}</small>
+                            </td>
+                            <td style="max-width: 250px; white-space: normal;">
+                                <small class="text-success">{{ m.corrective_action or '--' }}</small>
+                            </td>
+                            <td style="max-width: 250px; white-space: normal;">
+                                {% if m.officer_remarks %}
+                                    <div class="p-2 rounded bg-light border border-primary border-opacity-25 small">
+                                        <div class="fw-bold text-primary mb-1">
+                                            <i class="fa-solid fa-signature me-1"></i>{{ m.officer_reviewer.full_name if m.officer_reviewer else 'Officer' }}
+                                        </div>
+                                        <div class="text-dark">{{ m.officer_remarks }}</div>
+                                        {% if m.officer_remarked_at %}
+                                            <small class="text-muted d-block mt-1">{{ m.officer_remarked_at.strftime('%d-%b %H:%M') }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">No remark recorded</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#remarkModal{{ m.id }}">
+                                    <i class="fa-solid fa-comment-dots me-1"></i> Add Remark
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- OFFICER REMARK MODAL -->
+                        <div class="modal fade" id="remarkModal{{ m.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ url_for('officer.add_cli_movement_remark', movement_id=m.id) }}">
+                                        <div class="modal-header bg-light">
+                                            <h5 class="modal-title fw-bold text-dark">
+                                                <i class="fa-solid fa-signature me-1 text-primary"></i> Officer Observation / Directive
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3 p-3 bg-light rounded small">
+                                                <div><strong>CLI:</strong> {{ m.cli.full_name if m.cli else 'CLI' }}</div>
+                                                <div><strong>Activity:</strong> {{ m.activity_type }} on {{ m.activity_date.strftime('%d-%b-%Y') }}</div>
+                                                <div><strong>Train / Loco:</strong> {{ m.train_no or 'N/A' }} / {{ m.loco_no or 'N/A' }}</div>
+                                                <div><strong>Crew:</strong> {{ m.crew.full_name if m.crew else (m.crew_name_manual or 'N/A') }}</div>
+                                                <div class="mt-2 text-muted"><strong>CLI Findings:</strong> {{ m.observations_irregularities or m.remarks or 'None' }}</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold text-dark small">Officer Remarks / Corrective Directive:</label>
+                                                <textarea name="officer_remarks" class="form-control" rows="4" placeholder="Enter divisional observations, safety directives, or review notes..." required>{{ m.officer_remarks or '' }}</textarea>
+                                                <small class="text-muted">This observation will be visible to CLI in their daily activity console.</small>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary btn-sm fw-bold">
+                                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Remark
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <tr>
+                            <td colspan="12" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-clipboard-list fa-3x mb-3 text-secondary opacity-50"></i>
+                                <h6>No Movement Records Found</h6>
+                                <p class="small mb-0">No CLI activities match the selected filter criteria within the 90-day retention period.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

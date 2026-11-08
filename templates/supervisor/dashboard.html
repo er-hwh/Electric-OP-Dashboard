@@ -24,6 +24,12 @@
                 <small class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.7rem;">Footplate KMA (Rule 1515)</small>
                 <span class="fs-6 fw-bold text-success">{{ total_footplate_km|round(1) }} KMs</span>
             </div>
+            <a href="{{ url_for('supervisor.movements') }}" class="btn btn-primary btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-person-walking me-1"></i> Daily Movements
+            </a>
+            <a href="{{ url_for('supervisor.new_movement') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <i class="fa-solid fa-plus-circle me-1"></i> Log Activity
+            </a>
             <a href="{{ url_for('supervisor.export_roster_excel') }}" class="btn btn-outline-success btn-sm fw-bold shadow-sm d-flex align-items-center">
                 <i class="fa-solid fa-file-excel me-1"></i> Export 24-Col Excel
             </a>

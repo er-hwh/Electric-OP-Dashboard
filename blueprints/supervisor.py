@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 from database import db
 from models import (
     User, Lobby, FootplateInspection, Message, TrainingRecord, 
-    CounsellingTopic, Notice, CrewCounsellingRecord
+    CounsellingTopic, Notice, CrewCounsellingRecord, CLIMovement
 )
 from blueprints.auth import role_required
 
@@ -298,6 +298,27 @@ def quick_footplate():
     )
     db.session.add(insp)
 
+    # Sync to CLIMovement (90-day retention log)
+    cli_mov = CLIMovement(
+        cli_id=cli.id,
+        activity_date=insp_date,
+        activity_type='Footplate Inspection',
+        lobby_id=crew.lobby_id if crew else cli.lobby_id,
+        location=f"{from_stn} to {to_stn}" if (from_stn and to_stn) else (from_stn or to_stn or 'Footplate Run'),
+        section_from=from_stn,
+        section_to=to_stn,
+        train_no=train_no,
+        loco_no=loco_no,
+        footplate_km=kma,
+        crew_id=crew.id if crew else None,
+        crew_name_manual=crew.full_name if crew else '',
+        crew_id_str=crew.pf_number or crew.username if crew else '',
+        crew_category=crew.sub_role if crew else '',
+        grading=grading,
+        corrective_action=counselling_given
+    )
+    db.session.add(cli_mov)
+
     # Sync to CrewCounsellingRecord
     formatted_date = insp_date.strftime('%d-%m-%Y')
     rec = None
@@ -348,6 +369,24 @@ def quick_counselling():
         rec.counselling_verified_by = cli.full_name
         if remarks or topic:
             rec.remarks = f"{topic}: {remarks}" if topic and remarks else (topic or remarks)
+        
+        # Sync to CLIMovement
+        cli_mov = CLIMovement(
+            cli_id=cli.id,
+            activity_date=c_date,
+            activity_type='Crew Counselling',
+            lobby_id=crew.lobby_id if crew else cli.lobby_id,
+            location=cli.lobby.code if cli.lobby else 'Lobby',
+            crew_id=crew.id if crew else None,
+            crew_name_manual=crew.full_name if crew else rec.crew_name,
+            crew_id_str=crew.pf_number or crew.username if crew else (rec.pf_no or rec.crew_id_str),
+            crew_category=crew.sub_role if crew else rec.designation,
+            grading=rec.grade or 'A',
+            observations_irregularities=topic,
+            corrective_action=remarks
+        )
+        db.session.add(cli_mov)
+
         db.session.commit()
         flash(f"{counsel_type.capitalize()} Counselling logged for {rec.crew_name}. Status marked compliant as of {formatted_date}.", "success")
     else:
@@ -381,6 +420,26 @@ def quick_spm():
         rec.last_spm_check = formatted_date
         if speed_viol == 'Yes':
             rec.remarks = f"SPM Alert: Speed violation noted on {formatted_date} (Train {train_no}, Loco {loco_no})"
+        
+        # Sync to CLIMovement
+        cli = User.query.get(session['user_id'])
+        cli_mov = CLIMovement(
+            cli_id=cli.id,
+            activity_date=s_date,
+            activity_type='SPM Analysis',
+            lobby_id=crew.lobby_id if crew else cli.lobby_id,
+            location=cli.lobby.code if cli.lobby else 'HQ',
+            train_no=train_no,
+            loco_no=loco_no,
+            crew_id=crew.id if crew else None,
+            crew_name_manual=crew.full_name if crew else rec.crew_name,
+            crew_id_str=crew.pf_number or crew.username if crew else (rec.pf_no or rec.crew_id_str),
+            crew_category=crew.sub_role if crew else rec.designation,
+            observations_irregularities=f"Speed Violation: {speed_viol}",
+            remarks=remarks
+        )
+        db.session.add(cli_mov)
+
         db.session.commit()
         flash(f"SPM checking date updated to {formatted_date} for {rec.crew_name}.", "success")
 
@@ -409,6 +468,23 @@ def quick_cvvrs():
         rec.last_cvvrs_check = formatted_date
         if irregularity != 'Nil':
             rec.mobile_habit = irregularity
+        
+        # Sync to CLIMovement
+        cli = User.query.get(session['user_id'])
+        cli_mov = CLIMovement(
+            cli_id=cli.id,
+            activity_date=c_date,
+            activity_type='CVVRS Inspection',
+            lobby_id=crew.lobby_id if crew else cli.lobby_id,
+            location=cli.lobby.code if cli.lobby else 'HQ',
+            crew_id=crew.id if crew else None,
+            crew_name_manual=crew.full_name if crew else rec.crew_name,
+            crew_id_str=crew.pf_number or crew.username if crew else (rec.pf_no or rec.crew_id_str),
+            crew_category=crew.sub_role if crew else rec.designation,
+            observations_irregularities=f"Mobile Habit / Irregularity: {irregularity}"
+        )
+        db.session.add(cli_mov)
+
         db.session.commit()
         flash(f"CVVRS checking date updated to {formatted_date} for {rec.crew_name}.", "success")
 
@@ -630,6 +706,47 @@ def new_footplate():
             counselling_given=counselling_given
         )
         db.session.add(inspection)
+
+        # Sync to CLIMovement (90-day retention log)
+        crew_obj = User.query.get(int(crew_id)) if crew_id else None
+        cli_mov = CLIMovement(
+            cli_id=cli.id,
+            activity_date=insp_date,
+            activity_type='Footplate Inspection',
+            lobby_id=crew_obj.lobby_id if crew_obj else cli.lobby_id,
+            location=f"{from_stn} to {to_stn}" if (from_stn and to_stn) else (from_stn or to_stn or 'Footplate Run'),
+            section_from=from_stn,
+            section_to=to_stn,
+            train_no=train_no,
+            loco_no=loco_no,
+            footplate_km=footplate_km,
+            departure_time=departure_time,
+            arrival_time=arrival_time,
+            crew_id=crew_obj.id if crew_obj else None,
+            crew_name_manual=crew_obj.full_name if crew_obj else '',
+            crew_id_str=crew_obj.pf_number or crew_obj.username if crew_obj else '',
+            crew_category=crew_obj.sub_role if crew_obj else '',
+            grading=grading,
+            observations_irregularities=aspects,
+            corrective_action=counselling_given,
+            remarks=deficiencies
+        )
+        db.session.add(cli_mov)
+
+        # Sync to CrewCounsellingRecord
+        formatted_date = insp_date.strftime('%d-%m-%Y')
+        if crew_obj:
+            c_rec = CrewCounsellingRecord.query.filter(
+                (CrewCounsellingRecord.crew_user_id == crew_obj.id) |
+                (CrewCounsellingRecord.crew_id_str == crew_obj.pf_number) |
+                (CrewCounsellingRecord.cug == crew_obj.mobile)
+            ).first()
+            if c_rec:
+                c_rec.last_footplate = formatted_date
+                c_rec.grade = grading
+                if counselling_given:
+                    c_rec.safety_counselling = formatted_date
+
         db.session.commit()
 
         flash(f'Footplate inspection and counselling for crew logged successfully (Grade: {grading})!', 'success')
@@ -987,3 +1104,297 @@ def my_counselling_topics():
     cli = User.query.get(session['user_id'])
     topics = CounsellingTopic.query.filter_by(proposed_by_id=cli.id).order_by(CounsellingTopic.created_at.desc()).all()
     return render_template('supervisor/my_counselling_topics.html', cli=cli, topics=topics)
+
+
+# ---------------------------------------------------------------------------
+# CLI DAILY MOVEMENT & OPERATIONAL SUPERVISION (3-MONTH RETENTION)
+# ---------------------------------------------------------------------------
+
+@supervisor_bp.route('/movements')
+def movements():
+    cli = User.query.get(session['user_id'])
+    activity_type = request.args.get('activity_type', 'ALL').strip()
+    date_from_str = request.args.get('date_from', '').strip()
+    date_to_str = request.args.get('date_to', '').strip()
+    q = request.args.get('q', '').strip()
+
+    # Retention policy: 90 days active retention
+    cutoff_date = date.today() - timedelta(days=90)
+    
+    query = CLIMovement.query.filter(
+        CLIMovement.cli_id == cli.id,
+        CLIMovement.activity_date >= cutoff_date
+    )
+
+    if activity_type != 'ALL' and activity_type:
+        query = query.filter(CLIMovement.activity_type == activity_type)
+
+    if date_from_str:
+        d_from = parse_date_value(date_from_str)
+        if d_from:
+            query = query.filter(CLIMovement.activity_date >= d_from)
+
+    if date_to_str:
+        d_to = parse_date_value(date_to_str)
+        if d_to:
+            query = query.filter(CLIMovement.activity_date <= d_to)
+
+    if q:
+        q_wild = f"%{q}%"
+        query = query.filter(
+            (CLIMovement.crew_name_manual.ilike(q_wild)) |
+            (CLIMovement.crew_id_str.ilike(q_wild)) |
+            (CLIMovement.train_no.ilike(q_wild)) |
+            (CLIMovement.loco_no.ilike(q_wild)) |
+            (CLIMovement.location.ilike(q_wild)) |
+            (CLIMovement.observations_irregularities.ilike(q_wild)) |
+            (CLIMovement.corrective_action.ilike(q_wild))
+        )
+
+    movements_list = query.order_by(CLIMovement.activity_date.desc(), CLIMovement.created_at.desc()).all()
+
+    # Metrics over last 90 days
+    all_90d = CLIMovement.query.filter(
+        CLIMovement.cli_id == cli.id,
+        CLIMovement.activity_date >= cutoff_date
+    ).all()
+
+    total_movements = len(all_90d)
+    total_fp_km = sum([m.footplate_km or 0.0 for m in all_90d if m.activity_type == 'Footplate Inspection'])
+    spm_count = sum(1 for m in all_90d if m.activity_type == 'SPM Analysis')
+    cvvrs_count = sum(1 for m in all_90d if m.activity_type == 'CVVRS Inspection')
+    failure_count = sum(1 for m in all_90d if m.activity_type == 'Locomotive Failure Attendance')
+    problem_count = sum(1 for m in all_90d if m.activity_type == 'Crew Problem Attendance')
+    counsel_count = sum(1 for m in all_90d if m.activity_type == 'Crew Counselling')
+
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    my_crews = User.query.filter_by(cli_id=cli.id, is_active=True).all() if cli.sub_role == 'CLI' else User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).all()
+
+    return render_template(
+        'supervisor/movements.html',
+        cli=cli,
+        movements=movements_list,
+        total_movements=total_movements,
+        total_fp_km=round(total_fp_km, 1),
+        spm_count=spm_count,
+        cvvrs_count=cvvrs_count,
+        failure_count=failure_count,
+        problem_count=problem_count,
+        counsel_count=counsel_count,
+        cutoff_date=cutoff_date,
+        lobbies=lobbies,
+        my_crews=my_crews,
+        current_activity_type=activity_type,
+        current_date_from=date_from_str,
+        current_date_to=date_to_str,
+        current_q=q
+    )
+
+
+@supervisor_bp.route('/movements/new', methods=['GET', 'POST'])
+def new_movement():
+    cli = User.query.get(session['user_id'])
+    my_crews = User.query.filter_by(cli_id=cli.id, is_active=True).order_by(User.full_name).all() if cli.sub_role == 'CLI' else User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).order_by(User.full_name).all()
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+
+    prefill_type = request.args.get('type', 'Footplate Inspection').strip()
+
+    if request.method == 'POST':
+        activity_type = request.form.get('activity_type', 'Footplate Inspection').strip()
+        date_str = request.form.get('activity_date', '').strip()
+        activity_date = parse_date_value(date_str) or date.today()
+
+        lobby_id = request.form.get('lobby_id')
+        location = request.form.get('location', '').strip()
+        section_from = request.form.get('section_from', '').strip()
+        section_to = request.form.get('section_to', '').strip()
+        train_no = request.form.get('train_no', '').strip()
+        loco_no = request.form.get('loco_no', '').strip()
+        departure_time = request.form.get('departure_time', '').strip()
+        arrival_time = request.form.get('arrival_time', '').strip()
+
+        fp_km_str = request.form.get('footplate_km', '0').strip()
+        try:
+            footplate_km = float(fp_km_str) if fp_km_str else 0.0
+        except ValueError:
+            footplate_km = 0.0
+
+        crew_id_val = request.form.get('crew_id')
+        crew_name_manual = request.form.get('crew_name_manual', '').strip()
+        crew_id_str = request.form.get('crew_id_str', '').strip()
+        crew_category = request.form.get('crew_category', '').strip()
+        grading = request.form.get('grading', 'A').strip().upper()
+
+        observations = request.form.get('observations_irregularities', '').strip()
+        corrective = request.form.get('corrective_action', '').strip()
+        remarks = request.form.get('remarks', '').strip()
+
+        crew_obj = None
+        if crew_id_val and crew_id_val.isdigit():
+            crew_obj = User.query.get(int(crew_id_val))
+            if crew_obj:
+                if not crew_name_manual:
+                    crew_name_manual = crew_obj.full_name
+                if not crew_id_str:
+                    crew_id_str = crew_obj.pf_number or crew_obj.username
+                if not crew_category:
+                    crew_category = crew_obj.sub_role
+
+        movement = CLIMovement(
+            cli_id=cli.id,
+            activity_date=activity_date,
+            activity_type=activity_type,
+            lobby_id=int(lobby_id) if lobby_id and lobby_id.isdigit() else cli.lobby_id,
+            location=location or (f"{section_from} - {section_to}" if section_from or section_to else 'Section'),
+            section_from=section_from,
+            section_to=section_to,
+            train_no=train_no,
+            loco_no=loco_no,
+            footplate_km=footplate_km,
+            departure_time=departure_time,
+            arrival_time=arrival_time,
+            crew_id=crew_obj.id if crew_obj else None,
+            crew_name_manual=crew_name_manual,
+            crew_id_str=crew_id_str,
+            crew_category=crew_category,
+            grading=grading,
+            observations_irregularities=observations,
+            corrective_action=corrective,
+            remarks=remarks
+        )
+        db.session.add(movement)
+
+        # Synchronize with FootplateInspection if Footplate
+        if activity_type == 'Footplate Inspection' and crew_obj:
+            fp_row = FootplateInspection(
+                cli_id=cli.id,
+                crew_id=crew_obj.id,
+                inspection_date=activity_date,
+                train_no=train_no,
+                loco_no=loco_no,
+                from_station=section_from,
+                to_station=section_to,
+                departure_time=departure_time,
+                arrival_time=arrival_time,
+                grading=grading,
+                footplate_km=footplate_km,
+                aspects_covered=observations,
+                deficiencies=remarks,
+                counselling_given=corrective
+            )
+            db.session.add(fp_row)
+
+        # Update CrewCounsellingRecord dates if match found
+        target_pf = (crew_obj.pf_number if crew_obj else crew_id_str) or ''
+        c_rec = CrewCounsellingRecord.query.filter(
+            (CrewCounsellingRecord.crew_user_id == (crew_obj.id if crew_obj else -1)) |
+            (CrewCounsellingRecord.crew_id_str == target_pf) |
+            (CrewCounsellingRecord.pf_no == target_pf)
+        ).first()
+        if c_rec:
+            d_formatted = activity_date.strftime("%d-%m-%Y")
+            if activity_type == 'Footplate Inspection':
+                c_rec.last_footplate = d_formatted
+            elif activity_type == 'SPM Analysis':
+                c_rec.last_spm_check = d_formatted
+            elif activity_type == 'CVVRS Inspection':
+                c_rec.last_cvvrs_check = d_formatted
+            elif activity_type == 'Crew Counselling':
+                c_rec.safety_counselling = d_formatted
+            if grading:
+                c_rec.grade = grading
+
+        db.session.commit()
+        flash(f'CLI Daily Activity [{activity_type}] on {activity_date} successfully recorded!', 'success')
+        return redirect(url_for('supervisor.movements'))
+
+    return render_template(
+        'supervisor/movement_form.html',
+        cli=cli,
+        my_crews=my_crews,
+        lobbies=lobbies,
+        prefill_type=prefill_type,
+        today_date=date.today().strftime('%Y-%m-%d')
+    )
+
+
+@supervisor_bp.route('/movements/<int:movement_id>/edit', methods=['GET', 'POST'])
+def edit_movement(movement_id):
+    cli = User.query.get(session['user_id'])
+    movement = CLIMovement.query.get_or_404(movement_id)
+
+    # Permission check: CLIs can edit only their own entries
+    if movement.cli_id != cli.id and not cli.is_admin():
+        flash('Unauthorized: You can only edit your own activity records.', 'danger')
+        return redirect(url_for('supervisor.movements'))
+
+    my_crews = User.query.filter_by(cli_id=cli.id, is_active=True).order_by(User.full_name).all() if cli.sub_role == 'CLI' else User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).order_by(User.full_name).all()
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+
+    if request.method == 'POST':
+        movement.activity_type = request.form.get('activity_type', movement.activity_type).strip()
+        date_str = request.form.get('activity_date', '').strip()
+        movement.activity_date = parse_date_value(date_str) or movement.activity_date
+
+        lobby_id = request.form.get('lobby_id')
+        if lobby_id and lobby_id.isdigit():
+            movement.lobby_id = int(lobby_id)
+        
+        movement.location = request.form.get('location', '').strip()
+        movement.section_from = request.form.get('section_from', '').strip()
+        movement.section_to = request.form.get('section_to', '').strip()
+        movement.train_no = request.form.get('train_no', '').strip()
+        movement.loco_no = request.form.get('loco_no', '').strip()
+        movement.departure_time = request.form.get('departure_time', '').strip()
+        movement.arrival_time = request.form.get('arrival_time', '').strip()
+
+        fp_km_str = request.form.get('footplate_km', '0').strip()
+        try:
+            movement.footplate_km = float(fp_km_str) if fp_km_str else 0.0
+        except ValueError:
+            pass
+
+        crew_id_val = request.form.get('crew_id')
+        if crew_id_val and crew_id_val.isdigit():
+            crew_obj = User.query.get(int(crew_id_val))
+            if crew_obj:
+                movement.crew_id = crew_obj.id
+                movement.crew_name_manual = crew_obj.full_name
+                movement.crew_id_str = crew_obj.pf_number or crew_obj.username
+                movement.crew_category = crew_obj.sub_role
+        else:
+            movement.crew_name_manual = request.form.get('crew_name_manual', movement.crew_name_manual).strip()
+            movement.crew_id_str = request.form.get('crew_id_str', movement.crew_id_str).strip()
+            movement.crew_category = request.form.get('crew_category', movement.crew_category).strip()
+
+        movement.grading = request.form.get('grading', movement.grading).strip().upper()
+        movement.observations_irregularities = request.form.get('observations_irregularities', '').strip()
+        movement.corrective_action = request.form.get('corrective_action', '').strip()
+        movement.remarks = request.form.get('remarks', '').strip()
+        # Preserves officer_remarks and officer_remarked_by_id!
+
+        db.session.commit()
+        flash('CLI Daily Activity record updated successfully.', 'success')
+        return redirect(url_for('supervisor.movements'))
+
+    return render_template(
+        'supervisor/movement_edit.html',
+        cli=cli,
+        movement=movement,
+        my_crews=my_crews,
+        lobbies=lobbies
+    )
+
+
+@supervisor_bp.route('/movements/<int:movement_id>/delete', methods=['POST'])
+def delete_movement(movement_id):
+    cli = User.query.get(session['user_id'])
+    movement = CLIMovement.query.get_or_404(movement_id)
+    if movement.cli_id != cli.id and not cli.is_admin():
+        flash('Unauthorized: You can only remove your own activity records.', 'danger')
+        return redirect(url_for('supervisor.movements'))
+
+    db.session.delete(movement)
+    db.session.commit()
+    flash('Activity record removed from daily log.', 'info')
+    return redirect(url_for('supervisor.movements'))

@@ -1,14 +1,23 @@
 import os
 from datetime import datetime, date, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, send_file, session
-import pandas as pd
+from flask import (
+    Blueprint, render_template, request, redirect, url_for, 
+    flash, current_app, send_file, session, jsonify
+)
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 from werkzeug.utils import secure_filename
 from database import db
 from models import (
     User, Lobby, Notice, CounsellingTopic, TrainingRecord, FootplateInspection, 
-    Message, OfficerSay, CrewCounsellingRecord, PhotoGallery
+    Message, OfficerSay, CrewCounsellingRecord, PhotoGallery, CustomField, CLIMovement
 )
 from blueprints.auth import role_required
+from blueprints.excel_helper import (
+    read_excel_to_dicts, map_crew_record, export_crew_master_to_excel, clean_mobile_10
+)
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -145,6 +154,406 @@ def assign_cli(user_id):
         db.session.commit()
         flash(f"Nominated CLI updated for {crew.full_name}.", "success")
     return redirect(url_for('admin.users'))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 2: LOBBY MANAGEMENT (Main 9 + Sister 3 & CLI In-Charge Reassignment)
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/lobbies')
+def lobbies():
+    lobby_list = Lobby.query.order_by(Lobby.is_sister_lobby, Lobby.code).all()
+    clis = User.query.filter_by(role='supervisor', sub_role='CLI').order_by(User.full_name).all()
+    
+    lobby_stats = []
+    for l in lobby_list:
+        crew_cnt = User.query.filter_by(role='crew', lobby_id=l.id).count()
+        cli_cnt = User.query.filter_by(role='supervisor', lobby_id=l.id).count()
+        lobby_stats.append({
+            'lobby': l,
+            'crew_count': crew_cnt,
+            'cli_count': cli_cnt,
+            'in_charge': l.in_charge_cli
+        })
+        
+    return render_template('admin/lobbies.html', lobby_stats=lobby_stats, clis=clis)
+
+
+@admin_bp.route('/lobbies/<int:lobby_id>/update', methods=['POST'])
+def update_lobby(lobby_id):
+    lobby = Lobby.query.get_or_404(lobby_id)
+    in_charge_id = request.form.get('in_charge_cli_id')
+    ccc_name = request.form.get('ccc_name', '').strip()
+    phone = request.form.get('phone', '').strip()
+    jurisdiction = request.form.get('operational_jurisdiction', '').strip()
+    description = request.form.get('description', '').strip()
+
+    lobby.in_charge_cli_id = int(in_charge_id) if in_charge_id and in_charge_id.isdigit() else None
+    lobby.ccc_name = ccc_name or lobby.ccc_name
+    lobby.phone = phone
+    lobby.operational_jurisdiction = jurisdiction
+    lobby.description = description
+    db.session.commit()
+
+    flash(f"Lobby '{lobby.code}' ({lobby.name}) assignments updated successfully.", "success")
+    return redirect(url_for('admin.lobbies'))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 2: DYNAMIC CUSTOM FIELDS MANAGEMENT
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/custom-fields')
+def custom_fields():
+    fields = CustomField.query.order_by(CustomField.id.asc()).all()
+    return render_template('admin/custom_fields.html', fields=fields)
+
+
+@admin_bp.route('/custom-fields/add', methods=['POST'])
+def add_custom_field():
+    import re
+    label = request.form.get('field_label', '').strip()
+    f_name = request.form.get('field_name', '').strip()
+    f_type = request.form.get('field_type', 'text').strip()
+    is_req = bool(request.form.get('is_required'))
+    options_raw = request.form.get('options', '').strip()
+
+    if not label:
+        flash("Field Label is required.", "danger")
+        return redirect(url_for('admin.custom_fields'))
+
+    if not f_name:
+        f_name = re.sub(r'[^a-zA-Z0-9_]', '_', label.lower()).strip('_')
+    else:
+        f_name = re.sub(r'[^a-zA-Z0-9_]', '_', f_name.lower()).strip('_')
+
+    existing = CustomField.query.filter_by(field_name=f_name).first()
+    if existing:
+        flash(f"A custom field with identifier '{f_name}' already exists.", "warning")
+        return redirect(url_for('admin.custom_fields'))
+
+    options_json = None
+    if f_type == 'select' and options_raw:
+        import json
+        opts = [o.strip() for o in options_raw.split(',') if o.strip()]
+        options_json = json.dumps(opts)
+
+    new_field = CustomField(
+        entity_type='crew',
+        field_name=f_name,
+        field_label=label,
+        field_type=f_type,
+        options_json=options_json,
+        is_required=is_req,
+        is_active=True
+    )
+    db.session.add(new_field)
+    db.session.commit()
+    flash(f"Custom field '{label}' added to crew master schema.", "success")
+    return redirect(url_for('admin.custom_fields'))
+
+
+@admin_bp.route('/custom-fields/<int:field_id>/toggle', methods=['POST'])
+def toggle_custom_field(field_id):
+    cf = CustomField.query.get_or_404(field_id)
+    cf.is_active = not cf.is_active
+    db.session.commit()
+    status = "active" if cf.is_active else "inactive"
+    flash(f"Custom field '{cf.field_label}' marked as {status}.", "info")
+    return redirect(url_for('admin.custom_fields'))
+
+
+@admin_bp.route('/custom-fields/<int:field_id>/delete', methods=['POST'])
+def delete_custom_field(field_id):
+    cf = CustomField.query.get_or_404(field_id)
+    label = cf.field_label
+    db.session.delete(cf)
+    db.session.commit()
+    flash(f"Custom field '{label}' has been removed.", "info")
+    return redirect(url_for('admin.custom_fields'))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 2: CREW MASTER DATABASE & EXCEL WORKFLOW
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/crew-master')
+def crew_master():
+    lobby_filter = request.args.get('lobby', 'ALL')
+    cli_filter = request.args.get('cli', 'ALL')
+    cat_filter = request.args.get('category', 'ALL')
+    q = request.args.get('q', '').strip()
+
+    query = User.query.filter_by(role='crew')
+
+    if lobby_filter != 'ALL' and lobby_filter.isdigit():
+        query = query.filter_by(lobby_id=int(lobby_filter))
+    if cli_filter != 'ALL' and cli_filter.isdigit():
+        query = query.filter_by(cli_id=int(cli_filter))
+    if cat_filter != 'ALL':
+        query = query.filter(User.sub_role.ilike(f'%{cat_filter}%'))
+    if q:
+        query = query.filter(
+            (User.full_name.ilike(f'%{q}%')) |
+            (User.mobile.ilike(f'%{q}%')) |
+            (User.pf_number.ilike(f'%{q}%')) |
+            (User.username.ilike(f'%{q}%'))
+        )
+
+    crews = query.order_by(User.full_name.asc()).all()
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    clis = User.query.filter_by(role='supervisor', sub_role='CLI').order_by(User.full_name).all()
+    custom_fields_list = CustomField.query.filter_by(is_active=True).all()
+    
+    categories = ['LPM', 'LPP', 'MMAN', 'LPG', 'LPS-I', 'LPS-II', 'SALP', 'ALP']
+
+    return render_template(
+        'admin/crew_master.html',
+        crews=crews,
+        lobbies=lobbies,
+        clis=clis,
+        categories=categories,
+        custom_fields=custom_fields_list,
+        current_lobby=lobby_filter,
+        current_cli=cli_filter,
+        current_category=cat_filter,
+        search_query=q,
+        total_count=len(crews)
+    )
+
+
+@admin_bp.route('/crew-master/export')
+def export_crew_master():
+    crews = User.query.filter_by(role='crew').order_by(User.full_name.asc()).all()
+    custom_fields_list = CustomField.query.filter_by(is_active=True).all()
+    excel_buf = export_crew_master_to_excel(crews, custom_fields_list)
+    filename = f"Howrah_Division_Crew_Master_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    return send_file(
+        excel_buf,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
+
+
+@admin_bp.route('/crew-master/<int:crew_id>/quick-update', methods=['POST'])
+def quick_update_crew(crew_id):
+    crew = User.query.get_or_404(crew_id)
+    crew.full_name = request.form.get('full_name', crew.full_name).strip()
+    crew.sub_role = request.form.get('sub_role', crew.sub_role).strip()
+    new_mob = clean_mobile_10(request.form.get('mobile', crew.mobile))
+    if new_mob and len(new_mob) == 10:
+        crew.mobile = new_mob
+    pf = request.form.get('pf_number', '').strip()
+    if pf:
+        crew.pf_number = pf
+    lid = request.form.get('lobby_id')
+    if lid and lid.isdigit():
+        crew.lobby_id = int(lid)
+    cli_id = request.form.get('cli_id')
+    if cli_id and cli_id.isdigit():
+        crew.cli_id = int(cli_id)
+    
+    # Custom fields update
+    cfields = CustomField.query.filter_by(is_active=True).all()
+    for cf in cfields:
+        if cf.field_name in request.form:
+            crew.set_custom_field(cf.field_name, request.form.get(cf.field_name))
+
+    db.session.commit()
+    flash(f"Updated crew profile for {crew.full_name}.", "success")
+    return redirect(request.referrer or url_for('admin.crew_master'))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 2: EXCEL UPLOAD WORKFLOW WITH INTERACTIVE EDITABLE TABLE
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/crew-master/upload')
+def crew_upload_page():
+    custom_fields_list = CustomField.query.filter_by(is_active=True).all()
+    return render_template('admin/crew_upload.html', custom_fields=custom_fields_list)
+
+
+@admin_bp.route('/crew-master/upload-preview', methods=['POST'])
+def crew_upload_preview():
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'success': False, 'message': 'No Excel file was selected.'}), 400
+
+    fname = secure_filename(file.filename)
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f"preview_{fname}")
+    file.save(file_path)
+
+    try:
+        cfields = CustomField.query.filter_by(is_active=True).all()
+        records, headers = read_excel_to_dicts(file_path)
+        if not records:
+            return jsonify({'success': False, 'message': 'No data found in the uploaded Excel file.'}), 400
+
+        mapped_rows = []
+        seen_mobiles = set()
+        seen_pfs = set()
+        duplicates_in_file = []
+
+        for idx, r in enumerate(records, 1):
+            m = map_crew_record(r, cfields)
+            mob = m['mobile']
+            pf = m['pf_number']
+            
+            is_dup = False
+            dup_reasons = []
+            if mob:
+                if mob in seen_mobiles:
+                    is_dup = True
+                    dup_reasons.append(f"Duplicate Mobile: {mob}")
+                seen_mobiles.add(mob)
+
+            if pf:
+                if pf in seen_pfs:
+                    is_dup = True
+                    dup_reasons.append(f"Duplicate PF: {pf}")
+                seen_pfs.add(pf)
+
+            m['row_id'] = idx
+            m['is_duplicate'] = is_dup
+            m['duplicate_info'] = ', '.join(dup_reasons)
+            mapped_rows.append(m)
+
+            if is_dup:
+                duplicates_in_file.append({'row': idx, 'info': ', '.join(dup_reasons)})
+
+        lobbies = [{'id': l.id, 'code': l.code, 'name': l.name} for l in Lobby.query.order_by(Lobby.code).all()]
+        clis = [{'id': u.id, 'username': u.username, 'name': u.full_name} for u in User.query.filter_by(role='supervisor', sub_role='CLI').all()]
+        cf_defs = [{'field_name': cf.field_name, 'field_label': cf.field_label, 'field_type': cf.field_type} for cf in cfields]
+
+        return jsonify({
+            'success': True,
+            'total_rows': len(mapped_rows),
+            'duplicates_count': len(duplicates_in_file),
+            'rows': mapped_rows,
+            'lobbies': lobbies,
+            'clis': clis,
+            'custom_fields': cf_defs
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': f"Error reading Excel file: {str(e)}"}), 500
+    finally:
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
+
+
+@admin_bp.route('/crew-master/save-batch', methods=['POST'])
+def save_crew_batch():
+    data = request.get_json() or {}
+    rows = data.get('rows', [])
+    if not rows:
+        return jsonify({'success': False, 'message': 'No crew records to save.'}), 400
+
+    created_count = 0
+    updated_count = 0
+    errors = []
+
+    lobbies_by_code = {l.code.upper(): l for l in Lobby.query.all()}
+    clis_by_uname = {u.username.upper(): u for u in User.query.filter_by(role='supervisor').all()}
+    clis_by_name = {u.full_name.strip().upper(): u for u in User.query.filter_by(role='supervisor').all()}
+
+    for idx, r in enumerate(rows, 1):
+        raw_mob = str(r.get('mobile', '')).strip()
+        clean_mob = clean_mobile_10(raw_mob)
+        crew_name = str(r.get('crew_name', '')).strip()
+        pf = str(r.get('pf_number', '')).strip()
+        desig = str(r.get('designation', '')).strip()
+        cat = str(r.get('category', 'ALP')).strip() or 'ALP'
+        lobby_code = str(r.get('lobby', '')).strip().upper()
+        cli_id_str = str(r.get('cli_id', '')).strip().upper()
+        cli_name_str = str(r.get('cli_name', '')).strip().upper()
+        custom_vals = r.get('custom_fields', {})
+
+        if not clean_mob or len(clean_mob) != 10:
+            errors.append(f"Row {idx}: Invalid 10-digit mobile number ({raw_mob}) for {crew_name}.")
+            continue
+        if not crew_name:
+            errors.append(f"Row {idx}: Missing Crew Name.")
+            continue
+
+        # Resolve Lobby
+        lobby_obj = lobbies_by_code.get(lobby_code)
+
+        # Resolve CLI
+        cli_obj = None
+        if cli_id_str and cli_id_str in clis_by_uname:
+            cli_obj = clis_by_uname[cli_id_str]
+        elif cli_name_str and cli_name_str in clis_by_name:
+            cli_obj = clis_by_name[cli_name_str]
+        elif cli_id_str:
+            # Auto-create CLI account
+            cli_mob = clean_mobile_10(r.get('cli_mobile', ''))
+            new_cli = User(
+                username=cli_id_str,
+                role='supervisor',
+                sub_role='CLI',
+                full_name=r.get('cli_name', cli_id_str),
+                mobile=cli_mob,
+                password_must_change=True
+            )
+            new_cli.set_password('12345')
+            db.session.add(new_cli)
+            db.session.flush()
+            clis_by_uname[cli_id_str] = new_cli
+            cli_obj = new_cli
+
+        # Find existing crew by mobile or PF
+        user = User.query.filter(
+            (User.mobile == clean_mob) |
+            (User.username == clean_mob) |
+            (User.pf_number == pf if pf else False)
+        ).first()
+
+        if user:
+            user.full_name = crew_name
+            user.mobile = clean_mob
+            if pf:
+                user.pf_number = pf
+            user.sub_role = cat or desig or user.sub_role
+            if lobby_obj:
+                user.lobby_id = lobby_obj.id
+            if cli_obj:
+                user.cli_id = cli_obj.id
+            for k, v in custom_vals.items():
+                user.set_custom_field(k, v)
+            updated_count += 1
+        else:
+            user = User(
+                username=clean_mob,
+                role='crew',
+                sub_role=cat or desig or 'ALP',
+                full_name=crew_name,
+                mobile=clean_mob,
+                pf_number=pf,
+                lobby_id=lobby_obj.id if lobby_obj else None,
+                cli_id=cli_obj.id if cli_obj else None,
+                password_must_change=True,
+                is_active=True
+            )
+            user.set_password('12345')
+            for k, v in custom_vals.items():
+                user.set_custom_field(k, v)
+            db.session.add(user)
+            created_count += 1
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'created': created_count,
+        'updated': updated_count,
+        'errors': errors,
+        'message': f"Master Crew Database updated: {created_count} added, {updated_count} updated."
+    })
+
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -980,4 +1389,61 @@ def delete_gallery_item(item_id):
     db.session.commit()
     flash(f'Photo "{title}" has been deleted from the gallery.', 'info')
     return redirect(url_for('admin.gallery'))
+
+
+# ---------------------------------------------------------------------------
+# SECTION 13: IMPORTANT TOOLS (ADMIN ONLY)
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/important-tools')
+def important_tools():
+    """Important Tools Hub (Admin-only restricted section)."""
+    return render_template('admin/important_tools.html')
+
+
+@admin_bp.route('/important-tools/bulk-analysis')
+def bulk_analysis_tool():
+    """Bulk Signal & Speed Analysis Tool."""
+    return render_template('admin/tools/bulk_analysis.html')
+
+
+@admin_bp.route('/important-tools/pf-entry-speed')
+def pf_entry_speed_tool():
+    """Platform Entry & Turnout Speed Checking Tool."""
+    return render_template('admin/tools/pf_entry_speed.html')
+
+
+# ---------------------------------------------------------------------------
+# CLI MOVEMENT RETENTION POLICY (3 MONTHS RETENTION)
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/retention-policy', methods=['GET', 'POST'])
+def retention_policy():
+    """
+    Manages the 3-Month (90-Day) Data Retention Policy for CLI Daily Movement logs.
+    Master Crew database, counselling history, training, and medical are permanent.
+    """
+    cutoff = date.today() - timedelta(days=90)
+    
+    total_count = CLIMovement.query.count()
+    active_count = CLIMovement.query.filter(CLIMovement.activity_date >= cutoff).count()
+    eligible_count = CLIMovement.query.filter(CLIMovement.activity_date < cutoff).count()
+    oldest_record = CLIMovement.query.order_by(CLIMovement.activity_date.asc()).first()
+    oldest_date = oldest_record.activity_date if oldest_record else None
+
+    if request.method == 'POST':
+        deleted = CLIMovement.clean_old_movements(days=90)
+        flash(f'Data Retention Purge Completed: {deleted} old CLI movement records older than 90 days were safely purged. All Master Crew and permanent records remain 100% intact.', 'success')
+        return redirect(url_for('admin.retention_policy'))
+
+    return render_template(
+        'admin/retention_policy.html',
+        total_count=total_count,
+        active_count=active_count,
+        eligible_count=eligible_count,
+        cutoff=cutoff,
+        oldest_date=oldest_date
+    )
+
+
 

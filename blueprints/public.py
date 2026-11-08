@@ -208,24 +208,39 @@ def notices():
 
 @public_bp.route('/counselling')
 def counselling():
-    c_type = request.args.get('type', 'ALL')
-    query = CounsellingTopic.query.filter(
-        (CounsellingTopic.status == 'APPROVED') | (CounsellingTopic.status.is_(None))
-    )
-    if c_type in ['MONTHLY', 'SPECIAL']:
-        query = query.filter_by(counselling_type=c_type)
-    c_list = query.order_by(CounsellingTopic.topic_date.desc(), CounsellingTopic.created_at.desc()).all()
-    return render_template('public/counselling.html', counselling_list=c_list, current_type=c_type)
+    """Daily Safety Counselling removed as standalone public module; accessible inside user login dashboards."""
+    flash('Safety counselling is now integrated into the authenticated user dashboard. Please sign in to view counselling records.', 'info')
+    if 'user_id' in session:
+        from blueprints.auth import redirect_by_role
+        user = User.query.get(session['user_id'])
+        if user:
+            return redirect_by_role(user)
+    return redirect(url_for('auth.login'))
 
 @public_bp.route('/counselling/<int:topic_id>')
 def counselling_detail(topic_id):
-    topic = CounsellingTopic.query.get_or_404(topic_id)
-    ack = None
+    flash('Safety counselling is now integrated into the authenticated user dashboard.', 'info')
     if 'user_id' in session:
+        from blueprints.auth import redirect_by_role
         user = User.query.get(session['user_id'])
-        if user and user.role == 'crew':
-            ack = CounsellingAcknowledgement.query.filter_by(counselling_id=topic.id, crew_id=user.id).first()
-    return render_template('public/counselling_detail.html', topic=topic, ack=ack)
+        if user:
+            return redirect_by_role(user)
+    return redirect(url_for('auth.login'))
+
+@public_bp.route('/loco-info')
+def loco_info():
+    """Public portal: Loco Information for Electric & Diesel Locomotives."""
+    return render_template('public/loco_info.html')
+
+@public_bp.route('/rules')
+def rules():
+    """Public portal: Important Rules & Regulations."""
+    return redirect(url_for('elearning.index'))
+
+@public_bp.route('/learning-materials')
+def learning_materials():
+    """Public portal: Centralized Learning Materials."""
+    return render_template('public/learning_materials.html')
 
 @public_bp.route('/elearning')
 def elearning():

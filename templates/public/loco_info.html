@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Locomotive Information | Electric & Diesel Locomotives | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="fa-solid fa-train text-primary me-2"></i> LOCOMOTIVE INFORMATION & TECHNICAL SPECS
+            </h2>
+            <p class="text-muted mb-0">Technical Data, Operating Guidelines & Safety Specifications for Electric &amp; Diesel Traction &bull; Howrah Division</p>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <span class="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm">
+                <i class="fa-solid fa-bolt me-1"></i> Electric &amp; Diesel Unified Operations
+            </span>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2 bg-white p-2 rounded shadow-sm border" id="locoTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="electric-tab" data-bs-toggle="pill" data-bs-target="#electric-locos" type="button" role="tab">
+                <i class="fa-solid fa-bolt me-1 text-warning"></i> Electric Locomotives (3-Phase &amp; Conventional)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="diesel-tab" data-bs-toggle="pill" data-bs-target="#diesel-locos" type="button" role="tab">
+                <i class="fa-solid fa-gas-pump me-1 text-danger"></i> Diesel Locomotives (ALCO &amp; EMD HHP)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="guidelines-tab" data-bs-toggle="pill" data-bs-target="#general-guidelines" type="button" role="tab">
+                <i class="fa-solid fa-clipboard-check me-1 text-success"></i> Critical Operating Instructions
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Contents -->
+    <div class="tab-content" id="locoTabContent">
+        <!-- 1. Electric Locomotives -->
+        <div class="tab-pane fade show active" id="electric-locos" role="tabpanel">
+            <div class="row g-4">
+                <!-- WAP-7 -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm border-0 border-top border-4 border-primary">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-train me-2"></i>WAP-7 (3-Phase AC)</h4>
+                            <span class="badge bg-primary">High Speed Passenger</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">High-horsepower 3-phase AC electric passenger locomotive designed for heavy mail and express trains.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        <tr><th class="bg-light w-40">Power Output</th><td>6122 HP / 4565 kW</td></tr>
+                                        <tr><th class="bg-light">Traction Motors</th><td>6 &times; 3-Phase Induction (6FRA 6068)</td></tr>
+                                        <tr><th class="bg-light">Maximum Speed</th><td>140 kmph (Upgraded 160 kmph capable)</td></tr>
+                                        <tr><th class="bg-light">Starting Tractive Effort</th><td>322.6 kN (32.9 tonnes)</td></tr>
+                                        <tr><th class="bg-light">Brake Systems</th><td>Regenerative Brake + E-70 / CCB II Computer Controlled Brake</td></tr>
+                                        <tr><th class="bg-light">Hotel Load Converter</th><td>Available (2 &times; 500 kVA HOG System)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info py-2 px-3 mb-0 small">
+                                <strong>Safety Memo:</strong> Ensure Hotel Load IVC coupler is locked and BL key interlocked before energizing pantograph.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WAG-9 / WAG-9HC -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm border-0 border-top border-4 border-success">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-success"><i class="fa-solid fa-train me-2"></i>WAG-9 / WAG-9HC</h4>
+                            <span class="badge bg-success">Heavy Freight</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Heavy-haul 3-phase electric freight locomotive equipped with microprocessor controls and regenerative braking.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        <tr><th class="bg-light w-40">Power Output</th><td>6122 HP / 4565 kW (WAG-9HC high adhesion)</td></tr>
+                                        <tr><th class="bg-light">Traction Motors</th><td>6 &times; 3-Phase Induction (6FRA 6068)</td></tr>
+                                        <tr><th class="bg-light">Maximum Speed</th><td>100 kmph (120 kmph upgraded)</td></tr>
+                                        <tr><th class="bg-light">Starting Tractive Effort</th><td>460 kN (46.9 tonnes) - WAG-9HC: 500 kN</td></tr>
+                                        <tr><th class="bg-light">Wheel Arrangement</th><td>Co-Co</td></tr>
+                                        <tr><th class="bg-light">Braking System</th><td>Regenerative + Pneumatic Disc / Tread (CCB-II / E-70)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-success py-2 px-3 mb-0 small">
+                                <strong>Operating Rule:</strong> Maximum regenerative braking effort of 260 kN down to near zero speed. Mandatory dynamic brake use in gradients.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WAP-5 -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm border-0 border-top border-4 border-info">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-info"><i class="fa-solid fa-train me-2"></i>WAP-5</h4>
+                            <span class="badge bg-info">Bo-Bo Express</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Lightweight high-speed Bo-Bo passenger locomotive designed for Rajdhani and Shatabdi expresses.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        <tr><th class="bg-light w-40">Power Output</th><td>5450 HP / 4000 kW</td></tr>
+                                        <tr><th class="bg-light">Maximum Speed</th><td>160 kmph</td></tr>
+                                        <tr><th class="bg-light">Starting Tractive Effort</th><td>258 kN (26.3 tonnes)</td></tr>
+                                        <tr><th class="bg-light">Wheel Arrangement</th><td>Bo-Bo (Fully suspended traction motor)</td></tr>
+                                        <tr><th class="bg-light">Axle Load</th><td>19.5 tonnes</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WAG-12B -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm border-0 border-top border-4 border-warning">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-warning-emphasis"><i class="fa-solid fa-train me-2"></i>WAG-12B (Prima T8)</h4>
+                            <span class="badge bg-warning text-dark">12000 HP Twin-Section</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Twin-unit Bo-Bo+Bo-Bo electric locomotive for Dedicated Freight Corridors and heavy mineral rakes.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        <tr><th class="bg-light w-40">Power Output</th><td>12000 HP / 9000 kW</td></tr>
+                                        <tr><th class="bg-light">Maximum Speed</th><td>120 kmph (Freight)</td></tr>
+                                        <tr><th class="bg-light">Starting Tractive Effort</th><td>706 kN (72 tonnes)</td></tr>
+                                        <tr><th class="bg-light">Wheel Arrangement</th><td>Bo-Bo + Bo-Bo (Two coupled sections)</td></tr>
+                                        <tr><th class="bg-light">Weight</th><td>180 tonnes (22.5 tonne axle load, upgradeable to 25t)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Diesel Locomotives -->
+        <div class="tab-pane fade" id="diesel-locos" role="tabpanel">
+            <div class="row g-4">
+                <!-- WDP-4D / WDP-4B -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm border-0 border-top border-4 border-danger">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-danger"><i class="fa-solid fa-train me-2"></i>WDP-4D (Dual Cab HHP Diesel)</h4>
+                            <span class="badge bg-danger">Passenger EMD</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">High-horsepower dual-cab 2-stroke diesel-electric locomotive powered by EMD 16-710 G3B engine.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        <tr><th class="bg-light w-40">Engine Power</th><td>4500 HP (EMD 16-710 G3B-EC)</td></tr>
+                                        <tr><th class="bg-light">Traction Motors</th><td>6 &times; 3-Phase AC (1TB 2622 TA17)</td></tr>
+                                        <tr><th class="bg-light">Maximum Speed</th><td>135 kmph</td></tr>
+                                        <tr><th class="bg-light">Tractive Effort</th><td>395 kN (Starting)</td></tr>
+                                        <tr><th class="bg-light">Fuel Tank Capacity</th><td>5000 Litres HSD</td></tr>
+                                        <tr><th class="bg-light">Microprocessor</th><td>EM2000 / Medha MEP 660</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-danger py-2 px-3 mb-0 small">
+                                <strong>Fuel Conservation:</strong> Strictly adhere to APU (Auxiliary Power Unit) cut-in protocol when detention exceeds 15 minutes.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WDG-4 / WDG-4D -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm border-0 border-top border-4 border-dark">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-train me-2"></i>WDG-4 / WDG-4D</h4>
+                            <span class="badge bg-dark">Heavy Freight EMD</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Heavy freight workhorse equipped with high adhesion Co-Co radial bogies and dynamic rheostatic braking.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        <tr><th class="bg-light w-40">Engine Power</th><td>4500 HP (16 Cylinder Turbocharged)</td></tr>
+                                        <tr><th class="bg-light">Starting Tractive Effort</th><td>540 kN (55 tonnes)</td></tr>
+                                        <tr><th class="bg-light">Continuous Tractive Effort</th><td>400 kN</td></tr>
+                                        <tr><th class="bg-light">Bogie Type</th><td>HTSC Radial Steering Bogie (High Adhesion)</td></tr>
+                                        <tr><th class="bg-light">Maximum Speed</th><td>100 kmph</td></tr>
+                                        <tr><th class="bg-light">Fuel Tank</th><td>6000 Litres HSD</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-dark py-2 px-3 mb-0 small">
+                                <strong>Operating Rule:</strong> Dynamic braking grid provides 2700 HP retardation power. Use DB primarily for speed control in falling gradients.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WDM-3D -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm border-0 border-top border-4 border-warning">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-warning-emphasis"><i class="fa-solid fa-train me-2"></i>WDM-3D (ALCO Upgraded)</h4>
+                            <span class="badge bg-warning text-dark">Mixed Traffic ALCO</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Upgraded ALCO platform diesel locomotive with microprocessor control and enhanced cooling systems.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        <tr><th class="bg-light w-40">Engine Power</th><td>3300 HP (ALCO 251 Plus)</td></tr>
+                                        <tr><th class="bg-light">Traction Motors</th><td>6 &times; DC Series (GE 752 / BHEL 4907AZ)</td></tr>
+                                        <tr><th class="bg-light">Maximum Speed</th><td>120 kmph (Passenger) / 105 kmph (Freight)</td></tr>
+                                        <tr><th class="bg-light">Tractive Effort</th><td>38.6 tonnes starting</td></tr>
+                                        <tr><th class="bg-light">Brakes</th><td>Dual Air / Vacuum compatible with 28LAV-1</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WDS-6 -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm border-0 border-top border-4 border-secondary">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-secondary"><i class="fa-solid fa-train me-2"></i>WDS-6 (Heavy Shunter)</h4>
+                            <span class="badge bg-secondary">Yard Shunter</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Heavy yard shunter used in Howrah, Barddhaman, Dankuni yards and siding operations.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        <tr><th class="bg-light w-40">Engine Power</th><td>1400 HP / 1040 kW</td></tr>
+                                        <tr><th class="bg-light">Maximum Speed</th><td>65 kmph (Shunting 15 kmph)</td></tr>
+                                        <tr><th class="bg-light">Tractive Effort</th><td>30.7 tonnes starting</td></tr>
+                                        <tr><th class="bg-light">Weight</th><td>126 tonnes (Heavy ballast for adhesion)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. General Operating Guidelines -->
+        <div class="tab-pane fade" id="general-guidelines" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-book-bookmark me-2"></i>Mandatory Running Staff Protocols &bull; HWH Division</h4>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded bg-light h-100">
+                                <h5 class="fw-bold text-dark"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>1. SPAD Prevention Measures</h5>
+                                <ul class="small mb-0">
+                                    <li>Strictly call out signals loud and clear between LP &amp; ALP with hand gestures.</li>
+                                    <li>Begin controlled braking at least 1000m before a Danger (Red) stop signal.</li>
+                                    <li>Ensure speed is reduced to not more than 15 kmph at 100m before stop signal.</li>
+                                    <li>No mobile phone usage while on footplate (Strict Zero-Tolerance Policy).</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded bg-light h-100">
+                                <h5 class="fw-bold text-dark"><i class="fa-solid fa-bolt text-warning me-2"></i>2. Neutral Section Coasting</h5>
+                                <ul class="small mb-0">
+                                    <li>Open DJ / VCB at 500m / 250m Warning Board before Neutral Section.</li>
+                                    <li>Lower pantograph immediately if instructed due to OHE defect or emergency.</li>
+                                    <li>Close DJ / VCB only after passing the neutral section indicator board.</li>
+                                    <li>Never stall inside a Neutral Section under any circumstances.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded bg-light h-100">
+                                <h5 class="fw-bold text-dark"><i class="fa-solid fa-gauge text-info me-2"></i>3. Platform Entry Speed Checking</h5>
+                                <ul class="small mb-0">
+                                    <li>Observe maximum 15 kmph / 30 kmph turnout speed entering platform lines.</li>
+                                    <li>Check brake feel test at first opportunity after clearing starting yard.</li>
+                                    <li>Continuous speed monitoring with V-cutoff adherence on SPM recorder.</li>
+                                    <li>Stop with gentle brake release before complete halt to avoid jerk.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded bg-light h-100">
+                                <h5 class="fw-bold text-dark"><i class="fa-solid fa-shield-cat text-success me-2"></i>4. Cattle Run Over (CRO) &amp; Derailment Protection</h5>
+                                <ul class="small mb-0">
+                                    <li>Apply emergency brake and switch ON Flasher Light immediately.</li>
+                                    <li>Inform Section Controller (TLC/PCNL) and adjacent station on VHF walkie-talkie.</li>
+                                    <li>Examine brake pipe continuity and ensure adjacent line is not fouled.</li>
+                                    <li>Record all details in loco log book before restarting train.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

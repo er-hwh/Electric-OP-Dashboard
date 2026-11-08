@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Log CLI Daily Activity | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-primary mb-1"><i class="fa-solid fa-person-walking me-1"></i> Field Supervision</span>
+                        <h4 class="fw-bold text-dark mb-0">Record CLI Daily Activity & Movement</h4>
+                        <small class="text-muted">Logged records are retained for 3 months under Divisional Monitoring Policy</small>
+                    </div>
+                    <a href="{{ url_for('supervisor.movements') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back to Activity Log
+                    </a>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('supervisor.new_movement') }}">
+                        <!-- ACTIVITY CLASSIFICATION -->
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-layer-group me-1"></i> 1. Activity Classification & Time
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-dark">Activity Type <span class="text-danger">*</span></label>
+                                <select name="activity_type" id="activityTypeSelect" class="form-select" required onchange="toggleActivityFields()">
+                                    <option value="Footplate Inspection" {% if prefill_type == 'Footplate Inspection' %}selected{% endif %}>Footplate Inspection</option>
+                                    <option value="SPM Analysis" {% if prefill_type == 'SPM Analysis' %}selected{% endif %}>SPM Analysis & Speed Check</option>
+                                    <option value="CVVRS Inspection" {% if prefill_type == 'CVVRS Inspection' %}selected{% endif %}>CVVRS Video Inspection</option>
+                                    <option value="Locomotive Failure Attendance" {% if prefill_type == 'Locomotive Failure Attendance' %}selected{% endif %}>Locomotive Failure Attendance</option>
+                                    <option value="Crew Problem Attendance" {% if prefill_type == 'Crew Problem Attendance' %}selected{% endif %}>Crew Problem Attendance</option>
+                                    <option value="Crew Counselling" {% if prefill_type == 'Crew Counselling' %}selected{% endif %}>Crew Safety Counselling</option>
+                                    <option value="Yard Inspection" {% if prefill_type == 'Yard Inspection' %}selected{% endif %}>Yard Inspection</option>
+                                    <option value="Station Inspection" {% if prefill_type == 'Station Inspection' %}selected{% endif %}>Station Inspection</option>
+                                    <option value="Safety Seminar / Drive" {% if prefill_type == 'Safety Seminar / Drive' %}selected{% endif %}>Safety Seminar / Drive</option>
+                                    <option value="Other Supervisory Duties" {% if prefill_type == 'Other Supervisory Duties' %}selected{% endif %}>Other Supervisory Duties</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-dark">Date of Activity <span class="text-danger">*</span></label>
+                                <input type="date" name="activity_date" class="form-control" value="{{ today_date }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-dark">Lobby / Jurisdiction</label>
+                                <select name="lobby_id" class="form-select">
+                                    {% for l in lobbies %}
+                                        <option value="{{ l.id }}" {% if cli.lobby_id == l.id %}selected{% endif %}>
+                                            {{ l.code }} - {{ l.name }} {% if l.is_sister_lobby %}(Sister){% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- SECTION & TRAIN / LOCO DETAILS -->
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-train-subway me-1"></i> 2. Movement & Locomotive Particulars
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Train Number</label>
+                                <input type="text" name="train_no" class="form-control" placeholder="e.g. 12301 Up / Goods BHP">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Loco / EMU Rake No.</label>
+                                <input type="text" name="loco_no" class="form-control" placeholder="e.g. WAP-7 30201 / WAG-9 31102">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">From Section / Station</label>
+                                <input type="text" name="section_from" class="form-control" placeholder="e.g. HWH">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">To Section / Station</label>
+                                <input type="text" name="section_to" class="form-control" placeholder="e.g. BWN">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Departure Time</label>
+                                <input type="time" name="departure_time" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Arrival Time</label>
+                                <input type="time" name="arrival_time" class="form-control">
+                            </div>
+                            <div class="col-md-3" id="footplateKmField">
+                                <label class="form-label fw-bold small text-dark">Footplate KM (KMA - ACS 64)</label>
+                                <input type="number" step="0.1" name="footplate_km" class="form-control" placeholder="e.g. 108.5">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Location / Yard / Shed Note</label>
+                                <input type="text" name="location" class="form-control" placeholder="e.g. HWH Yard / RPH Lobby">
+                            </div>
+                        </div>
+
+                        <!-- RUNNING STAFF / CREW DETAILS -->
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-users me-1"></i> 3. Running Staff / Crew Attended (if applicable)
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-dark">Select Crew Member (from Squad)</label>
+                                <select name="crew_id" id="crewSelect" class="form-select" onchange="autoFillCrew()">
+                                    <option value="">-- Manual / Not in Squad --</option>
+                                    {% for c in my_crews %}
+                                        <option value="{{ c.id }}" data-name="{{ c.full_name }}" data-pf="{{ c.pf_number or c.username }}" data-role="{{ c.sub_role }}">
+                                            {{ c.full_name }} ({{ c.sub_role }}) - PF: {{ c.pf_number or c.username }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Crew Name (Manual / Other)</label>
+                                <input type="text" name="crew_name_manual" id="crewNameManual" class="form-control" placeholder="e.g. Rajesh Kumar">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-dark">Crew ID / PF No.</label>
+                                <input type="text" name="crew_id_str" id="crewIdStr" class="form-control" placeholder="e.g. 50290012">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Crew Category</label>
+                                <select name="crew_category" id="crewCategory" class="form-select">
+                                    <option value="">-- Select Category --</option>
+                                    <option value="LPM">LPM (Loco Pilot Mail)</option>
+                                    <option value="LPP">LPP (Loco Pilot Passenger)</option>
+                                    <option value="MMAN">MMAN (Motor Man - EMU)</option>
+                                    <option value="LPG">LPG (Loco Pilot Goods)</option>
+                                    <option value="LPS-I">LPS-I (Loco Pilot Shunting-I)</option>
+                                    <option value="LPS-II">LPS-II (Loco Pilot Shunting-II)</option>
+                                    <option value="SALP">SALP (Sr. Assistant Loco Pilot)</option>
+                                    <option value="ALP">ALP (Assistant Loco Pilot)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Grading Awarded</label>
+                                <select name="grading" class="form-select">
+                                    <option value="A">Grade A (High Vigilance / Exemplary)</option>
+                                    <option value="B">Grade B (Satisfactory & Safe)</option>
+                                    <option value="C">Grade C (Needs Improvement / Monitored)</option>
+                                    <option value="D">Grade D (Unsatisfactory / Critical)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- SUPERVISORY OBSERVATIONS & ACTIONS -->
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-clipboard-check me-1"></i> 4. Operational Observations & Corrective Actions
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark">
+                                    Observations, Irregularities & Deficiencies Noted:
+                                </label>
+                                <textarea name="observations_irregularities" class="form-control" rows="3" placeholder="e.g. Signal calling aloud, RS valve test, Caution order adherence, loco defect observed, SPM speed violation, delayed departure..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark">
+                                    Corrective Action Imparted / Action Taken:
+                                </label>
+                                <textarea name="corrective_action" class="form-control" rows="2" placeholder="e.g. On-spot counselling given on calling-on signal rules; loco defect booked at shed; crew grievance forwarded to in-charge..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark">General Remarks / Notes:</label>
+                                <textarea name="remarks" class="form-control" rows="2" placeholder="Any additional field notes or follow-up required..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                            <a href="{{ url_for('supervisor.movements') }}" class="btn btn-outline-secondary px-4">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Daily Activity Log
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function autoFillCrew() {
+    const sel = document.getElementById('crewSelect');
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.value) {
+        document.getElementById('crewNameManual').value = opt.getAttribute('data-name') || '';
+        document.getElementById('crewIdStr').value = opt.getAttribute('data-pf') || '';
+        const role = opt.getAttribute('data-role') || '';
+        const catSelect = document.getElementById('crewCategory');
+        for (let i = 0; i < catSelect.options.length; i++) {
+            if (catSelect.options[i].value === role) {
+                catSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+}
+
+function toggleActivityFields() {
+    const type = document.getElementById('activityTypeSelect').value;
+    const kmField = document.getElementById('footplateKmField');
+    if (type === 'Footplate Inspection') {
+        kmField.style.display = 'block';
+    } else {
+        kmField.style.display = 'none';
+    }
+}
+document.addEventListener('DOMContentLoaded', toggleActivityFields);
+</script>
+{% endblock %}

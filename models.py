@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import db
 
@@ -10,14 +10,42 @@ class Lobby(db.Model):
     name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(50))
     ccc_name = db.Column(db.String(100)) # Chief Crew Controller Name
+    is_sister_lobby = db.Column(db.Boolean, default=False) # Sister lobbies: NHT, SNT, KURV
+    in_charge_cli_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Assigned CLI In-Charge
+    operational_jurisdiction = db.Column(db.String(255)) # Jurisdiction description / routes
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
     users = db.relationship('User', backref='lobby', lazy='dynamic', foreign_keys='User.lobby_id')
+    in_charge_cli = db.relationship('User', foreign_keys=[in_charge_cli_id])
 
     def __repr__(self):
         return f"<Lobby {self.code} - {self.name}>"
+
+
+class CustomField(db.Model):
+    """Dynamic Custom Field Definitions for Crew Database."""
+    __tablename__ = 'custom_fields'
+
+    id = db.Column(db.Integer, primary_key=True)
+    entity_type = db.Column(db.String(50), default='crew') # 'crew', 'cli', etc.
+    field_name = db.Column(db.String(100), nullable=False, unique=True) # key identifier e.g. blood_group
+    field_label = db.Column(db.String(150), nullable=False) # human readable label
+    field_type = db.Column(db.String(50), default='text') # 'text', 'number', 'date', 'select'
+    options_json = db.Column(db.Text, nullable=True) # JSON list for dropdown options
+    is_required = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def get_options(self):
+        import json
+        if not self.options_json:
+            return []
+        try:
+            return json.loads(self.options_json)
+        except Exception:
+            return []
 
 
 class User(db.Model):
@@ -36,6 +64,8 @@ class User(db.Model):
     
     lobby_id = db.Column(db.Integer, db.ForeignKey('lobbies.id'), nullable=True)
     cli_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Nominated CLI for running staff
+    operational_jurisdiction = db.Column(db.String(255))
+    custom_fields_json = db.Column(db.Text, nullable=True) # Dynamic key-value store
     
     is_active = db.Column(db.Boolean, default=True)
     password_must_change = db.Column(db.Boolean, default=True) # True until user changes from '12345'
@@ -47,6 +77,21 @@ class User(db.Model):
     footplate_inspections = db.relationship('FootplateInspection', backref='inspector_cli', foreign_keys='FootplateInspection.cli_id', lazy='dynamic')
     crew_inspections = db.relationship('FootplateInspection', backref='inspected_crew', foreign_keys='FootplateInspection.crew_id', lazy='dynamic')
     training_records = db.relationship('TrainingRecord', backref='crew_member', foreign_keys='TrainingRecord.crew_id', lazy='dynamic')
+
+    def get_custom_fields(self):
+        import json
+        if not self.custom_fields_json:
+            return {}
+        try:
+            return json.loads(self.custom_fields_json)
+        except Exception:
+            return {}
+
+    def set_custom_field(self, key, value):
+        import json
+        data = self.get_custom_fields()
+        data[key] = value
+        self.custom_fields_json = json.dumps(data)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -70,26 +115,33 @@ class User(db.Model):
     def is_admin(self):
         return self.role == 'admin'
 
+    def is_tlc(self):
+        return self.role == 'control' and ('TLC' in (self.sub_role or '').upper() or self.username.upper() == 'TLC')
+
+    def is_pcnl(self):
+        return self.role == 'control' and ('PCNL' in (self.sub_role or '').upper() or self.username.upper() == 'PCNL')
+
     def is_control(self):
-        return self.role == 'control' or self.sub_role in ['CNL', 'Control', 'Power Controller', 'TLC', 'Chief Power Controller', 'PCNL']
+        return self.role == 'control' or self.is_tlc() or self.is_pcnl() or (self.sub_role or '').upper() in ['CNL', 'CONTROL', 'POWER CONTROLLER', 'TLC', 'PCNL', 'CHIEF POWER CONTROLLER']
+
+    def can_access_tools(self):
+        """Important tools access: Admin has full access, TLC and PCNL have operational tool access."""
+        return self.is_admin() or self.is_control()
 
     @property
     def power_level(self):
         """
         Hierarchy of Power:
         5: Admin (Highest - System Administration & System Edit)
-        4: Officer (Sr. DEE(OP) > DEE(OP) > AEE(OP) / AME(P))
-        3: CNL (Control / Power Controller / TLC)
-        2: CLI (Chief Loco Inspector & CCC Supervisor)
-        1: Crew (Running Staff - LPM, LPP, LPG, LPS, ALP)
+        4: Officer (Sr. DEE(OP) > AEE(OP) / AME(P)) & Control (TLC / PCNL - equal operational viewing parity + tools)
+        2: CLI (Chief Loco Inspector Supervisor)
+        1: Crew (Running Staff - LPM, LPP, MMAN, LPG, LPS-I, LPS-II, SALP, ALP)
         0: Public / Guest
         """
         if self.is_admin():
             return 5
-        elif self.is_officer():
+        elif self.is_officer() or self.is_control():
             return 4
-        elif self.is_control():
-            return 3
         elif self.is_supervisor():
             return 2
         elif self.is_crew():
@@ -101,11 +153,15 @@ class User(db.Model):
         if self.is_admin():
             return "System Administrator (Level 5)"
         elif self.is_officer():
-            return f"{self.officer_level_title} (Level 4)"
+            return f"{self.sub_role or 'Officer'} (Level 4 - Officer)"
+        elif self.is_tlc():
+            return "Traction Loco Control - TLC (Level 4 - Operational Control)"
+        elif self.is_pcnl():
+            return "Power Control - PCNL (Level 4 - Operational Control)"
         elif self.is_control():
-            return "Control / CNL (Level 3)"
+            return "Operational Control - TLC/PCNL (Level 4)"
         elif self.is_supervisor():
-            return f"Supervisor / {self.sub_role or 'CLI'} (Level 2)"
+            return f"Chief Loco Inspector / {self.sub_role or 'CLI'} (Level 2)"
         elif self.is_crew():
             return f"Running Staff / {self.sub_role or 'Crew'} (Level 1)"
         return "Public User"
@@ -355,9 +411,13 @@ class CrewCounsellingRecord(db.Model):
     baby_below_6_months = db.Column(db.String(20))
     accident_prone = db.Column(db.String(20))
     remarks = db.Column(db.Text)
+    officer_remarks = db.Column(db.Text)
+    officer_remarked_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    officer_remarked_at = db.Column(db.DateTime, nullable=True)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     crew_user = db.relationship('User', foreign_keys=[crew_user_id], backref='counselling_record')
+    officer_reviewer = db.relationship('User', foreign_keys=[officer_remarked_by_id])
 
 
 class ELearningRule(db.Model):
@@ -420,3 +480,76 @@ class PhotoGallery(db.Model):
     image_filename = db.Column(db.String(255), nullable=False)
     caption = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class CLIMovement(db.Model):
+    """
+    Daily CLI Movement & Operational Supervision Records.
+    Subject to 3-month (90-day) data retention policy.
+    Master crew records, counselling, training, and medical are permanent.
+    """
+    __tablename__ = 'cli_movements'
+
+    id = db.Column(db.Integer, primary_key=True)
+    cli_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    activity_date = db.Column(db.Date, nullable=False, default=date.today)
+    
+    # Activity Classification
+    # 'Footplate Inspection', 'CVVRS Inspection', 'SPM Analysis', 'Crew Counselling',
+    # 'Loco Failure Attendance', 'Crew Problem Attendance', 'Yard Inspection', 
+    # 'Station Inspection', 'Safety Seminar / Drive', 'Other Supervisory Duties'
+    activity_type = db.Column(db.String(100), nullable=False) 
+
+    lobby_id = db.Column(db.Integer, db.ForeignKey('lobbies.id'), nullable=True)
+    location = db.Column(db.String(150))
+    section_from = db.Column(db.String(50))
+    section_to = db.Column(db.String(50))
+    train_no = db.Column(db.String(50))
+    loco_no = db.Column(db.String(50))
+    footplate_km = db.Column(db.Float, default=0.0)
+    departure_time = db.Column(db.String(20))
+    arrival_time = db.Column(db.String(20))
+
+    # Crew Attended / Inspected
+    crew_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    crew_name_manual = db.Column(db.String(150))
+    crew_id_str = db.Column(db.String(50)) # CMS ID / PF No
+    crew_category = db.Column(db.String(50)) # LPM, LPP, LPG, etc.
+
+    # Supervision Findings & Corrective Action
+    grading = db.Column(db.String(10), default='A') # A, B, C, D
+    observations_irregularities = db.Column(db.Text)
+    corrective_action = db.Column(db.Text) # on-spot counselling, defect booked, action taken
+    remarks = db.Column(db.Text)
+
+    # Officer / Control Review & Remarks (Officers cannot edit CLI data, but can add remarks)
+    officer_remarks = db.Column(db.Text)
+    officer_remarked_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    officer_remarked_at = db.Column(db.DateTime, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    cli = db.relationship('User', foreign_keys=[cli_id], backref=db.backref('cli_movements', lazy='dynamic'))
+    crew = db.relationship('User', foreign_keys=[crew_id])
+    lobby = db.relationship('Lobby', foreign_keys=[lobby_id])
+    officer_reviewer = db.relationship('User', foreign_keys=[officer_remarked_by_id])
+
+    @classmethod
+    def clean_old_movements(cls, days=90):
+        """
+        Enforce 3-Month Data Retention Policy:
+        Purges daily CLI movement records older than `days` (default 90).
+        Strictly touches ONLY `cli_movements` table.
+        """
+        cutoff = date.today() - timedelta(days=days)
+        deleted = cls.query.filter(cls.activity_date < cutoff).delete()
+        db.session.commit()
+        return deleted
+
+    @property
+    def is_within_retention(self):
+        cutoff = date.today() - timedelta(days=90)
+        return self.activity_date >= cutoff
+

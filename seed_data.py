@@ -3,7 +3,7 @@ from app import create_app
 from database import db
 from models import (
     Lobby, User, Notice, CounsellingTopic, TrainingRecord, 
-    OfficerSay, ELearningRule, PhotoGallery
+    OfficerSay, ELearningRule, PhotoGallery, CrewCounsellingRecord
 )
 
 app = create_app()
@@ -14,41 +14,42 @@ def seed():
         db.create_all()
         print("Database tables verified.")
 
-        # 1. Seed Lobbies
+        # 1. Seed Lobbies (9 Main Lobbies + 3 Sister Lobbies)
         lobby_data = [
-            ("HWH", "Howrah Lobby", "033-2660-1234", "Sri Prasanta Panja (CCC/HWH)", "Headquarters Main Electric & EMU Running Lobby"),
-            ("BWN", "Barddhaman Lobby", "0342-2621-234", "Sri Brajesh Kumar Sinha (CCC/BWN)", "Main Line & Chord Junction Lobby"),
-            ("RPH", "Rampurhat Lobby", "03461-255-321", "Sri Badal Mondal (CCC/RPH)", "Loop Line Operation & Freight Lobby"),
-            ("PKR", "Pakur Lobby", "06435-222-111", "Sri D. K. Sharma (CCC/PKR)", "Stone Loading & Heavy Freight Operation Lobby"),
-            ("AZ", "Azimganj Lobby", "03483-253-400", "Sri Amalendu Malakar (CCC/AZ)", "Murshidabad Section Branch & Main Operation"),
-            ("KWAE", "Katwa Lobby", "03453-255-120", "Sri Bidhan Chandra Ray (CCC/KWAE)", "Bandel-Katwa-Azimganj Section Lobby"),
-            ("NHT", "Nalhati Lobby", "03465-257-890", "No Supervisor", "Nalhati-Azimganj Link Crew Base (No Resident Supervisor - Under RPH/AZ)"),
-            ("BHP", "Bolpur Shantiniketan Lobby", "03463-252-440", "Sri T. K. Sen (CCC/BHP)", "Passenger & Express Crew Booking Depot"),
-            ("TAK", "Tarakeswar Lobby", "03212-276-300", "Sri Mintu Pal (CCC/TAK)", "Suburban EMU High Frequency Line Lobby"),
-            ("KURV", "KURVA Lobby", "0342-2700-111", "No Supervisor", "KURVA Freight Marshalling & Yard Operation (No Resident Supervisor)"),
-            ("DKAE", "Dankuni Lobby", "033-2659-9988", "Mr. Pijush Ghosh (CCC/DKAE)", "Freight Complex & Coaching Yard Base"),
-            ("SNT", "Sainthia Lobby", "03462-222-100", "No Supervisor", "Sainthia Junction Loop & Freight Operational Base (No Resident Supervisor - Under RPH)")
+            ("RPH", "Rampurhat Lobby", "03461-255-321", "Sri Badal Mondal (CCC/RPH)", False, "Loop Line Operation & Freight Lobby"),
+            ("BWN", "Barddhaman Lobby", "0342-2621-234", "Sri Brajesh Kumar Sinha (CCC/BWN)", False, "Main Line & Chord Junction Lobby"),
+            ("HWH", "Howrah Lobby", "033-2660-1234", "Sri Prasanta Panja (CCC/HWH)", False, "Headquarters Main Electric & EMU Running Lobby"),
+            ("DKAE", "Dankuni Lobby", "033-2659-9988", "Mr. Pijush Ghosh (CCC/DKAE)", False, "Freight Complex & Coaching Yard Base"),
+            ("BHP", "Bolpur Shantiniketan Lobby", "03463-252-440", "Sri T. K. Sen (CCC/BHP)", False, "Passenger & Express Crew Booking Depot"),
+            ("TAK", "Tarakeswar Lobby", "03212-276-300", "Sri Mintu Pal (CCC/TAK)", False, "Suburban EMU High Frequency Line Lobby"),
+            ("AZ", "Azimganj Lobby", "03483-253-400", "Sri Amalendu Malakar (CCC/AZ)", False, "Murshidabad Section Branch & Main Operation"),
+            ("KWAE", "Katwa Lobby", "03453-255-120", "Sri Bidhan Chandra Ray (CCC/KWAE)", False, "Bandel-Katwa-Azimganj Section Lobby"),
+            ("PKR", "Pakur Lobby", "06435-222-111", "Sri D. K. Sharma (CCC/PKR)", False, "Stone Loading & Heavy Freight Operation Lobby"),
+            # Sister Lobbies
+            ("NHT", "Nalhati Sister Lobby", "03465-257-890", "Operated under RPH/AZ", True, "Nalhati-Azimganj Link Crew Base (Sister Lobby to RPH/AZ)"),
+            ("SNT", "Sainthia Sister Lobby", "03462-222-100", "Operated under RPH", True, "Sainthia Junction Loop & Freight Operational Base (Sister Lobby to RPH)"),
+            ("KURV", "KURVA Sister Lobby", "0342-2700-111", "Operated under BWN", True, "KURVA Freight Marshalling & Yard Operation (Sister Lobby to BWN)")
         ]
 
         lobbies = {}
-        for code, name, phone, ccc, desc in lobby_data:
+        for code, name, phone, ccc, is_sister, desc in lobby_data:
             lobby = Lobby.query.filter_by(code=code).first()
             if not lobby:
-                lobby = Lobby(code=code, name=name, phone=phone, ccc_name=ccc, description=desc)
+                lobby = Lobby(code=code, name=name, phone=phone, ccc_name=ccc, is_sister_lobby=is_sister, description=desc)
                 db.session.add(lobby)
                 db.session.flush()
             else:
                 lobby.name = name
                 lobby.ccc_name = ccc
                 lobby.phone = phone
+                lobby.is_sister_lobby = is_sister
                 lobby.description = desc
             lobbies[code] = lobby
 
         db.session.commit()
-        print("12 Lobbies created/verified.")
+        print("12 Lobbies (9 Main + 3 Sister) verified.")
 
-        # 2. Seed Admin & Officers
-        # Admin
+        # 2. Seed Admin, Officers, and Control (TLC / PCNL)
         admin = User.query.filter_by(username='admin').first()
         if not admin:
             admin = User(
@@ -64,28 +65,34 @@ def seed():
             admin.set_password('12345')
             db.session.add(admin)
 
-        # Default Control / CNL User
-        cnl_user = User.query.filter_by(username='CNL_HWH').first()
-        if not cnl_user:
-            cnl_user = User(
-                username='CNL_HWH',
-                role='control',
-                sub_role='CNL',
-                full_name='Chief Power Controller / CNL HWH',
-                mobile='9002022399',
-                email='cnl.hwh@er.railnet.gov.in',
-                pf_number='CNL001',
-                password_must_change=True
-            )
-            cnl_user.set_password('12345')
-            db.session.add(cnl_user)
+        # Control Users: TLC (Electric Traction Control) & PCNL (Diesel Power Control)
+        controls_info = [
+            ('TLC', 'TLC', 'Traction Loco Control / TLC HWH (Electric)', '9002022390', 'tlc.hwh@er.railnet.gov.in', 'TLC001'),
+            ('PCNL', 'PCNL', 'Power Control / PCNL HWH (Diesel)', '9002022391', 'pcnl.hwh@er.railnet.gov.in', 'PCNL001'),
+            ('CNL_HWH', 'CNL', 'Chief Power Controller / CNL HWH', '9002022399', 'cnl.hwh@er.railnet.gov.in', 'CNL001')
+        ]
+        for uname, srole, fname, mob, email, pf in controls_info:
+            ctrl_user = User.query.filter_by(username=uname).first()
+            if not ctrl_user:
+                ctrl_user = User(
+                    username=uname,
+                    role='control',
+                    sub_role=srole,
+                    full_name=fname,
+                    mobile=mob,
+                    email=email,
+                    pf_number=pf,
+                    password_must_change=True
+                )
+                ctrl_user.set_password('12345')
+                db.session.add(ctrl_user)
 
-        # Officers (Hierarchy: Sr. DEE(OP) > DEE(OP) > AEE(OP) / AME(P))
+        # Officers (Master Requirement Draft: SR_DEEOP_HWH, AEEOP_HWH, AMEP_HWH)
         officers_info = [
-            ('Sr. DEE(OP)/HWH', 'Sr. DEE(OP)', 'Mr. Arun Kumar Rana (IRSEE)', 'Senior Divisional Electrical Engineer (OP)', '9002022300', 'srdee.op.hwh@er.railnet.gov.in', 'OFF001'),
-            ('DEE(OP)/HWH', 'DEE(OP)', 'Mr. S. K. Pathak', 'Divisional Electrical Engineer (OP)', '9002022305', 'dee.op.hwh@er.railnet.gov.in', 'OFF004'),
-            ('AEE(OP)/HWH', 'AEE(OP)', 'Mr. Sourav Nandi', 'Assistant Electrical Engineer (OP)', '9002022301', 'aee.op.hwh@er.railnet.gov.in', 'OFF002'),
-            ('AME(P)/HWH', 'AME(P)', 'Mr. Viwshambhar Prasad', 'Assistant Mechanical Engineer (Power)', '9002022302', 'ame.p.hwh@er.railnet.gov.in', 'OFF003')
+            ('SR_DEEOP_HWH', 'Sr. DEE(OP)', 'Sri Arun Kumar Rana, IRSEE', 'Senior Divisional Electrical Engineer (OP)', '9002022300', 'srdee.op.hwh@er.railnet.gov.in', 'OFF001'),
+            ('AEEOP_HWH', 'AEE(OP)', 'Sri Sourav Nandi', 'Assistant Electrical Engineer (OP)', '9002022301', 'aee.op.hwh@er.railnet.gov.in', 'OFF002'),
+            ('AMEP_HWH', 'AME(P)', 'Sri Vishwambhar Prasad', 'Assistant Mechanical Engineer (Power)', '9002022302', 'ame.p.hwh@er.railnet.gov.in', 'OFF003'),
+            ('DEE(OP)/HWH', 'DEE(OP)', 'Sri S. K. Pathak', 'Divisional Electrical Engineer (OP)', '9002022305', 'dee.op.hwh@er.railnet.gov.in', 'OFF004')
         ]
 
         officer_objs = {}
@@ -107,13 +114,15 @@ def seed():
                 db.session.flush()
             officer_objs[uname] = officer
 
-        # 3. Seed Supervisors (CLIs and CCCs)
+        # 3. Seed Supervisors (CLIs) & Lobby In-Charges
         supervisors_info = [
             ('CLI_HWH_01', 'CLI', 'Sri Pradip Roy', 'Chief Loco Inspector (HWH)', '9830111101', 'HWH', 'CLI1001'),
             ('CLI_BWN_01', 'CLI', 'Sri Ramen Majumdar', 'Chief Loco Inspector (BWN)', '9830111102', 'BWN', 'CLI1002'),
             ('CLI_RPH_01', 'CLI', 'Sri Joydeb Karmakar', 'Chief Loco Inspector (RPH)', '9830111103', 'RPH', 'CLI1003'),
             ('CLI_DKAE_01', 'CLI', 'Sri Sanjay Bhattacharjee', 'Chief Loco Inspector (DKAE)', '9830111104', 'DKAE', 'CLI1004'),
-            ('CCC_HWH', 'CCC', 'Sri S. K. Roy', 'Chief Crew Controller (HWH)', '9830111105', 'HWH', 'CCC2001')
+            ('CLI_AZ_01', 'CLI', 'Sri Amalendu Malakar', 'Chief Loco Inspector (AZ)', '9830111105', 'AZ', 'CLI1005'),
+            ('CLI_PKR_01', 'CLI', 'Sri D. K. Sharma', 'Chief Loco Inspector (PKR)', '9830111106', 'PKR', 'CLI1006'),
+            ('CCC_HWH', 'CCC', 'Sri S. K. Roy', 'Chief Crew Controller (HWH)', '9830111107', 'HWH', 'CCC2001')
         ]
 
         cli_objs = {}
@@ -135,6 +144,27 @@ def seed():
                 db.session.add(cli)
                 db.session.flush()
             cli_objs[uname] = cli
+
+        # Map In-Charge CLIs to Lobbies
+        lobby_cli_map = {
+            'HWH': 'CLI_HWH_01',
+            'TAK': 'CLI_HWH_01',
+            'BWN': 'CLI_BWN_01',
+            'KURV': 'CLI_BWN_01',
+            'RPH': 'CLI_RPH_01',
+            'NHT': 'CLI_RPH_01',
+            'SNT': 'CLI_RPH_01',
+            'DKAE': 'CLI_DKAE_01',
+            'AZ': 'CLI_AZ_01',
+            'KWAE': 'CLI_AZ_01',
+            'PKR': 'CLI_PKR_01',
+            'BHP': 'CLI_PKR_01'
+        }
+        for lcode, cli_uname in lobby_cli_map.items():
+            if lcode in lobbies and cli_uname in cli_objs:
+                lobbies[lcode].in_charge_cli_id = cli_objs[cli_uname].id
+        db.session.commit()
+        print("Lobby in-charge CLIs mapped successfully.")
 
         # 4. Seed Sample Running Staff (Crews) mapped to CLIs
         crews_info = [
@@ -236,6 +266,9 @@ def seed():
             if not OfficerSay.query.filter_by(designation=osay['designation']).first():
                 db.session.add(OfficerSay(**osay))
 
+        sr_dee = officer_objs.get('SR_DEEOP_HWH') or officer_objs.get('Sr. DEE(OP)/HWH')
+        aee = officer_objs.get('AEEOP_HWH') or officer_objs.get('AEE(OP)/HWH')
+
         # 6. Seed Sr. DEE(OP) Instructions & Notices
         sample_notices = [
             {
@@ -243,7 +276,7 @@ def seed():
                 'category': 'Sr. DEE(OP) Instruction',
                 'content': 'All Running Staff (LPM/LPP/MMAN/LPG/ALP) must ensure strict observance of maximum speed restrictions in foggy and tempestuous weather. Speed in Absolute Block must never exceed 60 KMPH. Sound intermittent W/L whistle and ensure proper use of Fog Pass / Detonators as laid down.',
                 'target_audience': 'ALL',
-                'published_by_id': officer_objs['Sr. DEE(OP)/HWH'].id,
+                'published_by_id': sr_dee.id,
                 'is_urgent': True
             },
             {
@@ -251,7 +284,7 @@ def seed():
                 'category': 'Sr. DEE(OP) Instruction',
                 'content': 'Under Chapter XVII Rule 17.07, all Loco Pilots and Motormen are instructed to coast through Neutral Sections only after opening the Circuit Breaker (DJ) and dropping pantograph where notified. Do not attempt re-closing inside dead zones.',
                 'target_audience': 'ALL',
-                'published_by_id': officer_objs['Sr. DEE(OP)/HWH'].id,
+                'published_by_id': sr_dee.id,
                 'is_urgent': True
             },
             {
@@ -259,7 +292,7 @@ def seed():
                 'category': 'Notice',
                 'content': 'All running staff must exchange All-Right signals without fail on both sides while passing stations and cabins. In EMU trains, bell signal code 00 must be acknowledged properly.',
                 'target_audience': 'CREW_ONLY',
-                'published_by_id': officer_objs['AEE(OP)/HWH'].id,
+                'published_by_id': aee.id,
                 'is_urgent': False
             },
             {
@@ -267,7 +300,7 @@ def seed():
                 'category': 'Seniority',
                 'content': 'The provisional seniority list of Loco Pilot Mail/Express (Level-6) of Electric OP, Howrah Division is published for information of all concerned. Representations if any may be submitted via nominated CLI within 21 days.',
                 'target_audience': 'ALL',
-                'published_by_id': officer_objs['Sr. DEE(OP)/HWH'].id,
+                'published_by_id': sr_dee.id,
                 'is_urgent': False
             },
             {
@@ -275,7 +308,7 @@ def seed():
                 'category': 'Result',
                 'content': 'Following candidates from Howrah, Barddhaman, and Rampurhat lobbies have successfully qualified the promotional training and suitability test for the post of Loco Pilot Passenger (LPP).',
                 'target_audience': 'ALL',
-                'published_by_id': officer_objs['Sr. DEE(OP)/HWH'].id,
+                'published_by_id': sr_dee.id,
                 'is_urgent': False
             }
         ]
@@ -296,7 +329,7 @@ def seed():
 4. Continuous mutual calling of signal aspects between LP and ALP (SR 3.83).''',
                 'case_analysis': 'On 26.05.2026 at BZLE-TYAE section, uncoupling of load occurred. The investigation revealed improper locking check during engine changeover. Loco Pilots are cautioned that coupling integrity must be physically checked in presence of Guard before signing joint BPC memo.',
                 'rule_reference': 'GR 4.32, SR 4.31, SR 6.08 (Train Parting)',
-                'issued_by_id': officer_objs['Sr. DEE(OP)/HWH'].id
+                'issued_by_id': sr_dee.id
             },
             {
                 'topic_date': date.today() - timedelta(days=1),
@@ -306,7 +339,7 @@ def seed():
 3. In Automatic territory, after stopping at Red with 'A' marker (1 min day / 2 min night), proceed at speed not exceeding 15 KMPH under strict caution (GR 9.02).''',
                 'case_analysis': 'Analysis of near-miss incidents shows lack of communication between ALP and LP in suburban EMU/MEMU sections. ALP must remain in front cab while approaching any station or junction signal.',
                 'rule_reference': 'GR 3.79, GR 3.80, GR 9.02, SR 3.83',
-                'issued_by_id': officer_objs['AEE(OP)/HWH'].id
+                'issued_by_id': aee.id
             }
         ]
 

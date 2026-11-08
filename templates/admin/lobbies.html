@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Lobby Management Console | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Console</a></li>
+                    <li class="breadcrumb-item active">Lobby Management</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-house-chimney text-primary me-2"></i> DIVISIONAL LOBBY MANAGEMENT
+            </h2>
+            <p class="text-muted mb-0">Centralized Lobby Structure, CLI In-Charge Assignments &amp; Operational Jurisdiction &bull; HWH Division</p>
+        </div>
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+            <span class="badge bg-primary px-3 py-2 fs-6 shadow-sm">
+                <i class="fa-solid fa-layer-group me-1"></i> 9 Main Lobbies
+            </span>
+            <span class="badge bg-secondary px-3 py-2 fs-6 shadow-sm">
+                <i class="fa-solid fa-code-fork me-1"></i> 3 Sister Lobbies
+            </span>
+        </div>
+    </div>
+
+    <!-- Alert Note -->
+    <div class="alert alert-info border-start border-4 border-info shadow-sm mb-4">
+        <i class="fa-solid fa-circle-info me-2"></i>
+        <strong>Lobby Administration:</strong> Each lobby has an assigned in-charge (Chief Loco Inspector). You can reassign the CLI In-Charge, update CCC contact details, or modify operational jurisdiction below.
+    </div>
+
+    <!-- Lobbies Table -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-list-check me-2 text-primary"></i>Lobbies &amp; Supervision Overview</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Code</th>
+                            <th>Lobby Name</th>
+                            <th>Type</th>
+                            <th>Assigned CLI In-Charge</th>
+                            <th>CCC / Depot Contact</th>
+                            <th>Operational Jurisdiction</th>
+                            <th class="text-center">Crews</th>
+                            <th class="text-center">CLIs</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in lobby_stats %}
+                        {% set l = s.lobby %}
+                        <tr>
+                            <td class="ps-4 fw-bold">
+                                <span class="badge {% if l.is_sister_lobby %}bg-secondary{% else %}bg-primary{% endif %} fs-6 px-3 py-2">
+                                    {{ l.code }}
+                                </span>
+                            </td>
+                            <td>
+                                <strong class="text-dark">{{ l.name }}</strong>
+                                {% if l.description %}
+                                    <br><small class="text-muted">{{ l.description }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if l.is_sister_lobby %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary">
+                                        <i class="fa-solid fa-code-branch me-1"></i> Sister Lobby
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary">
+                                        <i class="fa-solid fa-star me-1"></i> Main Lobby
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if s.in_charge %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle-sm bg-primary text-white me-2">
+                                            <i class="fa-solid fa-user-tie"></i>
+                                        </div>
+                                        <div>
+                                            <strong class="text-dark">{{ s.in_charge.full_name }}</strong>
+                                            <br><small class="text-muted">{{ s.in_charge.username }} {% if s.in_charge.mobile %}&bull; {{ s.in_charge.mobile }}{% endif %}</small>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="text-danger small fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>Not Assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="fw-semibold text-dark">{{ l.ccc_name or 'N/A' }}</small>
+                                {% if l.phone %}
+                                    <br><small class="text-muted"><i class="fa-solid fa-phone me-1"></i>{{ l.phone }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ l.operational_jurisdiction or 'Standard Division Lines' }}</small>
+                            </td>
+                            <td class="text-center fw-bold text-primary">{{ s.crew_count }}</td>
+                            <td class="text-center fw-bold text-info">{{ s.cli_count }}</td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-outline-primary btn-sm fw-bold" 
+                                        data-bs-toggle="modal" data-bs-target="#editLobbyModal{{ l.id }}">
+                                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Lobby Modal -->
+                        <div class="modal fade" id="editLobbyModal{{ l.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ url_for('admin.update_lobby', lobby_id=l.id) }}">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title fw-bold">
+                                                <i class="fa-solid fa-house-chimney me-2"></i> Edit Lobby: {{ l.code }} ({{ l.name }})
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">CLI In-Charge</label>
+                                                <select name="in_charge_cli_id" class="form-select">
+                                                    <option value="">-- Select CLI In-Charge --</option>
+                                                    {% for cli in clis %}
+                                                        <option value="{{ cli.id }}" {% if l.in_charge_cli_id == cli.id %}selected{% endif %}>
+                                                            {{ cli.full_name }} ({{ cli.username }}) - Lobby: {{ cli.lobby.code if cli.lobby else 'None' }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-muted">Supervisor responsible for crews operating in this lobby.</small>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Chief Crew Controller (CCC) / In-Charge Name</label>
+                                                <input type="text" name="ccc_name" class="form-control" value="{{ l.ccc_name or '' }}" placeholder="e.g. Sri Prasanta Panja (CCC/HWH)">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Lobby Landline / CUG Phone</label>
+                                                <input type="text" name="phone" class="form-control" value="{{ l.phone or '' }}" placeholder="e.g. 033-2660-1234">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Operational Jurisdiction / Routes</label>
+                                                <input type="text" name="operational_jurisdiction" class="form-control" value="{{ l.operational_jurisdiction or '' }}" placeholder="e.g. HWH-BWN Main, Chord & Suburban Sections">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Description / Operating Notes</label>
+                                                <textarea name="description" class="form-control" rows="2">{{ l.description or '' }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary fw-bold">
+                                                <i class="fa-solid fa-save me-1"></i> Save Changes
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

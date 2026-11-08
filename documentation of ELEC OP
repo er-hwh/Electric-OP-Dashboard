@@ -1,0 +1,86 @@
+We already have a website we want to modify into it basic structure and redefine ovearll structure - 
+
+I will give you some information & as per that you will make a draft for me for modification - 
+
+This web application is developed for Electric Operation Department, HWH division ,Eastern Railway
+
+(For you kind information there were two separate department earlier for DSL Loco & Electric Loco Opeation but now as usage for DSL Loco reduced DSL Loco operation also comes under Electric Operation Department)
+
+Organizational Structure - 
+
+Sr. DEE(OP)/HWH 
+		|
+AEE(OP)/HWH & AME(P)/HWH
+		|
+Chief Loco Inspector (CLI)
+		|
+Crews (LPM/LPP/MMAN/LPG/LPS-I/LPS-II/SALP/ALP)
+
+And Running Whole operation under Sr. DEE(OP)/HWH two controlls are there -
+
+TLC - Traction Loco Control(ELEC) & PCNL - Power Control (DSL)
+
+
+How division works - there are a few lobbies under HWH division like - RPH, BWN, HWH, DKAE, BHP, TAK, AZ, KWAE, PKR & sister lobby like NHT, SNT, KURV are there.
+
+Each lobby has on in-charge which is among CLI's already mentioned at my site.
+
+
+What we need from these website ?
+
+1. This web application will be one stop destinations for All Crews, CLI, Officers & CNL's one stop solution.
+2. A few information will be shown as global which anyone can see - Like Learning Materials & can take quiz/performanec analysis, photo galary of division's achievement and showcase information about various loco and all. Notices and results should be there important rules should be there more importantly Trouble shooting guide will be there and other relavent things should be here.
+
+
+After reviewing structure there other than global information there should be lots things which will contolled by different layers of login like - Admin -> Officers -> CLI/supervisors -> Crew Login
+
+CLI's are mainly councils crews and do footplate with them and check CVVRS & check SPM also attended anywhere if problem occurrs in loco or crew accross division.
+
+Officer want to see the CLI movement daily - as there will lots of data we will keep only three months data only. per day we will set a cron to revise all those.
+
+CLI will feed lots of data regarding crew personal information, current problem , work performance  - whatever cli will oversee already mentioned in my app earlier and based on that officer will crew report from various filtered report.
+
+Other than that officer can issue notice of information which may be to all crew or all cli or both they have to acknowledge those and officer will monthly coucelling and special counceilling which each have to read and acknowledge.
+
+so at CLI login all crew assigned to him will be shown - editable and in crew dashboard his personal information, official information regarding duty and all coucelling will be there.
+
+Admin will upload at excel which contains all information of crews and which crew under which cli's are there and other than that a few's field may be there admin can add those field if office ask for.
+
+officers can see all crew or all cli's or cli wise crew any aspect. they can not edit anthing but they can put remarks on cli's performance and crew performance.
+
+-> Daily safety councelling option should be removed coucelling will avaialable at login.
+
+
+revsied login scenario - for Admin - username - admin & password - 12345 later will be changed
+for cli - username - cli_id password - 12345 (later will change)
+Crew - Mobile no (other than 91 only take 10 nos) and 12345 later will change
+Officer - user - SR_DEEOP_HWH/AEEOP_HWH/AMEP_HWH  password - 12345 later will change
+controll - user TLC/PCNL password - 12345 later will change
+
+controll will have same power as Sr. DEE OP but they will enjoy important tools access more than officres.
+
+I Will provide you one excel for CLI id and name mobile and other crew information.
+
+One more thing - Crew are under goes three types of training mainly - DSL Traction training & Electric Traction traning and Railway transporatation Rules Training (GR & SR training).
+
+At initail joining all have to undergo through these training and after that every three years referefers training will be there until next promotion. when anyone promoted from SALP to LPS or LPG he had to undergo promotional training then after that from LPG to LPP or MMAN.
+
+And PME or medical checkup is done in every three years and after 45 every years.
+
+so we need keep training details due and done dates we will import excel in every week to update this other than that admin can manually change done and due date.
+
+
+and officer should due of trainings - as reports - there are lots of rules regarding training i will explore that later.
+
+
+First make a draft for revise those then 
+
+Control Dashboard option to be renamed with Important tools which should only accessible by admin only - so option should not be viewed there it should comes under admin login.
+
+also overall je excel jeta ami upload korchi after upload show in table view and admin can make change in any field.
+
+Also we will develop a option in which lots of google sheet links will be linked in hwh division or for each lobbies they maintain various sheet which will same under one roof. admin can add google sheet links there.
+
+under imporantant tools add two more options - Bulk analysis and PF entry speed checking tools.
+
+also make a directory for unusual incident tracker which generally we kept in google dirves we will link those to there which will available to officers and CNL's and admin can do all.

@@ -199,6 +199,19 @@ def unusual_report():
 def memo_generator():
     return render_template('control/tools/memo_generator.html')
 
+# 10. Bulk Signal & Speed Analysis (TLC / PCNL Authorized Operational Tool)
+@control_bp.route('/tools/bulk-analysis')
+@control_login_required
+def bulk_analysis():
+    return render_template('admin/tools/bulk_analysis.html')
+
+# 11. PF Entry Speed Checking Tool (TLC / PCNL Authorized Operational Tool)
+@control_bp.route('/tools/pf-entry-speed')
+@control_login_required
+def pf_entry_speed():
+    return render_template('admin/tools/pf_entry_speed.html')
+
+
 
 # ---------------------------------------------------------------------------
 # COMPATIBILITY & DIRECT TOOLS ROUTE ALIASES
@@ -1159,3 +1172,26 @@ def api_crew_search_filters():
         "lobbies": sorted_lobbies,
         "designations": sorted(list(designations_set))
     })
+
+
+# ---------------------------------------------------------------------------
+# OPERATIONAL MONITORING ALIASES (TLC / PCNL SHARED MONITORING AUTHORITY)
+# ---------------------------------------------------------------------------
+
+@control_bp.route('/cli-movements')
+@control_login_required
+def cli_movements():
+    return redirect(url_for('officer.cli_movements', **request.args))
+
+
+@control_bp.route('/cli-performance')
+@control_login_required
+def cli_performance():
+    return redirect(url_for('officer.cli_performance'))
+
+
+@control_bp.route('/crew-performance')
+@control_login_required
+def crew_performance():
+    return redirect(url_for('officer.crew_performance', **request.args))
+

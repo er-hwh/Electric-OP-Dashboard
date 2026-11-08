@@ -26,7 +26,7 @@
                         </div>
                         <div class="top-header-title">
                             <h4>ELECTRIC OPERATION DEPARTMENT</h4>
-                            <small><i class="fa-solid fa-code-branch me-1"></i> HOWRAH DIVISION &bull; EASTERN RAILWAY</small>
+                            <small><i class="fa-solid fa-code-branch me-1"></i> HOWRAH DIVISION &bull; EASTERN RAILWAY &bull; ELECTRIC &amp; DIESEL TRACTION</small>
                         </div>
                     </div>
                 </div>
@@ -71,18 +71,31 @@
                                 <li><hr class="dropdown-divider"></li>
                                 {% if current_user.is_admin() %}
                                     <li><a class="dropdown-item fw-bold text-danger" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>Admin Console (System Edit)</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('officer.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Officer Dashboard</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Control Dashboard</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>Supervisor Console</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.crew_master') }}"><i class="fa-solid fa-users-gear me-2 text-primary"></i>Crew Master Database</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.important_tools') }}"><i class="fa-solid fa-screwdriver-wrench me-2 text-warning"></i>Important Tools (Admin Only)</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Movement Monitor</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.retention_policy') }}"><i class="fa-solid fa-clock-rotate-left me-2 text-danger"></i>Retention Policy (90 Days)</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Officer Dashboard (View)</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>TLC / PCNL Control Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>Supervisor Console (View)</a></li>
                                 {% elif current_user.is_officer() %}
-                                    <li><a class="dropdown-item fw-bold text-primary" href="{{ url_for('officer.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Officer Dashboard ({{ current_user.officer_level_title }})</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Control Live View</a></li>
+                                    <li><a class="dropdown-item fw-bold text-primary" href="{{ url_for('officer.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Officer Dashboard ({{ current_user.sub_role }})</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Daily Movement Monitor</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.cli_performance') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i>CLI Performance Monitoring</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.crew_performance') }}"><i class="fa-solid fa-users me-2 text-info"></i>Crew Performance Monitoring</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Operational Control View</a></li>
                                 {% elif current_user.is_control() %}
-                                    <li><a class="dropdown-item fw-bold text-warning" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Control Dashboard (CNL)</a></li>
+                                    <li><a class="dropdown-item fw-bold text-warning" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>{% if current_user.is_tlc() %}TLC (Electric){% elif current_user.is_pcnl() %}PCNL (Diesel){% else %}TLC / PCNL Control{% endif %} Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Daily Movement Monitor</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.cli_performance') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i>CLI Performance Monitoring</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.crew_performance') }}"><i class="fa-solid fa-users me-2 text-info"></i>Crew Performance Monitoring</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.bulk_analysis') }}"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Bulk Analysis Tool</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.pf_entry_speed') }}"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>PF Entry Speed Checking</a></li>
                                 {% elif current_user.is_supervisor() %}
-                                    <li><a class="dropdown-item fw-bold text-info" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>Supervisor Dashboard (CLI)</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.counselling') }}"><i class="fa-solid fa-clipboard-user me-2 text-danger"></i>Safety Register (24 Fields)</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.export_roster_excel') }}"><i class="fa-solid fa-file-excel me-2 text-success"></i>Export 24-Col Excel</a></li>
+                                    <li><a class="dropdown-item fw-bold text-info" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>CLI Supervisor Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>Daily Activity & Movement Log</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.counselling') }}"><i class="fa-solid fa-clipboard-user me-2 text-danger"></i>Crew Supervision Register</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.export_roster_excel') }}"><i class="fa-solid fa-file-excel me-2 text-success"></i>Export Crew Master Excel</a></li>
                                 {% elif current_user.is_crew() %}
                                     <li><a class="dropdown-item fw-bold text-success" href="{{ url_for('crew.dashboard') }}"><i class="fa-solid fa-id-card me-2 text-success"></i>Crew Running Desk</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('crew.export_my_pdf') }}" target="_blank"><i class="fa-solid fa-file-pdf me-2 text-danger"></i>My Bio-Data PDF</a></li>
@@ -118,37 +131,39 @@
                             <i class="fa-solid fa-house-chimney me-1 text-primary"></i> Home
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'public.about' %}active{% endif %}" href="{{ url_for('public.about') }}">
-                            <i class="fa-solid fa-sitemap me-1 text-primary"></i> About Us
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'public.instructions' %}active{% endif %}" href="{{ url_for('public.instructions') }}">
-                            <i class="fa-solid fa-bullhorn me-1 text-danger"></i> Sr. DEE(OP) Instructions
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'public.notices' %}active{% endif %}" href="{{ url_for('public.notices') }}">
-                            <i class="fa-solid fa-bell me-1 text-warning"></i> Notices & Results
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'public.counselling' %}active{% endif %}" href="{{ url_for('public.counselling') }}">
-                            <i class="fa-solid fa-user-shield me-1 text-success"></i> Daily Safety Counselling
-                        </a>
-                    </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'elearning' in request.endpoint %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-book-open-reader me-1 text-info"></i> E-Learning & GR/SR
+                        <a class="nav-link dropdown-toggle {% if 'learning' in request.endpoint %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-book-open-reader me-1 text-info"></i> Learning Materials
                         </a>
                         <ul class="dropdown-menu shadow">
-                            <li><a class="dropdown-item" href="{{ url_for('elearning.index') }}"><i class="fa-solid fa-scale-balanced me-2 text-primary"></i>GR & SR Rules Explorer</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('elearning.troubleshooting') }}"><i class="fa-solid fa-wrench me-2 text-danger"></i>Loco Troubleshooting Guide</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('elearning.forms_manual') }}"><i class="fa-solid fa-file-lines me-2 text-success"></i>Standard Operating Forms (T/409 etc.)</a></li>
+                            <li><a class="dropdown-item fw-bold" href="{{ url_for('public.learning_materials') }}"><i class="fa-solid fa-layer-group me-2 text-primary"></i>All Learning Materials</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('elearning.quiz') }}"><i class="fa-solid fa-award me-2 text-warning"></i>Crew Safety Quiz & Self-Assessment</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('public.learning_materials') }}#electric"><i class="fa-solid fa-bolt me-2 text-warning"></i>Electric Traction</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('public.learning_materials') }}#diesel"><i class="fa-solid fa-gas-pump me-2 text-danger"></i>Diesel Traction</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('elearning.index') }}"><i class="fa-solid fa-scale-balanced me-2 text-success"></i>Railway Transportation Rules (GR & SR)</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('public.instructions') }}"><i class="fa-solid fa-shield-halved me-2 text-info"></i>Safety Instructions & Circulars</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('elearning.forms_manual') }}"><i class="fa-solid fa-file-lines me-2 text-secondary"></i>Technical Manuals & Operating Forms</a></li>
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'elearning.quiz' %}active{% endif %}" href="{{ url_for('elearning.quiz') }}">
+                            <i class="fa-solid fa-award me-1 text-warning"></i> Quiz & Assessment
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'public.loco_info' %}active{% endif %}" href="{{ url_for('public.loco_info') }}">
+                            <i class="fa-solid fa-train me-1 text-primary"></i> Loco Information
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'elearning.index' %}active{% endif %}" href="{{ url_for('elearning.index') }}">
+                            <i class="fa-solid fa-scale-balanced me-1 text-success"></i> Rules & Regulations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'elearning.troubleshooting' %}active{% endif %}" href="{{ url_for('elearning.troubleshooting') }}">
+                            <i class="fa-solid fa-wrench me-1 text-danger"></i> Trouble Shooting Guide
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'public.gallery' %}active{% endif %}" href="{{ url_for('public.gallery') }}">
@@ -156,13 +171,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">
-                            <i class="fa-solid fa-phone-volume me-1 text-primary"></i> Contact Us
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint and 'control.' in request.endpoint %}active{% endif %}" href="{{ url_for('control.index') }}">
-                            <i class="fa-solid fa-headset me-1 text-warning"></i> Control Dashboard
+                        <a class="nav-link {% if request.endpoint == 'public.notices' %}active{% endif %}" href="{{ url_for('public.notices') }}">
+                            <i class="fa-solid fa-bell me-1 text-warning"></i> Notices & Results
                         </a>
                     </li>
                 </ul>

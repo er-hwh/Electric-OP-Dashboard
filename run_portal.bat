@@ -9,8 +9,11 @@ echo.
 echo Starting Application Server on http://localhost:5000 ...
 echo.
 
+set "PYTHONPATH=C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\backup\hwh-division-operation-dashboard\hwh-division-operation-dashboard\venv\Lib\site-packages;%PYTHONPATH%"
 set "PY_EXE=python"
-if exist "C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\backup\hwh-division-operation-dashboard\hwh-division-operation-dashboard\venv\Scripts\python.exe" (
+if exist "C:\Users\Indian Railway\AppData\Local\Programs\Python\Python315\python.exe" (
+    set "PY_EXE=C:\Users\Indian Railway\AppData\Local\Programs\Python\Python315\python.exe"
+) else if exist "C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\backup\hwh-division-operation-dashboard\hwh-division-operation-dashboard\venv\Scripts\python.exe" (
     set "PY_EXE=C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\backup\hwh-division-operation-dashboard\hwh-division-operation-dashboard\venv\Scripts\python.exe"
 )
 

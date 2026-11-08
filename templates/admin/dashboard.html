@@ -15,15 +15,21 @@
             <h3 class="fw-bold text-dark mb-0">Electric Operation Central Console</h3>
             <small class="text-muted">Master Management, User Accounts, Excel Bulk Uploads, Database Configuration & Lobby Oversight</small>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('admin.gallery') }}" class="btn btn-warning fw-bold text-dark shadow-sm">
-                <i class="fa-solid fa-camera me-1"></i> Photo Gallery
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('admin.important_tools') }}" class="btn btn-danger fw-bold shadow-sm">
+                <i class="fa-solid fa-screwdriver-wrench me-1"></i> Important Tools
             </a>
-            <a href="{{ url_for('admin.upload_excel') }}" class="btn btn-success fw-bold shadow-sm">
-                <i class="fa-solid fa-file-excel me-1"></i> Bulk Upload Excel
+            <a href="{{ url_for('admin.crew_master') }}" class="btn btn-primary fw-bold shadow-sm">
+                <i class="fa-solid fa-users me-1"></i> Crew Master
             </a>
-            <a href="{{ url_for('admin.users') }}" class="btn btn-primary fw-bold shadow-sm">
-                <i class="fa-solid fa-users me-1"></i> Manage Users
+            <a href="{{ url_for('admin.crew_upload_page') }}" class="btn btn-success fw-bold shadow-sm">
+                <i class="fa-solid fa-file-excel me-1"></i> Upload Master Excel
+            </a>
+            <a href="{{ url_for('admin.lobbies') }}" class="btn btn-secondary fw-bold shadow-sm">
+                <i class="fa-solid fa-house-chimney me-1"></i> Lobbies
+            </a>
+            <a href="{{ url_for('admin.custom_fields') }}" class="btn btn-outline-dark fw-bold shadow-sm">
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Custom Fields
             </a>
         </div>
     </div>

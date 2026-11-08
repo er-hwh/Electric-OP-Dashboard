@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}CLI Performance Monitoring | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- PAGE TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success px-3 py-2 fs-6">
+                    <i class="fa-solid fa-chart-line me-1"></i> Supervisory Analytics
+                </span>
+                <span class="badge bg-secondary">
+                    Active Window (Cutoff: {{ retention_cutoff.strftime('%d-%b-%Y') }})
+                </span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Chief Loco Inspector (CLI) Performance Monitoring</h3>
+            <p class="text-muted small mb-0">
+                Performance matrix of all CLIs in Howrah Division: inspections, footplate KM, SPM, CVVRS and crew supervisory compliance.
+            </p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('officer.cli_movements') }}" class="btn btn-outline-primary fw-bold">
+                <i class="fa-solid fa-person-walking me-1"></i> CLI Movement Feed
+            </a>
+            <a href="{{ url_for('officer.crew_performance') }}" class="btn btn-outline-info fw-bold">
+                <i class="fa-solid fa-users me-1"></i> Crew Performance
+            </a>
+            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-shield-halved me-1"></i> Officer Desk
+            </a>
+        </div>
+    </div>
+
+    <!-- CLI PERFORMANCE TABLE -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-user-tie me-2 text-primary"></i>Divisional CLI Performance Summary ({{ cli_perf_list|length }} CLIs)
+            </h5>
+            <small class="text-muted"><i class="fa-solid fa-clock-rotate-left me-1"></i>Metrics compiled over last 90 days of operational records</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="table-light text-uppercase small">
+                    <tr>
+                        <th class="ps-3">CLI Supervisor</th>
+                        <th>Lobby HQ</th>
+                        <th class="text-center">Assigned Crews</th>
+                        <th class="text-center">Total Activities</th>
+                        <th class="text-center">Footplates</th>
+                        <th class="text-center">Footplate KM</th>
+                        <th class="text-center">SPM Checks</th>
+                        <th class="text-center">CVVRS Checks</th>
+                        <th class="text-center">Counsellings</th>
+                        <th class="text-center">Failures Attended</th>
+                        <th class="text-center">Active Days</th>
+                        <th>Last Active</th>
+                        <th class="text-end pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in cli_perf_list %}
+                        <tr>
+                            <td class="ps-3">
+                                <div class="fw-bold text-dark">{{ p.cli.full_name }}</div>
+                                <small class="text-muted">CLI ID: {{ p.cli.username }} | PF: {{ p.cli.pf_number or '--' }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ p.cli.lobby.code if p.cli.lobby else 'HWH' }}
+                                </span>
+                            </td>
+                            <td class="text-center fw-bold">
+                                <span class="badge bg-primary rounded-pill px-3">{{ p.assigned_crews }}</span>
+                            </td>
+                            <td class="text-center fw-bold text-dark fs-6">
+                                {{ p.total_movements }}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info text-dark">{{ p.fp_count }}</span>
+                            </td>
+                            <td class="text-center fw-bold text-success">
+                                {{ p.fp_km }}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-warning text-dark">{{ p.spm_count }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary text-white">{{ p.cvvrs_count }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-success text-white">{{ p.counsel_count }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if p.failures_count > 0 %}
+                                    <span class="badge bg-danger text-white">{{ p.failures_count }}</span>
+                                {% else %}
+                                    <span class="text-muted">0</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <strong>{{ p.active_days }}</strong> / 90d
+                            </td>
+                            <td>
+                                {% if p.last_active %}
+                                    <span class="text-dark">{{ p.last_active.strftime('%d-%b-%Y') }}</span>
+                                {% else %}
+                                    <span class="text-muted small">No recent logs</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <a href="{{ url_for('officer.cli_movements', cli_id=p.cli.id) }}" class="btn btn-outline-primary btn-sm fw-bold">
+                                    <i class="fa-solid fa-list-check me-1"></i> View Logs
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="13" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-user-xmark fa-3x mb-3 text-secondary opacity-50"></i>
+                                <h6>No Chief Loco Inspectors Found</h6>
+                                <p class="small mb-0">No active CLI accounts registered in the database.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Important Tools (Admin Only) | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Console</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Important Tools</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-screwdriver-wrench text-danger me-2"></i> IMPORTANT TOOLS
+            </h2>
+            <small class="text-muted">Divisional High-Priority Operational & Analysis Suites &bull; Electric Operation Department, HWH Division</small>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">
+                <i class="fa-solid fa-lock me-1"></i> ADMIN RESTRICTED ACCESS
+            </span>
+        </div>
+    </div>
+
+    <!-- Alert Note -->
+    <div class="alert alert-warning border-start border-4 border-warning shadow-sm mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fa-solid fa-shield-halved fa-2x text-warning me-3"></i>
+            <div>
+                <strong>Confidential Operational Tools:</strong> This module is exclusively accessible to the System Administrator and authorized TLC / PCNL Control desks for speed, safety, and operational monitoring.
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools Grid -->
+    <div class="row g-4">
+        <!-- 1. Bulk Analysis Tool -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-primary">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0">Bulk Analysis Tool</h5>
+                            <span class="badge bg-primary-subtle text-primary border">Signal & Speed</span>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted flex-grow-1">
+                        Comprehensive bulk signal analysis, Vande Bharat and express speed adherence, multi-loco signal data parsing, and automated safety violation reporting.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('admin.bulk_analysis_tool') }}" class="btn btn-primary w-100 fw-bold">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Launch Bulk Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. PF Entry Speed Checking Tool -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-danger">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-danger text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-gauge-high"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0">PF Entry Speed Checking</h5>
+                            <span class="badge bg-danger-subtle text-danger border">Turnout & Platform</span>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted flex-grow-1">
+                        Monitor and analyze train entry speeds into station platforms, loop lines, turnouts, and crossovers against PSR/TSR and maximum permissible speeds.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('admin.pf_entry_speed_tool') }}" class="btn btn-danger w-100 fw-bold">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Launch Speed Analyzer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Duty Hours & Running Analysis -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-success">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-user-clock"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0">Duty Hours & Continuous Work</h5>
+                            <span class="badge bg-success-subtle text-success border">HOER Compliance</span>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted flex-grow-1">
+                        High-precision analysis of 9-hour and 12-hour crew running duty hours, excessive working analysis, and lobby-wise night duty compliance.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('control.duty_hours_count') }}" class="btn btn-success w-100 fw-bold">
+                            <i class="fa-solid fa-clock-rotate-left me-1"></i> View Duty Hours Suite
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Long Hours Memo Generator -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-warning">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-warning text-dark rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-file-invoice"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0">Long Hours Memo Generator</h5>
+                            <span class="badge bg-warning-subtle text-dark border">Memo Issuance</span>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted flex-grow-1">
+                        Generate official divisional memos for running crews exceeding standard working hours under Rule 1515, with automated notification trails.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('control.memo_generator') }}" class="btn btn-warning w-100 fw-bold text-dark">
+                            <i class="fa-solid fa-file-signature me-1"></i> Open Memo Generator
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Crew Availability Management -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-info">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-users-viewfinder"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0">Crew Availability & Roster</h5>
+                            <span class="badge bg-info-subtle text-info border">Live Position</span>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted flex-grow-1">
+                        Live crew availability across all 12 lobbies (9 Main + 3 Sister lobbies) for freight, passenger, mail, and suburban EMU train operations.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('control.availability_management') }}" class="btn btn-info text-white w-100 fw-bold">
+                            <i class="fa-solid fa-users-gear me-1"></i> Availability Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Gradient & Traction Calculator -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-secondary">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-secondary text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-mountain"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title fw-bold mb-0">Gradient & Load Calculator</h5>
+                            <span class="badge bg-secondary-subtle text-secondary border">Section Profile</span>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted flex-grow-1">
+                        Divisional gradient maps, critical sections (HWH-BWN chord, loop line, Pakur stone load profiles), and banking engine requirements.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('control.gradient') }}" class="btn btn-secondary w-100 fw-bold">
+                            <i class="fa-solid fa-calculator me-1"></i> Section Gradient Tool
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

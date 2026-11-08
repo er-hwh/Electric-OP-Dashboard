@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Edit CLI Daily Activity | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Mode</span>
+                        <h4 class="fw-bold text-dark mb-0">Modify CLI Daily Activity Entry</h4>
+                        <small class="text-muted">Activity ID: #{{ movement.id }} | Originally logged on {{ movement.activity_date.strftime('%d-%b-%Y') }}</small>
+                    </div>
+                    <a href="{{ url_for('supervisor.movements') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back to Activity Log
+                    </a>
+                </div>
+
+                <div class="card-body p-4">
+                    {% if movement.officer_remarks %}
+                        <div class="alert alert-primary border-primary border-opacity-25 mb-4 shadow-sm">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fa-solid fa-signature fa-lg text-primary"></i>
+                                <strong class="text-primary">Officer Review / Remark Recorded:</strong>
+                                <span class="badge bg-primary">{{ movement.officer_reviewer.full_name if movement.officer_reviewer else 'Officer' }}</span>
+                                {% if movement.officer_remarked_at %}
+                                    <small class="text-muted ms-auto">{{ movement.officer_remarked_at.strftime('%d-%b-%Y %H:%M') }}</small>
+                                {% endif %}
+                            </div>
+                            <p class="mb-0 text-dark ps-4">{{ movement.officer_remarks }}</p>
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('supervisor.edit_movement', movement_id=movement.id) }}">
+                        <!-- ACTIVITY CLASSIFICATION -->
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-layer-group me-1"></i> 1. Activity Classification & Time
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-dark">Activity Type <span class="text-danger">*</span></label>
+                                <select name="activity_type" id="activityTypeSelect" class="form-select" required onchange="toggleActivityFields()">
+                                    <option value="Footplate Inspection" {% if movement.activity_type == 'Footplate Inspection' %}selected{% endif %}>Footplate Inspection</option>
+                                    <option value="SPM Analysis" {% if movement.activity_type == 'SPM Analysis' %}selected{% endif %}>SPM Analysis & Speed Check</option>
+                                    <option value="CVVRS Inspection" {% if movement.activity_type == 'CVVRS Inspection' %}selected{% endif %}>CVVRS Video Inspection</option>
+                                    <option value="Locomotive Failure Attendance" {% if movement.activity_type == 'Locomotive Failure Attendance' %}selected{% endif %}>Locomotive Failure Attendance</option>
+                                    <option value="Crew Problem Attendance" {% if movement.activity_type == 'Crew Problem Attendance' %}selected{% endif %}>Crew Problem Attendance</option>
+                                    <option value="Crew Counselling" {% if movement.activity_type == 'Crew Counselling' %}selected{% endif %}>Crew Safety Counselling</option>
+                                    <option value="Yard Inspection" {% if movement.activity_type == 'Yard Inspection' %}selected{% endif %}>Yard Inspection</option>
+                                    <option value="Station Inspection" {% if movement.activity_type == 'Station Inspection' %}selected{% endif %}>Station Inspection</option>
+                                    <option value="Safety Seminar / Drive" {% if movement.activity_type == 'Safety Seminar / Drive' %}selected{% endif %}>Safety Seminar / Drive</option>
+                                    <option value="Other Supervisory Duties" {% if movement.activity_type == 'Other Supervisory Duties' %}selected{% endif %}>Other Supervisory Duties</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-dark">Date of Activity <span class="text-danger">*</span></label>
+                                <input type="date" name="activity_date" class="form-control" value="{{ movement.activity_date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-dark">Lobby / Jurisdiction</label>
+                                <select name="lobby_id" class="form-select">
+                                    {% for l in lobbies %}
+                                        <option value="{{ l.id }}" {% if movement.lobby_id == l.id %}selected{% endif %}>
+                                            {{ l.code }} - {{ l.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- SECTION & TRAIN / LOCO DETAILS -->
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-train-subway me-1"></i> 2. Movement & Locomotive Particulars
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Train Number</label>
+                                <input type="text" name="train_no" class="form-control" value="{{ movement.train_no or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Loco / EMU Rake No.</label>
+                                <input type="text" name="loco_no" class="form-control" value="{{ movement.loco_no or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">From Section / Station</label>
+                                <input type="text" name="section_from" class="form-control" value="{{ movement.section_from or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">To Section / Station</label>
+                                <input type="text" name="section_to" class="form-control" value="{{ movement.section_to or '' }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Departure Time</label>
+                                <input type="time" name="departure_time" class="form-control" value="{{ movement.departure_time or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Arrival Time</label>
+                                <input type="time" name="arrival_time" class="form-control" value="{{ movement.arrival_time or '' }}">
+                            </div>
+                            <div class="col-md-3" id="footplateKmField">
+                                <label class="form-label fw-bold small text-dark">Footplate KM (KMA - ACS 64)</label>
+                                <input type="number" step="0.1" name="footplate_km" class="form-control" value="{{ movement.footplate_km or 0.0 }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Location / Yard / Shed Note</label>
+                                <input type="text" name="location" class="form-control" value="{{ movement.location or '' }}">
+                            </div>
+                        </div>
+
+                        <!-- RUNNING STAFF / CREW DETAILS -->
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-users me-1"></i> 3. Running Staff / Crew Attended
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-dark">Select Crew Member (from Squad)</label>
+                                <select name="crew_id" id="crewSelect" class="form-select" onchange="autoFillCrew()">
+                                    <option value="">-- Manual / Not in Squad --</option>
+                                    {% for c in my_crews %}
+                                        <option value="{{ c.id }}" data-name="{{ c.full_name }}" data-pf="{{ c.pf_number or c.username }}" data-role="{{ c.sub_role }}" {% if movement.crew_id == c.id %}selected{% endif %}>
+                                            {{ c.full_name }} ({{ c.sub_role }}) - PF: {{ c.pf_number or c.username }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Crew Name (Manual / Other)</label>
+                                <input type="text" name="crew_name_manual" id="crewNameManual" class="form-control" value="{{ movement.crew_name_manual or '' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-dark">Crew ID / PF No.</label>
+                                <input type="text" name="crew_id_str" id="crewIdStr" class="form-control" value="{{ movement.crew_id_str or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Crew Category</label>
+                                <select name="crew_category" id="crewCategory" class="form-select">
+                                    <option value="">-- Select Category --</option>
+                                    {% for cat in ['LPM', 'LPP', 'MMAN', 'LPG', 'LPS-I', 'LPS-II', 'SALP', 'ALP'] %}
+                                        <option value="{{ cat }}" {% if movement.crew_category == cat %}selected{% endif %}>{{ cat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark">Grading Awarded</label>
+                                <select name="grading" class="form-select">
+                                    <option value="A" {% if movement.grading == 'A' %}selected{% endif %}>Grade A (High Vigilance / Exemplary)</option>
+                                    <option value="B" {% if movement.grading == 'B' %}selected{% endif %}>Grade B (Satisfactory & Safe)</option>
+                                    <option value="C" {% if movement.grading == 'C' %}selected{% endif %}>Grade C (Needs Improvement / Monitored)</option>
+                                    <option value="D" {% if movement.grading == 'D' %}selected{% endif %}>Grade D (Unsatisfactory / Critical)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- SUPERVISORY OBSERVATIONS & ACTIONS -->
+                        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-clipboard-check me-1"></i> 4. Operational Observations & Corrective Actions
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark">
+                                    Observations, Irregularities & Deficiencies Noted:
+                                </label>
+                                <textarea name="observations_irregularities" class="form-control" rows="3">{{ movement.observations_irregularities or '' }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark">
+                                    Corrective Action Imparted / Action Taken:
+                                </label>
+                                <textarea name="corrective_action" class="form-control" rows="2">{{ movement.corrective_action or '' }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark">General Remarks / Notes:</label>
+                                <textarea name="remarks" class="form-control" rows="2">{{ movement.remarks or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                            <a href="{{ url_for('supervisor.movements') }}" class="btn btn-outline-secondary px-4">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function autoFillCrew() {
+    const sel = document.getElementById('crewSelect');
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.value) {
+        document.getElementById('crewNameManual').value = opt.getAttribute('data-name') || '';
+        document.getElementById('crewIdStr').value = opt.getAttribute('data-pf') || '';
+        const role = opt.getAttribute('data-role') || '';
+        const catSelect = document.getElementById('crewCategory');
+        for (let i = 0; i < catSelect.options.length; i++) {
+            if (catSelect.options[i].value === role) {
+                catSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+}
+
+function toggleActivityFields() {
+    const type = document.getElementById('activityTypeSelect').value;
+    const kmField = document.getElementById('footplateKmField');
+    if (type === 'Footplate Inspection') {
+        kmField.style.display = 'block';
+    } else {
+        kmField.style.display = 'none';
+    }
+}
+document.addEventListener('DOMContentLoaded', toggleActivityFields);
+</script>
+{% endblock %}

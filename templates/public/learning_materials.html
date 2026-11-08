@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Departmental Learning Materials | Electric & Diesel Traction | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="fa-solid fa-book-open-reader text-primary me-2"></i> DEPARTMENTAL LEARNING MATERIALS
+            </h2>
+            <p class="text-muted mb-0">Unified Knowledge Base for Electric Traction, Diesel Traction, GR &amp; SR Rules, and Safety Instructions &bull; Howrah Division</p>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <a href="{{ url_for('elearning.quiz') }}" class="btn btn-warning btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-award me-1"></i> Take Safety Quiz &amp; Assessment
+            </a>
+        </div>
+    </div>
+
+    <!-- Category Cards -->
+    <div class="row g-4 mb-4">
+        <!-- 1. Electric Traction -->
+        <div class="col-lg-4 col-md-6" id="electric">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-warning">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-warning text-dark rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Electric Traction</h5>
+                            <small class="text-muted">3-Phase AC &amp; Conventional WAP/WAG</small>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-warning me-2"></i>WAP-7 / WAG-9 Three Phase Locos</span>
+                            <span class="badge bg-light text-dark border">Handbook</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-warning me-2"></i>Hotel Load Converter (HOG) Operation</span>
+                            <span class="badge bg-light text-dark border">Guide</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-warning me-2"></i>Neutral Section Coasting &amp; Handling</span>
+                            <span class="badge bg-light text-dark border">Safety</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-warning me-2"></i>VCB / DJ Circuit &amp; Panto Isolation</span>
+                            <span class="badge bg-light text-dark border">Troubleshoot</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('elearning.troubleshooting') }}" class="btn btn-outline-warning text-dark w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-screwdriver-wrench me-1"></i> Electric Loco Troubleshooting
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Diesel Traction -->
+        <div class="col-lg-4 col-md-6" id="diesel">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-danger">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-danger text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-gas-pump"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Diesel Traction</h5>
+                            <small class="text-muted">EMD HHP (WDP4/WDG4) &amp; ALCO</small>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-danger me-2"></i>EMD 710 Engine Handling &amp; APU</span>
+                            <span class="badge bg-light text-dark border">Manual</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-danger me-2"></i>Dynamic Braking Adherence in Gradients</span>
+                            <span class="badge bg-light text-dark border">Safety</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-danger me-2"></i>Fuel Conservation &amp; Idling Protocols</span>
+                            <span class="badge bg-light text-dark border">Economy</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-danger me-2"></i>Governor, Turbocharger &amp; Water Cooling</span>
+                            <span class="badge bg-light text-dark border">Tech</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('public.loco_info') }}" class="btn btn-outline-danger w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-train me-1"></i> Diesel Loco Specifications
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Railway Transportation Rules (GR & SR) -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-success">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Transportation Rules (GR &amp; SR)</h5>
+                            <small class="text-muted">Eastern Railway General &amp; Subsidiary Rules</small>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-success me-2"></i>Chapter III: Signals &amp; Stop Board Rules</span>
+                            <span class="badge bg-light text-dark border">GR 3.01-3.85</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-success me-2"></i>Chapter IV: Working of Trains &amp; Speed Limits</span>
+                            <span class="badge bg-light text-dark border">GR 4.01-4.65</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-success me-2"></i>Chapter IX: Automatic Block Signalling</span>
+                            <span class="badge bg-light text-dark border">GR 9.01-9.16</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-success me-2"></i>Chapter VI: Accidents &amp; Unusual Occurrences</span>
+                            <span class="badge bg-light text-dark border">GR 6.01-6.11</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('elearning.index') }}" class="btn btn-outline-success w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-book-open me-1"></i> Interactive GR &amp; SR Explorer
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Safety Instructions & Circulars -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Safety Instructions</h5>
+                            <small class="text-muted">Headquarters &amp; Divisional Directives</small>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-primary me-2"></i>Joint Safety Circulars &amp; Directives</span>
+                            <span class="badge bg-light text-dark border">Circulars</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-primary me-2"></i>Foggy Weather / Winter Precautions</span>
+                            <span class="badge bg-light text-dark border">Seasonal</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-primary me-2"></i>Caution Order Compliance (T/409)</span>
+                            <span class="badge bg-light text-dark border">TSR/PSR</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-primary me-2"></i>SPAD Avoidance Golden Rules</span>
+                            <span class="badge bg-light text-dark border">Priority</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('public.instructions') }}" class="btn btn-outline-primary w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-bullhorn me-1"></i> View Sr. DEE(OP) Instructions
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Technical Manuals & Operating Forms -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-info">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Technical Manuals &amp; Forms</h5>
+                            <small class="text-muted">Standard Operating Forms &amp; Authority</small>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-info me-2"></i>T/409 (Caution Order Form)</span>
+                            <span class="badge bg-light text-dark border">Form</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-info me-2"></i>T/A 912 (Passing Signal at On in Auto)</span>
+                            <span class="badge bg-light text-dark border">Authority</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-info me-2"></i>T/369(3b) (Passing Fixed Stop Signal)</span>
+                            <span class="badge bg-light text-dark border">Authority</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-info me-2"></i>Brake Power Certificate (BPC) Rules</span>
+                            <span class="badge bg-light text-dark border">Mechanical</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('elearning.forms_manual') }}" class="btn btn-outline-info w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-file-contract me-1"></i> Forms Manual &amp; Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Online Assessment & Mock Tests -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-secondary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-secondary text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-clipboard-question"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Quiz &amp; Self-Assessment</h5>
+                            <small class="text-muted">Online Safety &amp; Rules Examination</small>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-secondary me-2"></i>Topic-wise Objective Questions</span>
+                            <span class="badge bg-light text-dark border">MCQ</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-secondary me-2"></i>Random Question Mock Test</span>
+                            <span class="badge bg-light text-dark border">Timed</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-secondary me-2"></i>Signal Aspects &amp; Detonator Quiz</span>
+                            <span class="badge bg-light text-dark border">Visual</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-secondary me-2"></i>Performance Analysis &amp; Explanations</span>
+                            <span class="badge bg-light text-dark border">Instant</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('elearning.quiz') }}" class="btn btn-outline-secondary w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-pen-nib me-1"></i> Start Interactive Assessment
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

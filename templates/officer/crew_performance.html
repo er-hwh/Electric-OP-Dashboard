@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Crew Performance Monitoring | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- PAGE TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-info text-dark px-3 py-2 fs-6">
+                    <i class="fa-solid fa-users me-1"></i> Running Staff Supervision
+                </span>
+                <span class="badge bg-secondary">Cadre Performance & Compliance</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Crew Performance & Compliance Monitoring</h3>
+            <p class="text-muted small mb-0">
+                Divisional monitoring of running staff grades, footplate compliance, counselling status, SPM analysis & officer remarks.
+            </p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('officer.cli_movements') }}" class="btn btn-outline-primary fw-bold">
+                <i class="fa-solid fa-person-walking me-1"></i> CLI Movement Monitor
+            </a>
+            <a href="{{ url_for('officer.cli_performance') }}" class="btn btn-outline-success fw-bold">
+                <i class="fa-solid fa-chart-line me-1"></i> CLI Performance
+            </a>
+            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-shield-halved me-1"></i> Officer Desk
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ url_for('officer.crew_performance') }}" class="row g-2 align-items-center">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Lobby</label>
+                    <select name="lobby" class="form-select form-select-sm">
+                        <option value="ALL" {% if current_lobby == 'ALL' %}selected{% endif %}>-- All Lobbies --</option>
+                        {% for l in lobbies %}
+                            <option value="{{ l.code }}" {% if current_lobby == l.code %}selected{% endif %}>{{ l.code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">CLI In-Charge</label>
+                    <select name="cli" class="form-select form-select-sm">
+                        <option value="ALL" {% if current_cli == 'ALL' %}selected{% endif %}>-- All CLIs --</option>
+                        {% for c in all_clis %}
+                            <option value="{{ c.id }}" {% if current_cli == c.id|string %}selected{% endif %}>{{ c.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Grade</label>
+                    <select name="grade" class="form-select form-select-sm">
+                        <option value="ALL" {% if current_grade == 'ALL' %}selected{% endif %}>-- All Grades --</option>
+                        <option value="A" {% if current_grade == 'A' %}selected{% endif %}>Grade A</option>
+                        <option value="B" {% if current_grade == 'B' %}selected{% endif %}>Grade B</option>
+                        <option value="C" {% if current_grade == 'C' %}selected{% endif %}>Grade C</option>
+                        <option value="D" {% if current_grade == 'D' %}selected{% endif %}>Grade D</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Cadre Category</label>
+                    <select name="category" class="form-select form-select-sm">
+                        <option value="ALL" {% if current_category == 'ALL' %}selected{% endif %}>-- All Categories --</option>
+                        {% for cat in ['LPM', 'LPP', 'MMAN', 'LPG', 'LPS-I', 'LPS-II', 'SALP', 'ALP'] %}
+                            <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">Search Keywords</label>
+                    <input type="text" name="q" class="form-control form-control-sm" placeholder="Crew Name, PF, CUG..." value="{{ current_q }}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end pt-3">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold" title="Filter"><i class="fa-solid fa-filter"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CREW CADRE TABLE -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-clipboard-user me-2 text-primary"></i>Crew Performance Cadre ({{ records|length }})
+            </h5>
+            <small class="text-muted"><i class="fa-solid fa-circle-check me-1 text-success"></i>Showing full performance and supervisory attributes</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="table-light text-uppercase small">
+                    <tr>
+                        <th class="ps-3">Crew Name</th>
+                        <th>HQ</th>
+                        <th>Category</th>
+                        <th>Grade</th>
+                        <th>Nominated CLI</th>
+                        <th>Last Footplate</th>
+                        <th>Safety Counselling</th>
+                        <th>SPM Check</th>
+                        <th>CVVRS Check</th>
+                        <th>Officer Remarks & Notes</th>
+                        <th class="text-end pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                        <tr>
+                            <td class="ps-3">
+                                <div class="fw-bold text-dark">{{ r.crew_name or '--' }}</div>
+                                <small class="text-muted">CMS: {{ r.crew_id_str or '--' }} | PF: {{ r.pf_no or '--' }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ r.crew_hq or '--' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-white">{{ r.designation or '--' }}</span>
+                            </td>
+                            <td>
+                                {% if r.grade %}
+                                    <span class="badge {% if r.grade == 'A' %}bg-success{% elif r.grade == 'B' %}bg-primary{% elif r.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %} fw-bold">
+                                        Grade {{ r.grade }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="fw-bold text-primary">{{ r.cli_name or '--' }}</small>
+                            </td>
+                            <td>
+                                <small>{{ r.last_footplate or '--' }}</small>
+                            </td>
+                            <td>
+                                <small>{{ r.safety_counselling or '--' }}</small>
+                            </td>
+                            <td>
+                                <small>{{ r.last_spm_check or '--' }}</small>
+                            </td>
+                            <td>
+                                <small>{{ r.last_cvvrs_check or '--' }}</small>
+                            </td>
+                            <td style="max-width: 250px; white-space: normal;">
+                                {% if r.officer_remarks %}
+                                    <div class="p-2 rounded bg-light border border-info border-opacity-25 small">
+                                        <div class="fw-bold text-primary mb-1">
+                                            <i class="fa-solid fa-signature me-1"></i>{{ r.officer_reviewer.full_name if r.officer_reviewer else 'Officer' }}
+                                        </div>
+                                        <div class="text-dark">{{ r.officer_remarks }}</div>
+                                        {% if r.officer_remarked_at %}
+                                            <small class="text-muted d-block mt-1">{{ r.officer_remarked_at.strftime('%d-%b %H:%M') }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">No officer observation</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <button type="button" class="btn btn-outline-info btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#crewRemarkModal{{ r.id }}">
+                                    <i class="fa-solid fa-comment-pen me-1"></i> Remark
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- CREW REMARK MODAL -->
+                        <div class="modal fade" id="crewRemarkModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ url_for('officer.crew_performance') }}">
+                                        <input type="hidden" name="record_id" value="{{ r.id }}">
+                                        <div class="modal-header bg-light">
+                                            <h5 class="modal-title fw-bold text-dark">
+                                                <i class="fa-solid fa-user-pen me-1 text-info"></i> Officer Remark on Crew
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3 p-3 bg-light rounded small">
+                                                <div><strong>Crew:</strong> {{ r.crew_name }} ({{ r.designation }})</div>
+                                                <div><strong>Lobby:</strong> {{ r.crew_hq }} | <strong>CLI:</strong> {{ r.cli_name }}</div>
+                                                <div><strong>Current Grade:</strong> {{ r.grade or 'A' }}</div>
+                                                <div class="mt-2 text-muted"><strong>Last Footplate:</strong> {{ r.last_footplate or 'N/A' }}</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold text-dark small">Officer Observation / Evaluation Remarks:</label>
+                                                <textarea name="officer_remarks" class="form-control" rows="4" placeholder="Enter officer remarks regarding crew vigilance, safety habits, or monitoring instructions..." required>{{ r.officer_remarks or '' }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-info btn-sm fw-bold text-dark">
+                                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Remark
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <tr>
+                            <td colspan="11" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-users-slash fa-3x mb-3 text-secondary opacity-50"></i>
+                                <h6>No Crew Records Found</h6>
+                                <p class="small mb-0">No running staff match the selected criteria.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

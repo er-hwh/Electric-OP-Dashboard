@@ -29,6 +29,72 @@ def role_required(*roles):
         return decorated_function
     return decorator
 
+def officer_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Officer login required.', 'warning')
+            return redirect(url_for('auth.login', next=request.url))
+        user = User.query.get(session['user_id'])
+        if not user or not (user.is_officer() or user.is_admin()):
+            flash('Access denied. Officer privileges required.', 'danger')
+            return redirect(url_for('public.index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def control_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('TLC/PCNL Control login required.', 'warning')
+            return redirect(url_for('auth.login', next=request.url))
+        user = User.query.get(session['user_id'])
+        if not user or not (user.is_control() or user.is_admin()):
+            flash('Access denied. Control privileges required.', 'danger')
+            return redirect(url_for('public.index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def operational_monitor_required(f):
+    """Allows Admin, Officers, and Control (TLC / PCNL) who share equal operational monitoring authority."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Operational authorization required.', 'warning')
+            return redirect(url_for('auth.login', next=request.url))
+        user = User.query.get(session['user_id'])
+        if not user or not (user.is_admin() or user.is_officer() or user.is_control()):
+            flash('Access denied. Operational monitoring authority required.', 'danger')
+            return redirect(url_for('public.index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def supervisor_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('CLI Supervisor login required.', 'warning')
+            return redirect(url_for('auth.login', next=request.url))
+        user = User.query.get(session['user_id'])
+        if not user or not (user.is_supervisor() or user.is_admin()):
+            flash('Access denied. CLI Supervisor privileges required.', 'danger')
+            return redirect(url_for('public.index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def crew_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Crew login required.', 'warning')
+            return redirect(url_for('auth.login', next=request.url))
+        user = User.query.get(session['user_id'])
+        if not user or not (user.is_crew() or user.is_admin()):
+            flash('Access denied. Crew portal requires running staff login.', 'danger')
+            return redirect(url_for('public.index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def admin_required(f):
     """Strict decorator: Only System Administrator can access system edit / configuration operations."""
     @wraps(f)
@@ -59,12 +125,51 @@ def login():
             flash('Please enter both username/mobile and password.', 'danger')
             return render_template('auth/login.html')
 
-        # Find user by username, mobile, or pf_number
+        # Clean 10-digit mobile number if country code 91 was entered
+        clean_mob = ''.join(c for c in identifier if c.isdigit())
+        if len(clean_mob) == 12 and clean_mob.startswith('91'):
+            clean_mob = clean_mob[2:]
+
+        # Find user by direct match, case-insensitive username, mobile, or pf_number
         user = User.query.filter(
             (User.username == identifier) | 
+            (User.username.ilike(identifier)) |
             (User.mobile == identifier) | 
+            (User.mobile == clean_mob) |
             (User.pf_number == identifier)
         ).first()
+
+        # Support Officer & Control standard aliases
+        if not user:
+            ident_clean = identifier.upper().replace(' ', '').replace('/', '_').replace('.', '').replace('(', '').replace(')', '')
+            if ident_clean in ['SR_DEEOP_HWH', 'SRDEEOPHWH', 'SRDEEOP', 'SR_DEE_OP']:
+                user = User.query.filter(
+                    (User.username == 'SR_DEEOP_HWH') | 
+                    (User.username == 'Sr. DEE(OP)/HWH') | 
+                    (User.sub_role == 'Sr. DEE(OP)')
+                ).first()
+            elif ident_clean in ['AEEOP_HWH', 'AEEOPHWH', 'AEEOP', 'AEE_OP']:
+                user = User.query.filter(
+                    (User.username == 'AEEOP_HWH') | 
+                    (User.username == 'AEE(OP)/HWH') | 
+                    (User.sub_role == 'AEE(OP)')
+                ).first()
+            elif ident_clean in ['AMEP_HWH', 'AMEPHWH', 'AMEP', 'AME_P']:
+                user = User.query.filter(
+                    (User.username == 'AMEP_HWH') | 
+                    (User.username == 'AME(P)/HWH') | 
+                    (User.sub_role == 'AME(P)')
+                ).first()
+            elif ident_clean in ['TLC', 'TLC_HWH', 'TLCHWH']:
+                user = User.query.filter(
+                    (User.username == 'TLC') | 
+                    (User.sub_role == 'TLC')
+                ).first()
+            elif ident_clean in ['PCNL', 'PCNL_HWH', 'PCNLHWH']:
+                user = User.query.filter(
+                    (User.username == 'PCNL') | 
+                    (User.sub_role == 'PCNL')
+                ).first()
 
         # Support CCC lobby alias login (e.g. CCC/KWAE, CCC_KWAE)
         if not user and identifier.upper().startswith('CCC'):
@@ -78,16 +183,20 @@ def login():
             rec = CrewCounsellingRecord.query.filter(
                 (CrewCounsellingRecord.crew_id_str.ilike(identifier)) |
                 (CrewCounsellingRecord.cug == identifier) |
+                (CrewCounsellingRecord.cug == clean_mob) |
                 (CrewCounsellingRecord.pf_no == identifier) |
                 (CrewCounsellingRecord.crew_name.ilike(identifier))
             ).first()
             if rec and password in ('12345', '1234'):
+                mob_target = rec.cug or clean_mob or identifier
+                if len(mob_target) == 12 and mob_target.startswith('91'):
+                    mob_target = mob_target[2:]
                 user = User(
-                    username=rec.crew_id_str or identifier,
+                    username=mob_target if len(mob_target) == 10 and mob_target.isdigit() else (rec.crew_id_str or identifier),
                     role='crew',
                     sub_role=rec.designation or 'ALP',
                     full_name=rec.crew_name or identifier,
-                    mobile=rec.cug or '',
+                    mobile=mob_target,
                     pf_number=rec.pf_no or '',
                     is_active=True,
                     password_must_change=True
@@ -102,10 +211,11 @@ def login():
                 rec.crew_user_id = user.id
                 db.session.commit()
 
-        # Support CLI by Name from Master Sheet (hwh-division-operation-dashboard way of work)
+        # Support CLI by Name or ID from Master Sheet
         if not user:
             rec_cli = CrewCounsellingRecord.query.filter(
-                CrewCounsellingRecord.cli_name.ilike(f"%{identifier}%")
+                (CrewCounsellingRecord.cli_name.ilike(f"%{identifier}%")) |
+                (CrewCounsellingRecord.counselling_verified_by.ilike(f"%{identifier}%"))
             ).first()
             if rec_cli and password in ('12345', '1234'):
                 cli_uname = f"CLI_{rec_cli.cli_name.replace(' ', '_')[:18]}"
@@ -193,19 +303,27 @@ def register():
             flash('Please fill in all mandatory fields (Name, Mobile, Designation, Lobby).', 'danger')
             return render_template('auth/register.html', lobbies=lobbies, clis=clis)
 
+        # Strict validation: exactly 10 digits, no country code 91
+        clean_mob = ''.join(c for c in mobile if c.isdigit())
+        if len(clean_mob) == 12 and clean_mob.startswith('91'):
+            clean_mob = clean_mob[2:]
+        if len(clean_mob) != 10:
+            flash('Mobile number must contain exactly 10 digits. Country code 91 must not be included.', 'danger')
+            return render_template('auth/register.html', lobbies=lobbies, clis=clis)
+
         # Check existing mobile or PF
-        existing = User.query.filter((User.username == mobile) | (User.mobile == mobile)).first()
+        existing = User.query.filter((User.username == clean_mob) | (User.mobile == clean_mob)).first()
         if existing:
-            flash('A user with this mobile number already exists. Please login.', 'warning')
+            flash(f'A user with mobile number {clean_mob} already exists. Please login.', 'warning')
             return redirect(url_for('auth.login'))
 
         # Create new running crew user
         new_crew = User(
-            username=mobile,
+            username=clean_mob,
             role='crew',
             sub_role=designation,
             full_name=full_name,
-            mobile=mobile,
+            mobile=clean_mob,
             pf_number=pf_number,
             hrms_id=hrms_id,
             lobby_id=int(lobby_id) if lobby_id else None,

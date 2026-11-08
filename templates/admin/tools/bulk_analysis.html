@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Signal Analysis Dashboard</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚂</text></svg>">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-bg: #1e293b;
+            --header-bg: #ffffff;
+            --accent-color: #3b82f6;
+            --text-main: #334155;
+            --text-light: #64748b;
+            --border-color: #e2e8f0;
+            --violation-bg: #fef2f2;
+            --violation-text: #dc2626;
+            --success-bg: #f0fdf4;
+            --success-text: #16a34a;
+            --table-head-bg: #f8fafc;
+            --vb-orange: #ff671f;
+            --vb-grey: #475569;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 10px;
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header & Summary --- */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--header-bg);
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* SVG Styling */
+        .vb-icon {
+            height: 45px;
+            width: auto;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.1));
+        }
+
+        h1 { margin: 0; font-size: 1.3rem; color: var(--primary-bg); font-weight: 800; letter-spacing: -0.5px; }
+
+        /* Date Display Styling */
+        .date-display {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            background: #eff6ff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid #bfdbfe;
+            display: none;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background-color: var(--primary-bg);
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .nav-btn:hover { background-color: var(--accent-color); }
+
+        .summary-bar {
+            display: flex; gap: 20px; padding: 5px 15px;
+            border: 1px solid var(--border-color); background: #f8fafc;
+            border-radius: 6px;
+            align-items: center;
+        }
+        .stat-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .stat-item span.num { font-weight: bold; font-size: 1.1rem; }
+        .stat-violation { color: var(--violation-text); }
+        .stat-success { color: var(--success-text); }
+
+        /* --- Workspace --- */
+        .workspace {
+            display: grid; grid-template-columns: 260px 1fr; gap: 10px;
+            flex-grow: 1; overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            background: var(--header-bg); border-radius: 8px; padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 15px; overflow-y: auto;
+        }
+
+        /* Branding Section - SECRET CLICKABLE AREA */
+        .branding-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 5px;
+            cursor: default; /* Secret: No hand cursor */
+            user-select: none;
+        }
+        
+        .branding-section:active { transform: none; } /* Secret: No click effect */
+
+        .railway-logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 8px;
+        }
+        .brand-secr {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #1e3a8a;
+            margin-bottom: 2px;
+        }
+        .brand-sub {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-light);
+            line-height: 1.2;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px 10px; text-align: center; background: #f8fafc; cursor: pointer;
+        }
+        .drop-zone:hover { border-color: var(--accent-color); background: #eff6ff; }
+        .drop-zone h3 { font-size: 0.9rem; margin: 0 0 5px 0; }
+        .drop-zone p { font-size: 0.75rem; color: var(--text-light); margin: 0; }
+        
+        .file-status-list { display: flex; flex-direction: column; gap: 8px; }
+        .file-badge {
+            font-size: 0.75rem; padding: 6px 10px; border-radius: 4px; background: #f1f5f9; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px;
+        }
+        .file-badge.success { background: var(--success-bg); border-color: #bbf7d0; color: var(--success-text); }
+
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        .control-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-light); }
+        .control-group input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; }
+
+        button#runBtn {
+            background: var(--accent-color); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%;
+        }
+        button#runBtn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        /* --- Table --- */
+        .main-content {
+            background: var(--header-bg); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden;
+        }
+        .table-wrapper { flex-grow: 1; overflow: auto; position: relative; }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; white-space: nowrap; }
+        
+        thead th {
+            background-color: var(--table-head-bg); color: var(--text-main); font-weight: 600; padding: 8px 12px; text-align: left;
+            position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #cbd5e1; font-size: 0.75rem; cursor: pointer; user-select: none;
+        }
+        thead th:hover { background-color: #e2e8f0; }
+
+        .th-content { display: flex; justify-content: space-between; align-items: center; }
+        .filter-icon { font-size: 10px; margin-left: 5px; color: #94a3b8; }
+        .filter-active .filter-icon { color: var(--accent-color); font-weight: bold; }
+
+        /* Excel Filter Dropdown */
+        .filter-dropdown {
+            position: absolute; background: white; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 6px; width: 200px; max-height: 300px; display: none; flex-direction: column; z-index: 100;
+        }
+        .filter-search { padding: 8px; border-bottom: 1px solid #f1f5f9; }
+        .filter-search input { width: 100%; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; }
+        .filter-items { overflow-y: auto; flex-grow: 1; padding: 5px; }
+        .filter-item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
+        .filter-item:hover { background-color: #f8fafc; }
+        .filter-actions { padding: 8px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; }
+        .filter-btn { padding: 4px 10px; font-size: 11px; border-radius: 4px; cursor: pointer; border: none; }
+        .btn-apply { background: var(--accent-color); color: white; }
+        .btn-clear { background: #f1f5f9; color: #64748b; }
+
+        tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        tbody tr:hover { background-color: #f8fafc; }
+        tr.violation-row { background-color: var(--violation-bg) !important; }
+        tr.violation-row td { color: var(--violation-text); font-weight: 500; }
+        .lp-header { background-color: #eff6ff !important; color: #1e3a8a !important; }
+
+        #loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 1000;
+            display: none; flex-direction: column; justify-content: center; align-items: center; font-size: 1.5rem; color: var(--accent-color); font-weight: bold;
+        }
+        #loading svg { height: 80px; width: auto; margin-bottom: 15px; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0,0,0,0)); } 50% { transform: scale(1.1); filter: drop-shadow(0 5px 15px rgba(255, 103, 31, 0.4)); } 100% { transform: scale(1); } }
+
+        input[type="file"] { display: none; }
+        .download-btn { margin-left: auto; background: #10b981; color: white; text-decoration: none; padding: 5px 15px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        #filter-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99; display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="filter-overlay"></div>
+
+    <div class="dashboard-header">
+        <div class="title-group">
+            <svg class="vb-icon" viewBox="0 0 160 60" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 50 L150 50 L140 58 L20 58 Z" fill="#000000" opacity="0.15"/>
+                <path d="M10 50 L140 50 C155 50 160 40 160 25 C160 10 140 5 120 5 L10 5 C5 5 0 10 0 15 L0 45 C0 50 5 50 10 50 Z" fill="#f8fafc"/>
+                <path d="M120 5 L145 10 C155 15 160 25 160 25 C160 25 155 45 140 50 L120 50 Z" fill="#e2e8f0"/>
+                <path d="M0 35 L135 35 C145 35 152 40 155 45 L158 48 C158 48 150 50 140 50 L0 50 Z" fill="#ff671f"/>
+                <path d="M10 12 L110 12 L110 25 L10 25 Z" fill="#1e293b"/> <path d="M115 12 L135 15 C145 18 150 25 150 25 L125 25 L115 12 Z" fill="#1e293b"/> <rect x="25" y="12" width="1" height="38" fill="#cbd5e1"/>
+                <rect x="95" y="12" width="1" height="38" fill="#cbd5e1"/>
+            </svg>
+            <h1>BULK SIGNAL ANALYSIS</h1>
+        </div>
+
+        <div id="analysis-date-display" class="date-display"></div>
+
+        <div class="header-controls">
+            <div id="results-area" style="display:none;">
+                <div class="summary-bar">
+                    <div class="stat-item">Total: <span class="num" id="val-total">0</span></div>
+                    <div class="stat-item stat-violation">Violations: <span class="num" id="val-violations">0</span></div>
+                    <div class="stat-item stat-success">Complied: <span class="num" id="val-complied">0</span></div>
+                    <div class="stat-item">Clear: <span class="num" id="val-clear">0</span></div>
+                    <a href="#" id="downloadLink" class="download-btn">Download CSV</a>
+                </div>
+            </div>
+            <a href="location4.html" class="nav-btn">RTIS INDIVIDUAL ANALYSIS ➜</a>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="sidebar">
+            <div class="branding-section" onclick="sendToGoogleSheet()">
+                <img src="railway logo.png" alt="Indian Railways" class="railway-logo" onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('afterbegin', '<div style=\'font-size:40px;margin-bottom:10px\'>🚂</div>')">
+                <div class="brand-secr">SECR</div>
+                <div class="brand-sub">(Designed and Developed by ELECTRIC/OP/BSP)</div>
+            </div>
+
+            <div class="drop-zone" id="main-drop-zone">
+                <h3>📂 Upload Files</h3>
+                <p>Drag RTIS, FSD, SNT, CMS(Crew) here</p>
+                <label style="cursor: pointer; color: var(--accent-color); text-decoration: underline; font-size: 0.8rem;">
+                    or browse
+                    <input type="file" id="file-input" multiple accept=".csv, .xlsx, .xls">
+                </label>
+            </div>
+            <div class="file-status-list">
+                <div id="badge-rtis" class="file-badge"><span>⬜</span> RTIS Data</div>
+                <div id="badge-snt" class="file-badge"><span>⬜</span> Signal Log (SNT)</div>
+                <div id="badge-fsd" class="file-badge"><span>⬜</span> FSD Locations</div>
+                <div id="badge-crew" class="file-badge"><span>⬜</span> Crew (CMS)</div>
+            </div>
+            <hr style="border:0; border-top:1px solid #e2e8f0; width:100%;">
+            <div class="control-group">
+                <label>Time Window (+/- Sec)</label>
+                <input type="number" id="timeWindow" value="60" min="10" max="300">
+            </div>
+            <div class="control-group">
+                <label>Speed Limit (kmph)</label>
+                <input type="number" id="speedLimit" value="63" min="10" max="130">
+            </div>
+            <div class="control-group">
+                <label>Max Error Dist (km): <span id="errorDistVal" style="color:var(--accent-color)">0.2</span></label>
+                <input type="range" id="errorDistSlider" min="0.01" max="3.0" step="0.01" value="0.2">
+            </div>
+            <button id="runBtn" disabled>RUN ANALYSIS</button>
+        </div>
+
+        <div class="main-content">
+            <div class="table-wrapper">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th onclick="toggleFilter(event, 'Device_ID')"><div class="th-content">Device ID <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'Loco_No')"><div class="th-content">Loco No. <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'Station')"><div class="th-content">Station <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'RTIS_Time')"><div class="th-content">RTIS Time <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'Signal_Time')"><div class="th-content">Signal Time <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'Speed')"><div class="th-content">Speed <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'Direction')"><div class="th-content">Dir <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'Aspect')"><div class="th-content">Aspect <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'Conclusion')"><div class="th-content">Conclusion <span class="filter-icon">▼</span></div></th>
+                            <th onclick="toggleFilter(event, 'Error_Distance_KM')"><div class="th-content">Err(km) <span class="filter-icon">▼</span></div></th>
+                            <th class="lp-header" onclick="toggleFilter(event, 'LP_ID')"><div class="th-content">LP ID <span class="filter-icon">▼</span></div></th>
+                            <th class="lp-header" onclick="toggleFilter(event, 'LP_Name')"><div class="th-content">LP Name <span class="filter-icon">▼</span></div></th>
+                            <th class="lp-header" onclick="toggleFilter(event, 'Train_No')"><div class="th-content">Train No <span class="filter-icon">▼</span></div></th>
+                            <th class="lp-header" onclick="toggleFilter(event, 'Train_Type')"><div class="th-content">Type <span class="filter-icon">▼</span></div></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="14" style="text-align:center; padding: 50px; color: #94a3b8;">Data will appear here after analysis...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="filterMenu" class="filter-dropdown">
+                <div class="filter-search"><input type="text" id="filterSearchInput" placeholder="Search..." onkeyup="filterListItems()"></div>
+                <div class="filter-items" id="filterList"></div>
+                <div class="filter-actions">
+                    <button class="filter-btn btn-apply" onclick="applyFilter()">Apply</button>
+                    <button class="filter-btn btn-clear" onclick="clearFilter()">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading">
+        <svg viewBox="0 0 160 60" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 50 L140 50 C155 50 160 40 160 25 C160 10 140 5 120 5 L10 5 C5 5 0 10 0 15 L0 45 C0 50 5 50 10 50 Z" fill="#f8fafc"/>
+            <path d="M120 5 L145 10 C155 15 160 25 160 25 C160 25 155 45 140 50 L120 50 Z" fill="#e2e8f0"/>
+            <path d="M0 35 L135 35 C145 35 152 40 155 45 L158 48 C158 48 150 50 140 50 L0 50 Z" fill="#ff671f"/>
+            <path d="M10 12 L110 12 L110 25 L10 25 Z" fill="#1e293b"/>
+            <path d="M115 12 L135 15 C145 18 150 25 150 25 L125 25 L115 12 Z" fill="#1e293b"/>
+        </svg>
+        <div>Processing Data...</div>
+    </div>
+
+<script>
+    // --- UI UPDATES ---
+    const slider = document.getElementById('errorDistSlider');
+    const sliderVal = document.getElementById('errorDistVal');
+    slider.addEventListener('input', () => { sliderVal.innerText = slider.value; });
+
+    // --- GLOBAL DATA & FILTER STATE ---
+    let rawData = { rtis: null, snt: null, fsd: null, crew: null };
+    let globalResults = []; 
+    let activeFilters = {}; 
+    let currentFilterColumn = null; 
+
+    // --- FILTER LOGIC ---
+    function toggleFilter(event, key) {
+        event.stopPropagation();
+        const menu = document.getElementById('filterMenu');
+        const overlay = document.getElementById('filter-overlay');
+        const rect = event.currentTarget.getBoundingClientRect();
+        if (currentFilterColumn === key && menu.style.display === 'flex') { closeFilterMenu(); return; }
+        currentFilterColumn = key;
+        menu.style.top = (rect.bottom + 2) + 'px'; menu.style.left = rect.left + 'px';
+        menu.style.display = 'flex'; overlay.style.display = 'block';
+        populateFilterList(key);
+    }
+    function populateFilterList(key) {
+        const listContainer = document.getElementById('filterList');
+        listContainer.innerHTML = ''; document.getElementById('filterSearchInput').value = '';
+        const uniqueValues = new Set();
+        globalResults.forEach(row => {
+            let val = row[key]; if (val === undefined || val === null) val = "(Blanks)";
+            uniqueValues.add(val.toString());
+        });
+        const sortedValues = Array.from(uniqueValues).sort();
+        const divAll = document.createElement('div');
+        divAll.className = 'filter-item';
+        divAll.innerHTML = `<input type="checkbox" id="selectAll" checked> <b>(Select All)</b>`;
+        divAll.onclick = (e) => { 
+            if(e.target.tagName !== 'INPUT') { const cb = divAll.querySelector('input'); cb.checked = !cb.checked; toggleSelectAll(cb.checked); } 
+            else { toggleSelectAll(e.target.checked); }
+        };
+        listContainer.appendChild(divAll);
+        const activeSet = activeFilters[key];
+        sortedValues.forEach(val => {
+            const div = document.createElement('div'); div.className = 'filter-item';
+            const isChecked = activeSet ? activeSet.has(val) : true;
+            div.innerHTML = `<input type="checkbox" class="val-cb" value="${val}" ${isChecked ? 'checked' : ''}> <span>${val}</span>`;
+            div.onclick = (e) => { 
+                if(e.target.tagName !== 'INPUT') { const cb = div.querySelector('input'); cb.checked = !cb.checked; checkSelectAllStatus(); } 
+                else { checkSelectAllStatus(); }
+            };
+            listContainer.appendChild(div);
+        });
+        checkSelectAllStatus();
+    }
+    function toggleSelectAll(checked) {
+        document.querySelectorAll('.val-cb').forEach(cb => { if(cb.closest('.filter-item').style.display !== 'none') cb.checked = checked; });
+    }
+    function checkSelectAllStatus() {
+        const checkboxes = Array.from(document.querySelectorAll('.val-cb')).filter(cb => cb.closest('.filter-item').style.display !== 'none');
+        document.getElementById('selectAll').checked = checkboxes.every(cb => cb.checked);
+    }
+    function filterListItems() {
+        const term = document.getElementById('filterSearchInput').value.toLowerCase();
+        document.querySelectorAll('#filterList .filter-item').forEach((item, index) => {
+            if(index === 0) return;
+            const text = item.querySelector('span').innerText.toLowerCase();
+            item.style.display = text.includes(term) ? 'flex' : 'none';
+        });
+    }
+    function applyFilter() {
+        const checkboxes = document.querySelectorAll('.val-cb');
+        const selectedValues = new Set();
+        checkboxes.forEach(cb => { if(cb.checked) selectedValues.add(cb.value); });
+        if (selectedValues.size === checkboxes.length) delete activeFilters[currentFilterColumn];
+        else activeFilters[currentFilterColumn] = selectedValues;
+        renderTable(); closeFilterMenu(); updateFilterIcons();
+    }
+    function clearFilter() { delete activeFilters[currentFilterColumn]; renderTable(); closeFilterMenu(); updateFilterIcons(); }
+    function closeFilterMenu() {
+        document.getElementById('filterMenu').style.display = 'none'; document.getElementById('filter-overlay').style.display = 'none'; currentFilterColumn = null;
+    }
+    document.getElementById('filter-overlay').addEventListener('click', closeFilterMenu);
+    function updateFilterIcons() {
+        document.querySelectorAll('thead th').forEach(th => {
+            const key = th.getAttribute('onclick').match(/'([^']+)'/)[1];
+            if (activeFilters[key]) th.classList.add('filter-active'); else th.classList.remove('filter-active');
+        });
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
+        const filteredData = globalResults.filter(row => {
+            for (const key in activeFilters) {
+                let val = row[key]; if (val === undefined || val === null) val = "(Blanks)";
+                if (!activeFilters[key].has(val.toString())) return false;
+            }
+            return true;
+        });
+        updateStats(filteredData);
+        if(filteredData.length === 0) { tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; padding: 20px;">No matching records found</td></tr>`; return; }
+        filteredData.forEach(row => {
+            const tr = document.createElement('tr');
+            if (row.Conclusion === 'VIOLATION') tr.classList.add('violation-row');
+            tr.innerHTML = `
+                <td>${row.Device_ID}</td><td>${row.Loco_No}</td><td>${row.Station}</td>
+                <td>${row.RTIS_Time}</td><td>${row.Signal_Time}</td><td>${row.Speed}</td>
+                <td>${row.Direction}</td><td>${row.Aspect}</td><td><b>${row.Conclusion}</b></td>
+                <td>${typeof row.Error_Distance_KM === 'number' ? row.Error_Distance_KM.toFixed(3) : row.Error_Distance_KM}</td>
+                <td>${row.LP_ID}</td><td>${row.LP_Name}</td><td>${row.Train_No}</td><td>${row.Train_Type}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateStats(data) {
+        let stats = { total: data.length, violations: 0, complied: 0, clear: 0 };
+        data.forEach(d => {
+            if (d.Conclusion === 'VIOLATION') stats.violations++;
+            else if (d.Conclusion === 'Complied') stats.complied++;
+            else stats.clear++;
+        });
+        document.getElementById('val-total').innerText = stats.total;
+        document.getElementById('val-violations').innerText = stats.violations;
+        document.getElementById('val-complied').innerText = stats.complied;
+        document.getElementById('val-clear').innerText = stats.clear;
+        updateCSVDownload(data);
+    }
+    function updateCSVDownload(data) {
+        if(!data.length) return;
+        const headers = Object.keys(data[0]);
+        const csv = [headers.join(',')].concat(data.map(row => Object.values(row).map(v=>`"${v}"`).join(','))).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.getElementById('downloadLink'); a.href = URL.createObjectURL(blob); a.download = 'Filtered_Analysis.csv';
+    }
+
+    // --- PARSERS ---
+    function parseCSVLine(text) {
+        const result = []; let start = 0; let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            if (text[i] === '"') inQuotes = !inQuotes;
+            else if (text[i] === ',' && !inQuotes) {
+                let val = text.substring(start, i);
+                if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+                result.push(val); start = i + 1;
+            }
+        }
+        let lastVal = text.substring(start);
+        if (lastVal.startsWith('"') && lastVal.endsWith('"')) lastVal = lastVal.slice(1, -1);
+        result.push(lastVal);
+        return result;
+    }
+    
+    function parseStandardCSV(text, type) {
+        let lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+        if (lines.length === 0) return null;
+        let headerIndex = -1;
+        for (let i = 0; i < Math.min(lines.length, 25); i++) {
+            const line = lines[i].toLowerCase();
+            if (type === 'rtis' && line.includes('loco no.') && line.includes('event time')) { headerIndex = i; break; }
+            if (type === 'snt' && ((line.includes('faultlevel') && line.includes('station')) || (line.includes('fault message') && line.includes('station')))) { headerIndex = i; break; }
+            if (type === 'fsd' && line.includes('station') && line.includes('dirn')) { headerIndex = i; break; }
+        }
+        if (headerIndex === -1) return null;
+        const headers = parseCSVLine(lines[headerIndex]);
+        const data = [];
+        for (let i = headerIndex + 1; i < lines.length; i++) {
+            const currentLine = parseCSVLine(lines[i]);
+            if (currentLine.length > 1) { 
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    let headerName = headers[j] ? headers[j].trim() : `COL_${j}`;
+                    obj[headerName] = currentLine[j] ? currentLine[j].trim() : "";
+                }
+                data.push(obj);
+            }
+        }
+        return data;
+    }
+
+    // --- REVISED CREW PARSER ---
+    function parseCrewCSV(text) {
+        let lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+        const data = [];
+        if (lines.length === 0) return data;
+
+        // Try to identify header row by specific CMS Report columns
+        let headerIndex = -1;
+        for (let i = 0; i < Math.min(20, lines.length); i++) {
+            const line = lines[i].toLowerCase();
+            if (line.includes('crew id') && line.includes('train no') && line.includes('loco no')) {
+                headerIndex = i;
+                break;
+            }
+        }
+
+        if (headerIndex === -1) {
+            return parseCrewCSVLegacy(lines);
+        }
+
+        const headers = parseCSVLine(lines[headerIndex]).map(h => h.toUpperCase().trim());
+        const colMap = {
+            crewId: headers.indexOf('CREW ID'),
+            name: headers.indexOf('NAME'),
+            desig: headers.indexOf('DESIG'),
+            duty: headers.indexOf('DUTY TYPE'),
+            dep: headers.indexOf('DEPARTURE'),
+            arr: headers.indexOf('ARRIVAL'),
+            train: headers.indexOf('TRAIN NO'),
+            loco: headers.indexOf('LOCO NO')
+        };
+
+        for (let i = headerIndex + 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const cols = parseCSVLine(line);
+            if (cols.length < headers.length - 10) continue; 
+            const loco = (colMap.loco !== -1 && cols[colMap.loco]) ? cols[colMap.loco].trim() : "";
+            if (!loco || loco === "-" || loco === "") continue;
+
+            data.push({
+                CREW_ID: (colMap.crewId !== -1) ? cols[colMap.crewId] : "",
+                NAME: (colMap.name !== -1) ? cols[colMap.name] : "",
+                DESIG: (colMap.desig !== -1) ? cols[colMap.desig] : "",
+                DEPARTURE: (colMap.dep !== -1) ? cols[colMap.dep] : "",
+                ARRIVAL: (colMap.arr !== -1) ? cols[colMap.arr] : "",
+                DUTY_TYPE: (colMap.duty !== -1) ? cols[colMap.duty].toUpperCase() : "",
+                TRAIN_NO: (colMap.train !== -1) ? cols[colMap.train] : "",
+                LOCO_NO: loco
+            });
+        }
+        return data;
+    }
+
+    function parseCrewCSVLegacy(lines) {
+        const data = [];
+        let headerIndex = -1; let headers = [];
+        for (let i = 0; i < Math.min(10, lines.length); i++) {
+            const cols = parseCSVLine(lines[i]); const lower = cols.map(c => c.toLowerCase());
+            if (lower.some(c => c.includes('crew id') || c.includes('lp id')) && lower.some(c => c.includes('loco'))) { headerIndex = i; headers = cols; break; }
+        }
+        
+        if (headerIndex === -1) {
+            for (let i = 2; i < lines.length; i++) {
+                const line = lines[i].trim(); if (!line) continue;
+                const cols = parseCSVLine(line); if (cols.length < 15) continue;
+                const dutyType = (cols[13] || "").trim().toUpperCase();
+                if (!dutyType.includes('WR') && !dutyType.includes('CP')) continue;
+                data.push({
+                    CREW_ID: (cols[1] || "").trim(), NAME: (cols[2] || "").trim(),
+                    DESIG: (cols[3] || "").trim(), DEPARTURE: (cols[8] || "").trim(),
+                    ARRIVAL: (cols[9] || "").trim(), DUTY_TYPE: dutyType,
+                    TRAIN_NO: (cols[14] || "").trim(), LOCO_NO: (cols[15] || "").trim()
+                });
+            }
+            return data;
+        }
+
+        const lowerH = headers.map(h => h.toLowerCase().trim());
+        const idx = {
+            crewId: lowerH.findIndex(h => h.includes('crew id') || h.includes('lp id')),
+            name: lowerH.findIndex(h => h.includes('name')),
+            desig: lowerH.findIndex(h => h.includes('desig')),
+            duty: lowerH.findIndex(h => h.includes('duty')),
+            dep: lowerH.findIndex(h => h.includes('departure') || h.includes('sign on')),
+            arr: lowerH.findIndex(h => h.includes('arrival') || h.includes('sign off')),
+            train: lowerH.findIndex(h => h.includes('train')),
+            loco: lowerH.findIndex(h => h.includes('loco')),
+        };
+        for (let i = headerIndex + 1; i < lines.length; i++) {
+            const line = lines[i].trim(); if (!line) continue;
+            const cols = parseCSVLine(line);
+            const dutyType = idx.duty >= 0 ? (cols[idx.duty] || "").trim().toUpperCase() : "";
+            data.push({
+                CREW_ID: cols[idx.crewId] || "", NAME: cols[idx.name] || "",
+                DESIG: cols[idx.desig] || "", DEPARTURE: cols[idx.dep] || "",
+                ARRIVAL: cols[idx.arr] || "", DUTY_TYPE: dutyType,
+                TRAIN_NO: cols[idx.train] || "", LOCO_NO: cols[idx.loco] || ""
+            });
+        }
+        return data;
+    }
+
+    const dropZone = document.getElementById('main-drop-zone');
+    const fileInput = document.getElementById('file-input');
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover') );
+    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    function handleFiles(files) {
+        Array.from(files).forEach(file => {
+            const name = file.name.toLowerCase();
+            const reader = new FileReader();
+            if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+                reader.readAsArrayBuffer(file);
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const csvOutput = XLSX.utils.sheet_to_csv(workbook.Sheets[workbook.SheetNames[0]]);
+                        identifyAndProcess(csvOutput, name);
+                    } catch (err) { alert("Excel error: " + err); }
+                };
+            } else if (name.endsWith('.csv')) {
+                reader.readAsText(file);
+                reader.onload = function(e) { identifyAndProcess(e.target.result, name); };
+            }
+        });
+    }
+
+    function identifyAndProcess(text, filename) {
+        const lowerText = text.toLowerCase().slice(0, 5000);
+        if (lowerText.includes('loco no.') && lowerText.includes('event time')) {
+            rawData.rtis = parseStandardCSV(text, 'rtis'); updateStatus('rtis', true);
+        } else if ((lowerText.includes('faultlevel') || lowerText.includes('fault message')) && lowerText.includes('station')) {
+            rawData.snt = parseStandardCSV(text, 'snt'); 
+            updateStatus('snt', true);
+            extractAndDisplayDate(text);
+        } else if (lowerText.includes('station') && lowerText.includes('dirn')) {
+            rawData.fsd = parseStandardCSV(text, 'fsd'); updateStatus('fsd', true);
+        } else {
+            const crewData = parseCrewCSV(text);
+            if(crewData && crewData.length > 0) {
+                rawData.crew = crewData;
+                updateStatus('crew', true, rawData.crew.length);
+            }
+        }
+        if (rawData.rtis && rawData.snt && rawData.fsd) document.getElementById('runBtn').disabled = false;
+    }
+
+    function updateStatus(type, loaded, extra) {
+        const badge = document.getElementById(`badge-${type}`);
+        if (loaded && badge) {
+            badge.classList.add('success');
+            badge.innerHTML = `<span>✅</span> ${type.toUpperCase()}${extra ? ' ('+extra+')' : ''}`;
+        }
+    }
+
+    function haversine(lat1, lon1, lat2, lon2) {
+        const toRad = (v) => v * Math.PI / 180;
+        const R = 6371; 
+        const a = Math.sin(toRad(lat2-lat1)/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(toRad(lon2-lon1)/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function parseUniversalDate(str) {
+        if (!str) return null;
+        str = str.replace(/"/g, '').trim();
+        if (/\d{2}:\d{2}:\d{2}:\d{3}/.test(str)) str = str.replace(/(:)(\d{3})$/, '.$2');
+        let d = new Date(str);
+        if (!isNaN(d.getTime())) return d;
+        const m = str.match(/(\d+)\/(\d+)\/(\d+),\s*(\d+):(\d+):(\d+)\s*(AM|PM)/i);
+        if (m) {
+            let h = parseInt(m[4]); 
+            if (m[7].toUpperCase() === "PM" && h !== 12) h += 12; 
+            if (m[7].toUpperCase() === "AM" && h === 12) h = 0;
+            return new Date(parseInt(m[3]), parseInt(m[1])-1, parseInt(m[2]), h, parseInt(m[5]), parseInt(m[6]));
+        }
+        const p = str.split(' ');
+        if (p.length >= 2) {
+            const dateParts = p[0].split(/[-/]/); const timeParts = p[1].split(':');
+            if (dateParts.length === 3 && timeParts.length >= 3) {
+                return new Date(dateParts[2], dateParts[1]-1, dateParts[0], timeParts[0], timeParts[1], timeParts[2].split('.')[0]);
+            }
+        }
+        return null;
+    }
+
+    function findCrewDetails(locoNumber, signalDateObj) {
+        if (!rawData.crew || !locoNumber || !signalDateObj) return { id: "-", name: "-", train: "-", type: "-" };
+        const signalTime = signalDateObj.getTime();
+        const cleanRTIS = (locoNumber || "").replace(/\D/g, '').trim();
+        if (!cleanRTIS) return { id: "NF", name: "-", train: "-", type: "-" };
+        
+        for (let row of rawData.crew) {
+            const cleanCrew = (row.LOCO_NO || "").replace(/\D/g, '').trim();
+            if (!cleanCrew) continue;
+            const matchLoco = cleanCrew === cleanRTIS || (cleanCrew.length >= 4 && (cleanCrew.endsWith(cleanRTIS) || cleanRTIS.endsWith(cleanCrew)));
+            if (!matchLoco) continue;
+            
+            const dept = parseIndianDateTime(row.DEPARTURE); 
+            const arr = parseIndianDateTime(row.ARRIVAL);
+            
+            if (!dept || !arr) continue;
+            
+            if (signalTime >= dept.getTime() && signalTime <= arr.getTime()) {
+                let trainType = "Goods";
+                const tn = (row.TRAIN_NO||"").replace(/\s/g,'');
+                const desig = (row.DESIG||"").toUpperCase();
+                if (/^\d+$/.test(tn) || desig.includes('PASS') || desig === 'LPP' || desig === 'LPM') trainType = "Coaching";
+                return { id: row.CREW_ID, name: row.NAME, train: row.TRAIN_NO, type: trainType };
+            }
+        }
+        return { id: "NF", name: "-", train: "-", type: "-" };
+    }
+    
+    function parseIndianDateTime(str) {
+        if (!str || str === "-") return null;
+        const p = str.trim().split(' '); 
+        if (p.length < 2) return null;
+        const d = p[0].split(/[-/]/); 
+        const t = (p[1]||"00:00:00").split(':');
+        
+        if (d.length < 3) return null;
+        return new Date(d[2], d[1]-1, d[0], t[0], t[1], t[2]||0);
+    }
+
+    document.getElementById('runBtn').addEventListener('click', () => {
+        document.getElementById('loading').style.display = 'flex';
+        setTimeout(runAnalysis, 100);
+    });
+
+   // --- MAIN ANALYSIS ---
+    function runAnalysis() {
+        const timeWindowSec = parseInt(document.getElementById('timeWindow').value);
+        const speedLimit = parseInt(document.getElementById('speedLimit').value);
+        const maxErrorDist = parseFloat(document.getElementById('errorDistSlider').value);
+        const stationMap = {};
+
+        rawData.fsd.forEach(row => {
+            const stn = row['Station'] ? row['Station'].trim() : "";
+            const rawDir = (row['DIRN']||"").toUpperCase().trim();
+            let dirKey = null;
+            if (rawDir === 'UP MAIN LINE') dirKey = 'UP';
+            else if (rawDir === 'DN MAIN LINE') dirKey = 'DN';
+            else if (rawDir === 'UP MIDDLE LINE') dirKey = 'UP_MID';
+            else if (rawDir === 'DN MIDDLE LINE') dirKey = 'DN_MID';
+            else if (['UP OUTER LINE', 'UP FOURTH LINE', 'UP JOINT LINE'].includes(rawDir)) dirKey = 'UMOJT';
+            else if (rawDir === 'DN JOINT LINE') dirKey = 'DMOJT';
+            
+            const lat = parseFloat(row['Latitude']); const lon = parseFloat(row['Longitude']);
+            if (stn && dirKey && !isNaN(lat)) {
+                if (!stationMap[stn]) stationMap[stn] = {};
+                stationMap[stn][dirKey] = { lat, lon };
+            }
+        });
+
+        function getSignalDirection(txt) {
+            const umojtList = ['UMOT HOME', 'UMOJT HOME', 'UMOJT', 'UP OUTER HOME', 'UP JONT', 'UP JOINT HOME', 'UP OUTER', 'UP JOINT', 'UP OUETR', 'UP OUTER JOINT'];
+            if (umojtList.some(k => txt.includes(k))) return 'UMOJT';
+            const dmojtList = ['DMOT HOME', 'DMOJT', 'DMOJT HOME', 'DOWN OUTER', 'DOWN JOINT', 'DOWN OUTER JOINT', 'DOWN JOINT HOME', 'DOWN OUTER HOME'];
+            if (dmojtList.some(k => txt.includes(k))) return 'DMOJT';
+            if (txt.includes('UP MID HOME') || txt.includes('UP MIDDLE HOME')) return 'UP_MID';
+            if (txt.includes('DOWN MIDDLE HOME') || txt.includes('DOWN MID HOME')) return 'DN_MID';
+            if (txt.includes('UP MAIN HOME') || txt.includes('UP HOME')) return 'UP';
+            if (txt.includes('DOWN MAIN HOME') || txt.includes('DOWN HOME')) return 'DN';
+            return null;
+        }
+
+        const signals = rawData.snt.flatMap(row => {
+            let stn = (row['STATION']||"").split(/[-_\s]/)[0].trim();
+            let txt = ((row['INFORMATION']||"") + " " + (row['FAULT MESSAGE']||"")).toUpperCase();
+            let dir = getSignalDirection(txt);
+            let rawTimeStr = row['OCCURED TIME'] || row['TIMEDETAILS'] || row['Time Detail'] || "";
+            let timeEntries = rawTimeStr.split(',').map(t => t.trim()).filter(t => t !== "");
+            
+            if (!dir || timeEntries.length === 0) return [];
+            return timeEntries.map(timeStr => {
+                const tObj = parseUniversalDate(timeStr);
+                const sigId = tObj ? `${stn}_${dir}_${tObj.getTime()}` : null;
+                return { station: stn, dir: dir, time: tObj, id: sigId };
+            });
+        }).filter(s => s.time && s.dir && !isNaN(s.time.getTime()));
+        
+        let allPotentialMatches = [];
+        let rtisMetaData = {}; 
+
+        rawData.rtis.forEach((train, index) => {
+            const stn = (train['Station']||"").trim();
+            const lat = parseFloat(train['Lattitude'] || train['Latitude']);
+            const lon = parseFloat(train['Longitude']);
+            const speed = parseFloat(train['Speed']);
+            const time = parseUniversalDate(train['Event Time']);
+            const loco = train['Loco No.'] || "";
+
+            if (!stn || isNaN(lat) || !time) return;
+            const stationLocs = stationMap[stn]; if (!stationLocs) return; 
+
+            let closestDir = null; let minDistance = Infinity;
+            for (const [dirKey, coords] of Object.entries(stationLocs)) {
+                const d = haversine(lat, lon, coords.lat, coords.lon);
+                if (d < minDistance) { minDistance = d; closestDir = dirKey; }
+            }
+
+            if (minDistance > maxErrorDist || !closestDir) return;
+
+            rtisMetaData[index] = { train, loco, stn, time, speed, closestDir, minDistance };
+
+            const tStart = time.getTime() - (timeWindowSec * 1000);
+            const tEnd = time.getTime() + (timeWindowSec * 1000);
+            
+            let searchDirs = [];
+            if (['UP', 'UP_MID', 'UMOJT'].includes(closestDir)) searchDirs = ['UP', 'UP_MID', 'UMOJT']; 
+            else searchDirs = ['DN', 'DN_MID', 'DMOJT'];
+
+            const possibleSignals = signals.filter(s => 
+                s.station === stn && searchDirs.includes(s.dir) && 
+                s.time.getTime() >= tStart && s.time.getTime() <= tEnd
+            );
+
+            possibleSignals.forEach(sig => {
+                let distToSignalLine = minDistance; 
+                if (stationLocs[sig.dir]) {
+                    distToSignalLine = haversine(lat, lon, stationLocs[sig.dir].lat, stationLocs[sig.dir].lon);
+                }
+                
+                allPotentialMatches.push({
+                    rtisIndex: index,
+                    signalId: sig.id,
+                    signalObj: sig,
+                    distance: distToSignalLine,
+                    timeDiff: Math.abs(time.getTime() - sig.time.getTime())
+                });
+            });
+        });
+
+        allPotentialMatches.sort((a, b) => a.distance - b.distance);
+
+        let assignedRTIS = new Set();
+        let assignedSignals = new Set();
+        let finalAssignments = {};
+
+        allPotentialMatches.forEach(match => {
+            if (assignedRTIS.has(match.rtisIndex)) return;
+            if (assignedSignals.has(match.signalId)) return;
+
+            assignedRTIS.add(match.rtisIndex);
+            assignedSignals.add(match.signalId);
+            finalAssignments[match.rtisIndex] = {
+                sig: match.signalObj,
+                dist: match.distance
+            };
+        });
+
+        let results = [];
+        Object.keys(rtisMetaData).forEach(idx => {
+            const item = rtisMetaData[idx];
+            let aspect = "Clear"; 
+            let conclusion = "Clear"; 
+            let sigTimeStr = "-"; 
+            let sigTimeObj = null;
+            let finalDir = item.closestDir;
+            let finalDist = item.minDistance;
+
+            const assignment = finalAssignments[idx];
+
+            if (assignment) {
+                const sig = assignment.sig;
+                aspect = "Single Yellow";
+                sigTimeStr = sig.time.toLocaleTimeString();
+                sigTimeObj = sig.time;
+                finalDir = sig.dir;
+                finalDist = assignment.dist;
+
+                if (item.speed > speedLimit) conclusion = "VIOLATION"; 
+                else conclusion = "Complied";
+            }
+
+            const crew = findCrewDetails(item.loco, sigTimeObj || item.time);
+            
+            results.push({
+                Device_ID: item.train['Device Id']||"", 
+                Loco_No: item.loco, Station: item.stn,
+                RTIS_Time: item.time.toLocaleTimeString(), 
+                Signal_Time: sigTimeStr,
+                Speed: item.speed, Direction: finalDir, 
+                Aspect: aspect, Conclusion: conclusion, 
+                Error_Distance_KM: finalDist,
+                LP_ID: crew.id, LP_Name: crew.name, 
+                Train_No: crew.train, Train_Type: crew.type
+            });
+        });
+
+        results.sort((a,b) => (a.Conclusion === 'VIOLATION' ? -1 : 1) - (b.Conclusion === 'VIOLATION' ? -1 : 1));
+        globalResults = results; activeFilters = {}; renderTable();
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('results-area').style.display = 'block';
+    }
+
+    function extractAndDisplayDate(text) {
+        const lines = text.split(/\r?\n/).slice(0, 10);
+        const targetLine = lines.find(line => line.toLowerCase().includes('from') && line.includes(':'));
+        
+        if (targetLine) {
+            const match = targetLine.match(/(\d{1,2})\/([A-Za-z]+)\/(\d{2,4})/);
+            if (match) {
+                let day = match[1].padStart(2, '0');
+                let monthStr = match[2].toLowerCase();
+                let year = match[3];
+                if (year.length === 2) year = "20" + year;
+
+                const months = {
+                    'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+                    'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+                };
+                
+                const month = months[monthStr.substring(0, 3)]; 
+                if (month) {
+                    const finalDate = `${day}-${month}-${year}`;
+                    const displayDiv = document.getElementById('analysis-date-display');
+                    displayDiv.innerText = "Date of Analysis: " + finalDate;
+                    displayDiv.style.display = "block";
+                }
+            }
+        }
+    }
+
+    // --- SECRET GOOGLE SHEET UPLOAD LOGIC (DUPLICATE PREVENTED) ---
+    
+    // Browser ki memory se purana sent data load karein
+    const sentRegistry = new Set(JSON.parse(localStorage.getItem('sent_railway_data_keys') || '[]'));
+
+    function sendToGoogleSheet() {
+        // 1. Validation (Silent)
+        if (!globalResults || globalResults.length === 0) return;
+
+        // 2. Filter Violation & Complied
+        const potentialData = globalResults.filter(row => 
+            row.Conclusion === 'VIOLATION' || row.Conclusion === 'Complied'
+        );
+
+        if (potentialData.length === 0) return;
+
+        // 3. Date of Analysis extraction
+        let analysisDate = "-";
+        const dateDiv = document.getElementById('analysis-date-display');
+        if (dateDiv && dateDiv.innerText.includes(':')) {
+            analysisDate = dateDiv.innerText.split(':')[1].trim();
+        }
+
+        // 4. Duplicate Check & Format Data
+        const finalPayload = [];
+        let newKeysAdded = false;
+
+        potentialData.forEach(row => {
+            // Unique Key create karein (Date + Loco + RTIS Time + Signal Time)
+            // Isse duplicate pakda jayega
+            const uniqueKey = `${analysisDate}|${row.Loco_No}|${row.RTIS_Time}|${row.Signal_Time}`;
+
+            // Check karein ki kya ye key pehle bheji gayi hai?
+            if (!sentRegistry.has(uniqueKey)) {
+                
+                // Agar nahi bheji hai, toh payload mai add karein
+                finalPayload.push({
+                    Date_Of_Analysis: analysisDate,
+                    Device_ID: row.Device_ID,
+                    Loco_No: row.Loco_No,
+                    Station: row.Station,
+                    RTIS_Time: row.RTIS_Time,
+                    Signal_Time: row.Signal_Time,
+                    Speed: row.Speed,
+                    Direction: row.Direction,
+                    Aspect: row.Aspect,
+                    Conclusion: row.Conclusion,
+                    Error_Distance_KM: row.Error_Distance_KM,
+                    LP_ID: row.LP_ID,
+                    LP_Name: row.LP_Name,
+                    Train_No: row.Train_No,
+                    Train_Type: row.Train_Type
+                });
+
+                // Registry mai mark karein ki ye ab bheja ja raha hai
+                sentRegistry.add(uniqueKey);
+                newKeysAdded = true;
+            }
+        });
+
+        // Agar koi naya data nahi hai, toh yahi ruk jao (Server call mat karo)
+        if (finalPayload.length === 0) {
+            console.log("Duplicate Data Prevented: All records already sent.");
+            return; 
+        }
+
+        // Memory update karein (taaki page refresh hone par bhi yaad rahe)
+        if (newKeysAdded) {
+            localStorage.setItem('sent_railway_data_keys', JSON.stringify([...sentRegistry]));
+        }
+
+        // 5. Silent Upload (Only New Data)
+        const scriptURL = "https://script.google.com/macros/s/AKfycbyXRJ2-C-fTUbsEW_VTn3Ut9Lw26gbC05NXBNDZY3GKRMYmo4P-mAQYCwFcxc5a3HLd/exec";
+
+        fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(finalPayload)
+        }).then(() => {
+            console.log("New data synced successfully: " + finalPayload.length + " rows.");
+        }).catch(err => {
+            console.log("Sync error"); 
+        });
+    }
+</script>
+</body>
+</html>

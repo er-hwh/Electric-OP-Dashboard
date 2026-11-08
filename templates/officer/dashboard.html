@@ -17,6 +17,15 @@
             <span class="text-muted ms-2">&bull; Howrah Division, Eastern Railway</span>
         </div>
         <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+            <a href="{{ url_for('officer.cli_movements') }}" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-person-walking me-1"></i> CLI Movements
+            </a>
+            <a href="{{ url_for('officer.cli_performance') }}" class="btn btn-outline-success btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-chart-line me-1"></i> CLI Performance
+            </a>
+            <a href="{{ url_for('officer.crew_performance') }}" class="btn btn-outline-info btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-users me-1"></i> Crew Performance
+            </a>
             <a href="{{ url_for('officer.counselling_approvals') }}" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm position-relative">
                 <i class="fa-solid fa-stamp me-1"></i> Counselling Approvals
                 {% if pending_counselling_count > 0 %}

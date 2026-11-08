@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Crew Master Excel & Table Review | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Console</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.crew_master') }}">Crew Master Database</a></li>
+                    <li class="breadcrumb-item active">Excel Upload &amp; Review</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-file-excel text-success me-2"></i> CREW MASTER EXCEL UPLOAD &amp; EDITABLE TABLE
+            </h2>
+            <p class="text-muted mb-0">Upload Excel, inspect in table view, edit fields, validate duplicates, and confirm save &bull; Section 8 Workflow</p>
+        </div>
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+            <a href="{{ url_for('admin.crew_master') }}" class="btn btn-outline-secondary fw-bold">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Crew Master
+            </a>
+            <a href="{{ url_for('admin.custom_fields') }}" class="btn btn-outline-primary fw-bold">
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Manage Custom Fields
+            </a>
+        </div>
+    </div>
+
+    <!-- Step 1: Upload Card -->
+    <div class="card shadow-sm border-0 mb-4" id="uploadCard">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Step 1: Select Master Excel File (.xlsx / .xls)</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="border border-2 border-primary border-dashed rounded-3 p-4 text-center bg-light" id="dropArea">
+                        <i class="fa-solid fa-file-excel fa-3x text-success mb-2"></i>
+                        <h6 class="fw-bold mb-1">Upload Crew &amp; CLI Master Excel File</h6>
+                        <p class="text-muted small mb-3">Accepts CMS Call Serve, Cadre Summary, or Divisional Master Sheets</p>
+                        <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="d-none">
+                        <button type="button" class="btn btn-primary fw-bold px-4" onclick="document.getElementById('excelFileInput').click()">
+                            <i class="fa-solid fa-folder-open me-1"></i> Choose File
+                        </button>
+                        <span id="selectedFileName" class="ms-3 text-dark fw-bold"></span>
+                    </div>
+                </div>
+                <div class="col-lg-4 mt-3 mt-lg-0">
+                    <div class="alert alert-light border shadow-sm mb-0">
+                        <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-circle-check text-success me-1"></i>Supported Columns</h6>
+                        <ul class="small text-muted ps-3 mb-0">
+                            <li><strong>CLI:</strong> CLI ID, CLI Name, CLI Mobile</li>
+                            <li><strong>Crew:</strong> Name, Employee ID (PF), Mobile</li>
+                            <li><strong>Cadre:</strong> Designation, Category (LPM, LPP, LPG, etc.)</li>
+                            <li><strong>Lobby:</strong> Lobby Code (HWH, BWN, RPH, etc.)</li>
+                            <li><strong>Dynamic Fields:</strong> Auto-matched to active custom fields</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3 text-end" id="inspectBtnContainer" style="display: none;">
+                <button type="button" class="btn btn-success fw-bold px-4" id="inspectBtn" onclick="uploadAndInspect()">
+                    <i class="fa-solid fa-table me-1"></i> Inspect &amp; Load into Editable Table &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spinner Loading Overlay -->
+    <div id="loadingBox" class="text-center py-5 d-none">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+        <h5 class="fw-bold text-dark">Processing Excel Records...</h5>
+        <p class="text-muted">Detecting headers, mapping CLI &amp; Lobby relations, and validating duplicate numbers...</p>
+    </div>
+
+    <!-- Step 2: Interactive Editable Table Container -->
+    <div id="editableTableContainer" class="d-none">
+        <!-- Summary & Action Bar -->
+        <div class="card shadow-sm border-0 mb-3 bg-white">
+            <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-pen-to-square text-primary me-2"></i>Inspect &amp; Edit Records Before Saving
+                    </h5>
+                    <small class="text-muted" id="tableSummaryText">Loaded 0 records</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm fw-bold" onclick="addNewRow()">
+                        <i class="fa-solid fa-plus me-1"></i> Add Record
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm fw-bold" onclick="resetUpload()">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Reset / Upload New
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm fw-bold px-3 shadow-sm" onclick="confirmAndSaveBatch()">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Confirm &amp; Save to Master Database
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Duplicates Banner -->
+        <div id="duplicateAlertBox" class="alert alert-danger border-start border-4 border-danger shadow-sm mb-3 d-none">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-triangle-exclamation fa-2x text-danger me-3"></i>
+                <div>
+                    <strong>Duplicate Records Detected:</strong> <span id="duplicateAlertText">Some records share duplicate mobile numbers or PF numbers. Please review or correct highlighted cells.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-bordered table-hover align-middle mb-0" id="previewTable" style="font-size: 0.85rem;">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th style="width: 40px;" class="text-center">#</th>
+                                <th style="min-width: 140px;">CLI ID</th>
+                                <th style="min-width: 150px;">CLI Name</th>
+                                <th style="min-width: 170px;">Crew Name <span class="text-danger">*</span></th>
+                                <th style="min-width: 130px;">Employee ID / PF</th>
+                                <th style="min-width: 140px;">Mobile (10 Digits) <span class="text-danger">*</span></th>
+                                <th style="min-width: 120px;">Category</th>
+                                <th style="min-width: 130px;">Lobby</th>
+                                <th style="width: 50px;" class="text-center">Del</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light d-flex justify-content-between align-items-center py-3">
+                <small class="text-muted"><i class="fa-solid fa-circle-info me-1"></i>You can edit any cell directly before confirming. All new crew members will be activated with default password <code>12345</code>.</small>
+                <button type="button" class="btn btn-success fw-bold px-4 shadow-sm" onclick="confirmAndSaveBatch()">
+                    <i class="fa-solid fa-circle-check me-1"></i> Confirm &amp; Save Records
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="saveSuccessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+            <div class="text-success mb-3 fs-1">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-1">Master Database Updated!</h4>
+            <p class="text-muted" id="saveSuccessMessage">All crew and CLI records have been saved successfully.</p>
+            <div class="d-flex justify-content-center gap-2 mt-3">
+                <a href="{{ url_for('admin.crew_master') }}" class="btn btn-primary fw-bold px-4">
+                    <i class="fa-solid fa-users me-1"></i> Open Crew Master
+                </a>
+                <button type="button" class="btn btn-outline-secondary" onclick="resetUpload()" data-bs-dismiss="modal">
+                    Upload Another File
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let g_lobbies = [];
+    let g_clis = [];
+    let g_custom_fields = [];
+    let g_categories = ['LPM', 'LPP', 'MMAN', 'LPG', 'LPS-I', 'LPS-II', 'SALP', 'ALP'];
+
+    const fileInput = document.getElementById('excelFileInput');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const inspectBtnContainer = document.getElementById('inspectBtnContainer');
+
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            selectedFileName.textContent = this.files[0].name;
+            inspectBtnContainer.style.display = 'block';
+        } else {
+            selectedFileName.textContent = '';
+            inspectBtnContainer.style.display = 'none';
+        }
+    });
+
+    function uploadAndInspect() {
+        if (!fileInput.files.length) return;
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        document.getElementById('uploadCard').classList.add('d-none');
+        document.getElementById('loadingBox').classList.remove('d-none');
+
+        fetch("{{ url_for('admin.crew_upload_preview') }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('loadingBox').classList.add('d-none');
+            if (data.success) {
+                g_lobbies = data.lobbies || [];
+                g_clis = data.clis || [];
+                g_custom_fields = data.custom_fields || [];
+                renderEditableTable(data.rows, data.duplicates_count);
+            } else {
+                alert("Upload failed: " + (data.message || "Unknown error"));
+                resetUpload();
+            }
+        })
+        .catch(err => {
+            document.getElementById('loadingBox').classList.add('d-none');
+            alert("Error parsing file: " + err);
+            resetUpload();
+        });
+    }
+
+    function renderEditableTable(rows, duplicatesCount) {
+        const tbody = document.getElementById('previewTableBody');
+        tbody.innerHTML = '';
+
+        document.getElementById('tableSummaryText').textContent = 
+            `Loaded ${rows.length} records from Excel (${duplicatesCount} duplicates flagged)`;
+
+        if (duplicatesCount > 0) {
+            document.getElementById('duplicateAlertBox').classList.remove('d-none');
+            document.getElementById('duplicateAlertText').textContent = 
+                `${duplicatesCount} duplicate mobile or employee IDs detected in the uploaded file. Please review highlighted rows.`;
+        } else {
+            document.getElementById('duplicateAlertBox').classList.add('d-none');
+        }
+
+        rows.forEach((r, idx) => {
+            appendTableRow(r, idx + 1);
+        });
+
+        document.getElementById('editableTableContainer').classList.remove('d-none');
+    }
+
+    function appendTableRow(r, sNo) {
+        const tbody = document.getElementById('previewTableBody');
+        const tr = document.createElement('tr');
+        if (r.is_duplicate) {
+            tr.classList.add('table-danger');
+        }
+
+        // Build category options
+        let catOptions = g_categories.map(cat => 
+            `<option value="${cat}" ${r.category === cat ? 'selected' : ''}>${cat}</option>`
+        ).join('');
+
+        // Build lobby options
+        let lobbyOptions = `<option value="">-- Select --</option>` + g_lobbies.map(l => 
+            `<option value="${l.code}" ${r.lobby === l.code ? 'selected' : ''}>${l.code}</option>`
+        ).join('');
+
+        tr.innerHTML = `
+            <td class="text-center fw-bold text-muted row-index">${sNo}</td>
+            <td><input type="text" class="form-control form-control-sm cli-id" value="${r.cli_id || ''}" placeholder="CLI ID"></td>
+            <td><input type="text" class="form-control form-control-sm cli-name" value="${r.cli_name || ''}" placeholder="CLI Name"></td>
+            <td><input type="text" class="form-control form-control-sm crew-name fw-bold" value="${r.crew_name || ''}" placeholder="Crew Name" required></td>
+            <td><input type="text" class="form-control form-control-sm pf-number" value="${r.pf_number || ''}" placeholder="PF / Emp ID"></td>
+            <td>
+                <input type="text" class="form-control form-control-sm mobile ${r.is_duplicate ? 'border-danger' : ''}" 
+                       value="${r.mobile || ''}" maxlength="10" placeholder="10 Digits" required>
+            </td>
+            <td>
+                <select class="form-select form-select-sm category">${catOptions}</select>
+            </td>
+            <td>
+                <select class="form-select form-select-sm lobby">${lobbyOptions}</select>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm p-1" onclick="removeRow(this)" title="Delete Row">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+    }
+
+    function addNewRow() {
+        const tbody = document.getElementById('previewTableBody');
+        const nextIdx = tbody.children.length + 1;
+        appendTableRow({ category: 'ALP', lobby: 'HWH' }, nextIdx);
+        // Scroll to bottom
+        tbody.lastElementChild.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function removeRow(btn) {
+        const tr = btn.closest('tr');
+        tr.remove();
+        // Re-index
+        const rows = document.querySelectorAll('#previewTableBody tr');
+        rows.forEach((r, i) => {
+            r.querySelector('.row-index').textContent = i + 1;
+        });
+        document.getElementById('tableSummaryText').textContent = `Total ${rows.length} records in table`;
+    }
+
+    function confirmAndSaveBatch() {
+        const trs = document.querySelectorAll('#previewTableBody tr');
+        if (!trs.length) {
+            alert("No records to save.");
+            return;
+        }
+
+        const rowsData = [];
+        let hasErrors = false;
+
+        trs.forEach((tr, i) => {
+            const crew_name = tr.querySelector('.crew-name').value.trim();
+            const mobile = tr.querySelector('.mobile').value.trim();
+            const pf_number = tr.querySelector('.pf-number').value.trim();
+            const cli_id = tr.querySelector('.cli-id').value.trim();
+            const cli_name = tr.querySelector('.cli-name').value.trim();
+            const category = tr.querySelector('.category').value;
+            const lobby = tr.querySelector('.lobby').value;
+
+            if (!crew_name) {
+                tr.querySelector('.crew-name').classList.add('border-danger');
+                hasErrors = true;
+            } else {
+                tr.querySelector('.crew-name').classList.remove('border-danger');
+            }
+
+            if (!mobile || mobile.length !== 10 || !/^\d+$/.test(mobile)) {
+                tr.querySelector('.mobile').classList.add('border-danger');
+                hasErrors = true;
+            } else {
+                tr.querySelector('.mobile').classList.remove('border-danger');
+            }
+
+            rowsData.push({
+                cli_id: cli_id,
+                cli_name: cli_name,
+                crew_name: crew_name,
+                pf_number: pf_number,
+                mobile: mobile,
+                category: category,
+                lobby: lobby,
+                custom_fields: {}
+            });
+        });
+
+        if (hasErrors) {
+            alert("Please correct highlighted fields: Crew Name is required and Mobile must be exactly 10 digits.");
+            return;
+        }
+
+        if (!confirm(`Save and update ${rowsData.length} records to the master database?`)) {
+            return;
+        }
+
+        fetch("{{ url_for('admin.save_crew_batch') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: rowsData })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('saveSuccessMessage').textContent = data.message;
+                const modal = new bootstrap.Modal(document.getElementById('saveSuccessModal'));
+                modal.show();
+            } else {
+                alert("Error saving records: " + (data.message || "Unknown error"));
+            }
+        })
+        .catch(err => alert("Server error: " + err));
+    }
+
+    function resetUpload() {
+        document.getElementById('editableTableContainer').classList.add('d-none');
+        document.getElementById('uploadCard').classList.remove('d-none');
+        fileInput.value = '';
+        selectedFileName.textContent = '';
+        inspectBtnContainer.style.display = 'none';
+    }
+</script>
+{% endblock %}
