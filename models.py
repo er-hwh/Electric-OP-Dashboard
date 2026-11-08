@@ -248,6 +248,10 @@ class User(db.Model):
         c = self.get_custom_fields()
         return c.get('traction_type', 'BOTH')
 
+    @traction_type.setter
+    def traction_type(self, val):
+        self.set_custom_field('traction_type', val)
+
     @property
     def safety_grading(self):
         c = self.get_custom_fields()
