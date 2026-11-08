@@ -1195,3 +1195,10 @@ def cli_performance():
 def crew_performance():
     return redirect(url_for('officer.crew_performance', **request.args))
 
+
+@control_bp.route('/training-monitor')
+@control_login_required
+def training_monitor():
+    return redirect(url_for('officer.training_monitor', **request.args))
+
+

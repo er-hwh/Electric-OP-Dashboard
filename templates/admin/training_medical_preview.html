@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Preview Weekly Training & PME Upload | Admin Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success px-3 py-2 fs-6">
+                    <i class="fa-solid fa-file-excel me-1"></i> Weekly Excel Batch Review
+                </span>
+                <span class="badge bg-secondary">{{ filename }}</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Review & Validate Weekly Training & PME Data</h3>
+            <p class="text-muted small mb-0">
+                Inspect parsed records below. You can edit any cell directly in the table before applying the batch update.
+            </p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('admin.training_medical') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Cancel & Return
+            </a>
+            <button type="button" class="btn btn-success fw-bold px-4 shadow-sm" onclick="saveBatch()">
+                <i class="fa-solid fa-cloud-arrow-up me-1"></i> Apply Weekly Update Batch
+            </button>
+        </div>
+    </div>
+
+    <!-- VALIDATION SUMMARY CARDS -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-primary border-4">
+                <div class="text-muted small text-uppercase fw-bold">Total Rows Parsed</div>
+                <div class="fs-2 fw-bold text-primary mt-1">{{ total_count }}</div>
+                <small class="text-muted">From uploaded spreadsheet</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-success border-4">
+                <div class="text-muted small text-uppercase fw-bold">Valid & Matched Records</div>
+                <div class="fs-2 fw-bold text-success mt-1" id="validCount">{{ valid_count }}</div>
+                <small class="text-muted">Ready to commit</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-danger border-4">
+                <div class="text-muted small text-uppercase fw-bold">Rows with Issues</div>
+                <div class="fs-2 fw-bold text-danger mt-1" id="errorCount">{{ error_count }}</div>
+                <small class="text-muted">Correct cells below before saving</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDITABLE PREVIEW TABLE -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-table me-2 text-primary"></i>Editable Batch Table
+            </h5>
+            <small class="text-muted"><i class="fa-solid fa-pen me-1"></i>Click any field to adjust prior to committing</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0 text-nowrap" id="batchTable">
+                <thead class="table-light text-uppercase small">
+                    <tr>
+                        <th class="text-center" style="width: 50px;">#</th>
+                        <th>Employee PF / Mob</th>
+                        <th>Matched Crew</th>
+                        <th>Type</th>
+                        <th>Course / Exam Name</th>
+                        <th>Institute / Hospital</th>
+                        <th>Last Done Date</th>
+                        <th>Next Due Date</th>
+                        <th>Cert / Memo No.</th>
+                        <th>Fitness / Status</th>
+                        <th>Remarks</th>
+                        <th>Validation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                        <tr class="{% if not r.is_valid %}table-danger table-opacity-25{% endif %}" data-row-num="{{ loop.index0 }}">
+                            <td class="text-center fw-bold">{{ r.row_num }}</td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm field-ident" value="{{ r.identifier }}">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm field-name bg-light" value="{{ r.crew_name }}" readonly>
+                                <input type="hidden" class="field-user-id" value="{{ r.crew_user_id or '' }}">
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm field-type">
+                                    <option value="Training" {% if r.record_type == 'Training' %}selected{% endif %}>Training</option>
+                                    <option value="PME" {% if r.record_type == 'PME' %}selected{% endif %}>PME</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm field-course" value="{{ r.course_name }}">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm field-institute" value="{{ r.institute }}">
+                            </td>
+                            <td>
+                                <input type="date" class="form-control form-control-sm field-done" value="{{ r.last_done_date }}">
+                            </td>
+                            <td>
+                                <input type="date" class="form-control form-control-sm field-due" value="{{ r.due_date }}">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm field-cert" value="{{ r.certificate_no }}">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm field-status" value="{{ r.status }}">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm field-remarks" value="{{ r.remarks }}">
+                            </td>
+                            <td>
+                                {% if r.is_valid %}
+                                    <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Valid</span>
+                                {% else %}
+                                    <span class="badge bg-danger" title="{{ r.errors|join(', ') }}">
+                                        <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ r.errors[0] if r.errors else 'Error' }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function saveBatch() {
+    const table = document.getElementById('batchTable');
+    const rows = table.querySelectorAll('tbody tr');
+    const payload = [];
+
+    rows.forEach(tr => {
+        const ident = tr.querySelector('.field-ident').value.trim();
+        const userId = tr.querySelector('.field-user-id').value.trim();
+        const recType = tr.querySelector('.field-type').value.trim();
+        const course = tr.querySelector('.field-course').value.trim();
+        const institute = tr.querySelector('.field-institute').value.trim();
+        const doneDate = tr.querySelector('.field-done').value.trim();
+        const dueDate = tr.querySelector('.field-due').value.trim();
+        const certNo = tr.querySelector('.field-cert').value.trim();
+        const statusVal = tr.querySelector('.field-status').value.trim();
+        const remarks = tr.querySelector('.field-remarks').value.trim();
+
+        if (ident && course && doneDate) {
+            payload.push({
+                identifier: ident,
+                crew_user_id: userId ? parseInt(userId) : null,
+                record_type: recType,
+                course_name: course,
+                institute: institute,
+                last_done_date: doneDate,
+                due_date: dueDate,
+                certificate_no: certNo,
+                status: statusVal,
+                remarks: remarks
+            });
+        }
+    });
+
+    if (payload.length === 0) {
+        alert('No valid rows found to commit.');
+        return;
+    }
+
+    if (!confirm(`Confirm committing ${payload.length} training and medical records to the database?`)) {
+        return;
+    }
+
+    fetch("{{ url_for('admin.save_training_medical_batch') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ rows: payload })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            window.location.href = "{{ url_for('admin.training_medical') }}";
+        } else {
+            alert('Error saving batch: ' + (res.message || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        alert('Server connection error: ' + err);
+    });
+}
+</script>
+{% endblock %}

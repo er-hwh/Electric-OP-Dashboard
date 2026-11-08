@@ -66,6 +66,11 @@ class User(db.Model):
     cli_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Nominated CLI for running staff
     operational_jurisdiction = db.Column(db.String(255))
     custom_fields_json = db.Column(db.Text, nullable=True) # Dynamic key-value store
+    date_of_birth = db.Column(db.Date, nullable=True) # DOB for PME age frequency tiering
+    date_of_appointment = db.Column(db.Date, nullable=True) # Service seniority
+    pme_last_done_date = db.Column(db.Date, nullable=True)
+    pme_due_date = db.Column(db.Date, nullable=True)
+    pme_fitness_status = db.Column(db.String(50), default='Fit A-One')
     
     is_active = db.Column(db.Boolean, default=True)
     password_must_change = db.Column(db.Boolean, default=True) # True until user changes from '12345'
@@ -208,6 +213,57 @@ class User(db.Model):
         """Strict Rule: Only Admin can perform system edits."""
         return self.is_admin()
 
+    def get_age(self, as_of_date=None):
+        """Calculates employee age in completed years."""
+        if not self.date_of_birth:
+            return 35  # Sensible default if DOB not yet updated
+        ref_date = as_of_date or date.today()
+        years = ref_date.year - self.date_of_birth.year
+        if (ref_date.month, ref_date.day) < (self.date_of_birth.month, self.date_of_birth.day):
+            years -= 1
+        return max(years, 18)
+
+    def compute_pme_frequency_years(self, age=None):
+        """
+        Railway Medical Standard (A-One Category):
+        - Age <= 45 years: Every 4 years
+        - Age > 45 to 55 years: Every 2 years
+        - Age > 55 years: Every 1 year (Annual)
+        """
+        if age is None:
+            age = self.get_age()
+        if age <= 45:
+            return 4
+        elif age <= 55:
+            return 2
+        else:
+            return 1
+
+    def calculate_next_pme_due(self, last_done_date=None):
+        """Calculates next PME due date based on age at last PME examination."""
+        base_date = last_done_date or self.pme_last_done_date or date.today()
+        age_at_pme = self.get_age(base_date)
+        freq_years = self.compute_pme_frequency_years(age_at_pme)
+        try:
+            return base_date.replace(year=base_date.year + freq_years)
+        except ValueError:
+            return base_date.replace(year=base_date.year + freq_years, day=28)
+
+    @property
+    def pme_status_info(self):
+        """Returns live PME status dictionary with badges."""
+        if not self.pme_due_date:
+            return {'status': 'NOT_SET', 'class': 'secondary', 'badge': 'PME Not Set', 'days': 999, 'days_left': 999}
+        today = date.today()
+        days_left = (self.pme_due_date - today).days
+        if days_left < 0:
+            return {'status': 'OVERDUE', 'class': 'danger', 'badge': f'PME Overdue by {-days_left}d', 'days': days_left, 'days_left': days_left}
+        elif days_left <= 30:
+            return {'status': 'DUE_SOON', 'class': 'warning', 'badge': f'PME Due in {days_left}d', 'days': days_left, 'days_left': days_left}
+        else:
+            return {'status': 'VALID', 'class': 'success', 'badge': f'Valid ({days_left}d left)', 'days': days_left, 'days_left': days_left}
+
+
 
 class Notice(db.Model):
     __tablename__ = 'notices'
@@ -301,24 +357,112 @@ class TrainingRecord(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     crew_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    training_type = db.Column(db.String(100), nullable=False) # 'Refresher DSL', 'Refresher ELEC', 'Refresher GR & SR', 'Automatic Block System', 'PME', 'Safety Camp'
+    training_type = db.Column(db.String(100), nullable=False) 
+    # 'Refresher ELEC', 'Refresher DSL', 'Refresher GR & SR', 'Automatic Block System', 'Safety Camp',
+    # 'ALP to SALP Promotional', 'SALP to LPS Promotional', 'LPS to LPG Promotional', 
+    # 'LPG to LPP Promotional', 'LPP to LPM Promotional', 'Simulator Training', '3-Phase Loco Induction'
+    
+    training_category = db.Column(db.String(50), default='REFRESHER') # 'REFRESHER', 'ABS', 'PROMOTIONAL', 'SAFETY_CAMP', 'SPECIAL'
     institute = db.Column(db.String(100), default='ZRTI Bhuli')
     last_done_date = db.Column(db.Date, nullable=False)
     due_date = db.Column(db.Date, nullable=False)
+    validity_months = db.Column(db.Integer, default=36)
     certificate_no = db.Column(db.String(100))
     remarks = db.Column(db.Text)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    crew = db.relationship('User', foreign_keys=[crew_id], overlaps="crew_member,training_records")
+
+    @property
+    def course_name(self):
+        return self.training_type
+
+    @property
+    def completion_date(self):
+        return self.last_done_date
+
+    @classmethod
+    def calculate_due_date(cls, last_done_date, training_type):
+        """
+        Railway Training Validity Rules:
+        - Automatic Block System (ABS): 6 Months (180 days)
+        - Safety Camp: 1 Year (12 months)
+        - Refresher ELEC, Refresher DSL, Refresher GR & SR: 3 Years (36 months)
+        - Promotional / Conversion: 3 Years (36 months)
+        """
+        tt_upper = (training_type or '').upper()
+        if 'ABS' in tt_upper or 'AUTOMATIC BLOCK' in tt_upper:
+            month = last_done_date.month + 6
+            year = last_done_date.year + (month - 1) // 12
+            month = ((month - 1) % 12) + 1
+            day = min(last_done_date.day, 28)
+            return date(year, month, day)
+        elif 'SAFETY CAMP' in tt_upper:
+            try:
+                return last_done_date.replace(year=last_done_date.year + 1)
+            except ValueError:
+                return last_done_date.replace(year=last_done_date.year + 1, day=28)
+        else:
+            try:
+                return last_done_date.replace(year=last_done_date.year + 3)
+            except ValueError:
+                return last_done_date.replace(year=last_done_date.year + 3, day=28)
 
     @property
     def status_info(self):
         today = date.today()
         days_left = (self.due_date - today).days
         if days_left < 0:
-            return {'status': 'OVERDUE', 'class': 'danger', 'badge': f'Overdue by {-days_left}d'}
+            return {'status': 'OVERDUE', 'class': 'danger', 'badge': f'Overdue by {-days_left}d', 'days': days_left}
         elif days_left <= 30:
-            return {'status': 'DUE_SOON', 'class': 'warning', 'badge': f'Due in {days_left}d'}
+            return {'status': 'DUE_SOON', 'class': 'warning', 'badge': f'Due in {days_left}d', 'days': days_left}
         else:
-            return {'status': 'VALID', 'class': 'success', 'badge': f'Valid ({days_left}d left)'}
+            return {'status': 'VALID', 'class': 'success', 'badge': f'Valid ({days_left}d left)', 'days': days_left}
+
+
+class MedicalRecord(db.Model):
+    """Periodic Medical Examination (PME) Records for Running Staff (A-1 Category)."""
+    __tablename__ = 'medical_records'
+
+    id = db.Column(db.Integer, primary_key=True)
+    crew_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    last_pme_date = db.Column(db.Date, nullable=False)
+    due_date = db.Column(db.Date, nullable=False)
+    medical_category = db.Column(db.String(20), default='A-One')
+    fitness_status = db.Column(db.String(50), default='Fit A-One') # 'Fit A-One', 'Fit with Glasses', 'Fit without Glasses', 'Under Observation', 'Unfit A-One'
+    hospital_name = db.Column(db.String(100), default='Divisional Railway Hospital Howrah')
+    certificate_no = db.Column(db.String(100))
+    age_at_pme = db.Column(db.Integer, default=35)
+    frequency_years = db.Column(db.Integer, default=4) # 4, 2, or 1 based on age
+    vision_acuity = db.Column(db.String(100), default='6/6, 6/6 without glasses')
+    remarks = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    crew = db.relationship('User', foreign_keys=[crew_id], backref=db.backref('pme_records', lazy='dynamic'))
+
+    @property
+    def hospital(self):
+        return self.hospital_name
+
+    @property
+    def fit_memo_no(self):
+        return self.certificate_no
+
+    @property
+    def examination_date(self):
+        return self.last_pme_date
+
+    @property
+    def status_info(self):
+        today = date.today()
+        days_left = (self.due_date - today).days
+        if days_left < 0:
+            return {'status': 'OVERDUE', 'class': 'danger', 'badge': f'PME Overdue by {-days_left}d', 'days': days_left}
+        elif days_left <= 30:
+            return {'status': 'DUE_SOON', 'class': 'warning', 'badge': f'PME Due in {days_left}d', 'days': days_left}
+        else:
+            return {'status': 'VALID', 'class': 'success', 'badge': f'Valid ({days_left}d left)', 'days': days_left}
 
 
 class FootplateInspection(db.Model):

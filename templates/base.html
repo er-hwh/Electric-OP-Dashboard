@@ -178,10 +178,13 @@
                 </ul>
 
                 {% if current_user %}
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center gap-1">
                         {% if current_user.is_admin() %}
-                            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-dashboard-nav shadow-sm me-2">
+                            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-dashboard-nav shadow-sm btn-sm">
                                 <i class="fa-solid fa-gauge-high me-1"></i> Admin Portal
+                            </a>
+                            <a href="{{ url_for('admin.training_medical') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                                <i class="fa-solid fa-graduation-cap me-1 text-primary"></i> Training & PME
                             </a>
                             <a href="{{ url_for('control.dashboard') }}" class="btn btn-warning btn-sm text-dark fw-bold shadow-sm">
                                 <i class="fa-solid fa-headset me-1"></i> Control Desk
@@ -190,16 +193,25 @@
                             <a href="{{ url_for('control.dashboard') }}" class="btn btn-warning btn-sm text-dark fw-bold shadow-sm">
                                 <i class="fa-solid fa-headset me-1"></i> Control Desk
                             </a>
+                            <a href="{{ url_for('officer.training_monitor') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                                <i class="fa-solid fa-graduation-cap me-1"></i> Training Monitor
+                            </a>
                         {% elif current_user.is_officer() %}
-                            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-dashboard-nav shadow-sm">
+                            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-dashboard-nav shadow-sm btn-sm">
                                 <i class="fa-solid fa-shield-halved me-1"></i> Officer Desk
                             </a>
+                            <a href="{{ url_for('officer.training_monitor') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                                <i class="fa-solid fa-graduation-cap me-1"></i> Training Monitor
+                            </a>
                         {% elif current_user.is_supervisor() %}
-                            <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-dashboard-nav shadow-sm">
+                            <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-dashboard-nav shadow-sm btn-sm">
                                 <i class="fa-solid fa-clipboard-check me-1"></i> Supervisor Console
                             </a>
+                            <a href="{{ url_for('supervisor.training_medical') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                                <i class="fa-solid fa-graduation-cap me-1"></i> Squad Training & PME
+                            </a>
                         {% elif current_user.is_crew() %}
-                            <a href="{{ url_for('crew.dashboard') }}" class="btn btn-dashboard-nav shadow-sm">
+                            <a href="{{ url_for('crew.dashboard') }}" class="btn btn-dashboard-nav shadow-sm btn-sm">
                                 <i class="fa-solid fa-id-card me-1"></i> My Crew Desk
                             </a>
                         {% endif %}

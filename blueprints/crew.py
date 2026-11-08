@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from database import db
 from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, 
-    CounsellingAcknowledgement, TrainingRecord, FootplateInspection, Message,
+    CounsellingAcknowledgement, TrainingRecord, MedicalRecord, FootplateInspection, Message,
     CrewCounsellingRecord
 )
 from blueprints.auth import role_required
@@ -24,6 +24,7 @@ def dashboard():
     
     # 1. Training & Competencies
     trainings = TrainingRecord.query.filter_by(crew_id=crew.id).order_by(TrainingRecord.due_date.asc()).all()
+    pme_record = MedicalRecord.query.filter_by(crew_id=crew.id).order_by(MedicalRecord.due_date.desc()).first()
 
     # 2. Notices requiring acknowledgement
     all_notices = Notice.query.filter_by(is_active=True).order_by(Notice.created_at.desc()).limit(15).all()
@@ -89,6 +90,7 @@ def dashboard():
         compliance=compliance,
         cli_user=cli_user,
         trainings=trainings,
+        pme_record=pme_record,
         pending_notices=pending_notices,
         acked_notices=acked_notices,
         counselling_list=counselling_list,

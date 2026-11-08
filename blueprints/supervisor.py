@@ -9,7 +9,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 from database import db
 from models import (
-    User, Lobby, FootplateInspection, Message, TrainingRecord, 
+    User, Lobby, FootplateInspection, Message, TrainingRecord, MedicalRecord,
     CounsellingTopic, Notice, CrewCounsellingRecord, CLIMovement
 )
 from blueprints.auth import role_required
@@ -1398,3 +1398,151 @@ def delete_movement(movement_id):
     db.session.commit()
     flash('Activity record removed from daily log.', 'info')
     return redirect(url_for('supervisor.movements'))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 4: CLI SQUAD TRAINING & MEDICAL (PME) MONITORING
+# ---------------------------------------------------------------------------
+
+@supervisor_bp.route('/training-medical')
+def training_medical():
+    """CLI Squad Training & Medical (PME) Compliance Overview."""
+    cli = User.query.get(session['user_id'])
+    my_crews = User.query.filter_by(cli_id=cli.id, is_active=True).all() if cli.sub_role == 'CLI' else User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).all()
+    crew_ids = [c.id for c in my_crews]
+
+    today = date.today()
+    status_filter = request.args.get('status', 'ALL').strip().upper()
+    course_filter = request.args.get('course', 'ALL').strip()
+    q = request.args.get('q', '').strip()
+
+    # Trainings
+    t_query = TrainingRecord.query.filter(TrainingRecord.crew_id.in_(crew_ids)) if crew_ids else TrainingRecord.query.filter(TrainingRecord.id == -1)
+    if course_filter != 'ALL' and course_filter:
+        t_query = t_query.filter(TrainingRecord.training_type.ilike(f"%{course_filter}%"))
+    if status_filter == 'OVERDUE':
+        t_query = t_query.filter(TrainingRecord.due_date < today)
+    elif status_filter == 'DUE_SOON':
+        t_query = t_query.filter(TrainingRecord.due_date >= today, TrainingRecord.due_date <= today + timedelta(days=30))
+    elif status_filter == 'VALID':
+        t_query = t_query.filter(TrainingRecord.due_date > today + timedelta(days=30))
+    trainings = t_query.order_by(TrainingRecord.due_date.asc()).all()
+
+    # Medicals / PME
+    m_query = MedicalRecord.query.filter(MedicalRecord.crew_id.in_(crew_ids)) if crew_ids else MedicalRecord.query.filter(MedicalRecord.id == -1)
+    if status_filter == 'OVERDUE':
+        m_query = m_query.filter(MedicalRecord.due_date < today)
+    elif status_filter == 'DUE_SOON':
+        m_query = m_query.filter(MedicalRecord.due_date >= today, MedicalRecord.due_date <= today + timedelta(days=30))
+    elif status_filter == 'VALID':
+        m_query = m_query.filter(MedicalRecord.due_date > today + timedelta(days=30))
+    medicals = m_query.order_by(MedicalRecord.due_date.asc()).all()
+
+    # Squad Metrics
+    overdue_tr = sum(1 for t in trainings if t.due_date < today)
+    due_tr = sum(1 for t in trainings if today <= t.due_date <= today + timedelta(days=30))
+    overdue_pme = sum(1 for m in medicals if m.due_date < today)
+    due_pme = sum(1 for m in medicals if today <= m.due_date <= today + timedelta(days=30))
+
+    return render_template(
+        'supervisor/training_medical.html',
+        cli=cli,
+        my_crews=my_crews,
+        trainings=trainings,
+        medicals=medicals,
+        overdue_tr=overdue_tr,
+        due_tr=due_tr,
+        overdue_pme=overdue_pme,
+        due_pme=due_pme,
+        current_status=status_filter,
+        current_course=course_filter,
+        current_q=q
+    )
+
+
+@supervisor_bp.route('/training-medical/record', methods=['POST'])
+def record_training_medical():
+    """CLI records completed training or PME for a squad crew member."""
+    cli = User.query.get(session['user_id'])
+    crew_id = request.form.get('crew_id')
+    rec_type = request.form.get('record_type', 'TRAINING').strip().upper()
+    course_name = (request.form.get('course_name') or request.form.get('training_type') or ('Periodical Medical Examination (PME)' if rec_type == 'PME' else '')).strip()
+    institute = request.form.get('institute', '').strip()
+    last_done_str = (request.form.get('last_done_date') or request.form.get('completion_date') or '').strip()
+    due_date_str = request.form.get('due_date', '').strip()
+    cert_no = (request.form.get('certificate_no') or request.form.get('fit_memo_no') or '').strip()
+    status_val = (request.form.get('status') or request.form.get('pme_status') or 'Passed').strip()
+    remarks = request.form.get('remarks', '').strip()
+
+    if not crew_id or not last_done_str or not course_name:
+        flash('Crew, Course/Exam Name, and Last Done Date are required.', 'danger')
+        return redirect(url_for('supervisor.training_medical'))
+
+    crew = User.query.get(int(crew_id))
+    if not crew:
+        flash('Selected crew not found.', 'danger')
+        return redirect(url_for('supervisor.training_medical'))
+
+    done_date = parse_date_value(last_done_str) or date.today()
+    due_date = parse_date_value(due_date_str)
+
+    if rec_type == 'PME' or 'PME' in course_name.upper():
+        if not due_date:
+            due_date = crew.calculate_next_pme_due(done_date)
+
+        crew.pme_last_done_date = done_date
+        crew.pme_due_date = due_date
+        crew.pme_fitness_status = status_val
+
+        med_rec = MedicalRecord.query.filter_by(crew_id=crew.id).first()
+        if not med_rec:
+            med_rec = MedicalRecord(
+                crew_id=crew.id,
+                last_pme_date=done_date,
+                due_date=due_date,
+                hospital_name=institute or 'Divisional Hospital Howrah',
+                certificate_no=cert_no,
+                fitness_status=status_val,
+                age_at_pme=crew.get_age(done_date),
+                frequency_years=crew.compute_pme_frequency_years(crew.get_age(done_date)),
+                remarks=remarks
+            )
+            db.session.add(med_rec)
+        else:
+            med_rec.last_pme_date = done_date
+            med_rec.due_date = due_date
+            med_rec.hospital_name = institute or med_rec.hospital_name
+            med_rec.certificate_no = cert_no or med_rec.certificate_no
+            med_rec.fitness_status = status_val
+            med_rec.remarks = remarks
+
+        db.session.commit()
+        flash(f'PME Fitness updated for {crew.full_name} (Next Due: {due_date.strftime("%d-%b-%Y")}).', 'success')
+    else:
+        if not due_date:
+            due_date = TrainingRecord.calculate_due_date(done_date, course_name)
+
+        t_rec = TrainingRecord.query.filter_by(crew_id=crew.id, training_type=course_name).first()
+        if not t_rec:
+            t_rec = TrainingRecord(
+                crew_id=crew.id,
+                training_type=course_name,
+                institute=institute or 'ZRTI Bhuli',
+                last_done_date=done_date,
+                due_date=due_date,
+                certificate_no=cert_no,
+                remarks=remarks
+            )
+            db.session.add(t_rec)
+        else:
+            t_rec.last_done_date = done_date
+            t_rec.due_date = due_date
+            t_rec.institute = institute or t_rec.institute
+            t_rec.certificate_no = cert_no or t_rec.certificate_no
+            t_rec.remarks = remarks
+
+        db.session.commit()
+        flash(f'Training Course [{course_name}] recorded for {crew.full_name} (Next Due: {due_date.strftime("%d-%b-%Y")}).', 'success')
+
+    return redirect(url_for('supervisor.training_medical'))
+

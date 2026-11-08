@@ -445,6 +445,29 @@
 
             <div class="sidebar-divider"></div>
 
+            <!-- DIVISIONAL OVERSIGHT -->
+            <div class="sidebar-section-title">
+                <i class="bi bi-shield-check text-info"></i>
+                <span>Divisional Monitoring</span>
+            </div>
+
+            <ul class="cnl-nav">
+                <li class="cnl-nav-item">
+                    <a href="{{ url_for('control.training_monitor') }}" class="cnl-nav-link {% if 'training' in request.endpoint or 'training-monitor' in request.path %}active{% endif %}" title="Training & Medical Compliance">
+                        <i class="bi bi-mortarboard-fill"></i>
+                        <span>Training & Medical (PME)</span>
+                    </a>
+                </li>
+                <li class="cnl-nav-item">
+                    <a href="{{ url_for('control.cli_movements') }}" class="cnl-nav-link {% if 'cli_movements' in request.endpoint or 'cli-movements' in request.path %}active{% endif %}" title="Daily CLI Movements">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>CLI Movements & Diary</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-divider"></div>
+
             <!-- BACK TO MAIN / ADMIN -->
             <ul class="cnl-nav mb-4">
                 {% if current_user and current_user.is_admin() %}

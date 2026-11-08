@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Squad Training & Medical (PME) | CLI Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary px-3 py-2 fs-6">
+                    <i class="fa-solid fa-user-graduate me-1"></i> Squad Competency Monitoring
+                </span>
+                <span class="badge bg-secondary">CLI Supervision</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Squad Training & Periodic Medical Examination (PME)</h3>
+            <p class="text-muted small mb-0">
+                Track 3-year refresher courses, 6-month ABS, and age-based PME compliance for crews assigned under your supervision.
+            </p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#recordModal">
+                <i class="fa-solid fa-plus-circle me-1"></i> Record Training / PME
+            </button>
+            <a href="{{ url_for('supervisor.movements') }}" class="btn btn-outline-primary fw-bold">
+                <i class="fa-solid fa-person-walking me-1"></i> Daily Movements
+            </a>
+            <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> CLI Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- SQUAD METRICS -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-danger border-4">
+                <div class="text-muted small text-uppercase fw-bold">Trainings Overdue</div>
+                <div class="fs-2 fw-bold text-danger mt-1">{{ overdue_tr }}</div>
+                <small class="text-muted">In your squad</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-warning border-4">
+                <div class="text-muted small text-uppercase fw-bold">Trainings Due (30d)</div>
+                <div class="fs-2 fw-bold text-warning mt-1">{{ due_tr }}</div>
+                <small class="text-muted">Nomination required</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-danger border-4">
+                <div class="text-muted small text-uppercase fw-bold">PME Overdue</div>
+                <div class="fs-2 fw-bold text-danger mt-1">{{ overdue_pme }}</div>
+                <small class="text-muted">Critical safety issue</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100 bg-white border-start border-info border-4">
+                <div class="text-muted small text-uppercase fw-bold">PME Due Soon (30d)</div>
+                <div class="fs-2 fw-bold text-info mt-1">{{ due_pme }}</div>
+                <small class="text-muted">Send to Health Unit</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- SQUAD RECORDS TABLE -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-list-check me-2 text-primary"></i>Assigned Squad Compliance Records
+            </h5>
+            <small class="text-muted"><i class="fa-solid fa-circle-check text-success me-1"></i>Maintained by CLI & Divisional Safety Branch</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="table-light text-uppercase small">
+                    <tr>
+                        <th class="ps-3">Crew Member</th>
+                        <th>Category</th>
+                        <th>Type</th>
+                        <th>Course / Exam Name</th>
+                        <th>Institute / Hospital</th>
+                        <th>Last Done Date</th>
+                        <th>Next Due Date</th>
+                        <th>Status</th>
+                        <th>Cert / Memo No.</th>
+                        <th class="text-end pe-3">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- PME RECORDS -->
+                    {% for m in medicals %}
+                        <tr class="table-info table-opacity-10">
+                            <td class="ps-3">
+                                <div class="fw-bold text-dark">{{ m.crew.full_name if m.crew else 'Unknown Crew' }}</div>
+                                <small class="text-muted">PF: {{ m.crew.pf_number if m.crew else '--' }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-white">{{ m.crew.sub_role if m.crew else '--' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info text-dark"><i class="fa-solid fa-heart-pulse me-1"></i>PME</span>
+                            </td>
+                            <td>
+                                <strong>Periodical Medical Exam</strong>
+                                <div class="small text-muted">{{ m.fitness_status }} ({{ m.medical_category }})</div>
+                            </td>
+                            <td>
+                                <small>{{ m.hospital_name or 'Divisional Hospital HWH' }}</small>
+                            </td>
+                            <td>
+                                {{ m.last_pme_date.strftime('%d-%b-%Y') }}
+                                <div class="small text-muted">Age: {{ m.age_at_pme }}y (Every {{ m.frequency_years }}y)</div>
+                            </td>
+                            <td class="fw-bold text-dark">
+                                {{ m.due_date.strftime('%d-%b-%Y') }}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ m.status_info.class }} px-2 py-1">
+                                    {{ m.status_info.badge }}
+                                </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ m.certificate_no or '--' }}</small>
+                            </td>
+                            <td class="text-end pe-3">
+                                <small class="text-muted">{{ m.remarks or '--' }}</small>
+                            </td>
+                        </tr>
+                    {% endfor %}
+
+                    <!-- TRAINING RECORDS -->
+                    {% for t in trainings %}
+                        <tr>
+                            <td class="ps-3">
+                                <div class="fw-bold text-dark">{{ t.crew.full_name if t.crew else 'Unknown Crew' }}</div>
+                                <small class="text-muted">PF: {{ t.crew.pf_number if t.crew else '--' }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-white">{{ t.crew.sub_role if t.crew else '--' }}</span>
+                            </td>
+                            <td>
+                                {% if 'ABS' in t.training_type.upper() %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-traffic-light me-1"></i>ABS (6m)</span>
+                                {% elif 'CAMP' in t.training_type.upper() %}
+                                    <span class="badge bg-primary text-white"><i class="fa-solid fa-campground me-1"></i>Camp</span>
+                                {% else %}
+                                    <span class="badge bg-success text-white"><i class="fa-solid fa-graduation-cap me-1"></i>Refresher</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ t.training_type }}</strong>
+                            </td>
+                            <td>
+                                <small>{{ t.institute or 'ZRTI Bhuli' }}</small>
+                            </td>
+                            <td>
+                                {{ t.last_done_date.strftime('%d-%b-%Y') }}
+                            </td>
+                            <td class="fw-bold text-dark">
+                                {{ t.due_date.strftime('%d-%b-%Y') }}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ t.status_info.class }} px-2 py-1">
+                                    {{ t.status_info.badge }}
+                                </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ t.certificate_no or '--' }}</small>
+                            </td>
+                            <td class="text-end pe-3">
+                                <small class="text-muted">{{ t.remarks or '--' }}</small>
+                            </td>
+                        </tr>
+                    {% endfor %}
+
+                    {% if not medicals and not trainings %}
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-user-graduate fa-3x mb-3 text-secondary opacity-50"></i>
+                                <h6>No Squad Training or PME Records Found</h6>
+                                <p class="small mb-0">Use the button above to record training or PME completion.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CLI RECORD TRAINING / PME -->
+<div class="modal fade" id="recordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('supervisor.record_training_medical') }}">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="fa-solid fa-plus-circle me-1 text-primary"></i> Record Squad Training / PME
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Select Crew Member <span class="text-danger">*</span></label>
+                            <select name="crew_id" class="form-select" required>
+                                <option value="">-- Choose from your squad --</option>
+                                {% for c in my_crews %}
+                                    <option value="{{ c.id }}">{{ c.full_name }} ({{ c.sub_role }}) - PF: {{ c.pf_number or c.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Record Type <span class="text-danger">*</span></label>
+                            <select name="record_type" id="cliModalRecType" class="form-select" required onchange="toggleCliCourses()">
+                                <option value="TRAINING">Training Course</option>
+                                <option value="PME">Periodic Medical Examination (PME)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Course / Examination Name <span class="text-danger">*</span></label>
+                            <select name="course_name" id="cliModalCourseSelect" class="form-select" required>
+                                <option value="Refresher ELEC">Refresher ELEC (Electric Traction - 3 Years)</option>
+                                <option value="Refresher DSL">Refresher DSL (Diesel Traction - 3 Years)</option>
+                                <option value="Refresher GR & SR">Refresher GR & SR (Rules - 3 Years)</option>
+                                <option value="Automatic Block System">Automatic Block System (ABS - 6 Months)</option>
+                                <option value="Safety Camp">Safety Camp (Annual 1-Year)</option>
+                                <option value="ALP to SALP Promotional">ALP to SALP Promotional</option>
+                                <option value="SALP to LPS Promotional">SALP to LPS Promotional</option>
+                                <option value="LPS to LPG Promotional">LPS to LPG Promotional</option>
+                                <option value="LPG to LPP Promotional">LPG to LPP Promotional</option>
+                                <option value="LPP to LPM Promotional">LPP to LPM Promotional</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Institute / Hospital</label>
+                            <input type="text" name="institute" class="form-control" placeholder="e.g. ZRTI Bhuli or Hospital HWH">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Last Done Date <span class="text-danger">*</span></label>
+                            <input type="date" name="last_done_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Next Due Date (Leave blank to auto-compute)</label>
+                            <input type="date" name="due_date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Certificate / Fit Memo No.</label>
+                            <input type="text" name="certificate_no" class="form-control" placeholder="e.g. CERT-2026-901">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Fitness / Result Status</label>
+                            <input type="text" name="status" class="form-control" value="Passed / Fit A-One">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-dark">Remarks</label>
+                            <textarea name="remarks" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm fw-bold">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Save Squad Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCliCourses() {
+    const recType = document.getElementById('cliModalRecType').value;
+    const courseSelect = document.getElementById('cliModalCourseSelect');
+    if (recType === 'PME') {
+        courseSelect.innerHTML = `
+            <option value="Periodic Medical Examination" selected>Periodic Medical Examination (PME)</option>
+        `;
+    } else {
+        courseSelect.innerHTML = `
+            <option value="Refresher ELEC">Refresher ELEC (Electric Traction - 3 Years)</option>
+            <option value="Refresher DSL">Refresher DSL (Diesel Traction - 3 Years)</option>
+            <option value="Refresher GR & SR">Refresher GR & SR (Rules - 3 Years)</option>
+            <option value="Automatic Block System">Automatic Block System (ABS - 6 Months)</option>
+            <option value="Safety Camp">Safety Camp (Annual 1-Year)</option>
+            <option value="ALP to SALP Promotional">ALP to SALP Promotional</option>
+            <option value="SALP to LPS Promotional">SALP to LPS Promotional</option>
+            <option value="LPS to LPG Promotional">LPS to LPG Promotional</option>
+            <option value="LPG to LPP Promotional">LPG to LPP Promotional</option>
+            <option value="LPP to LPM Promotional">LPP to LPM Promotional</option>
+        `;
+    }
+}
+</script>
+{% endblock %}

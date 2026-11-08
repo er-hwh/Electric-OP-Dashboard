@@ -137,6 +137,13 @@
                         </div>
                         <i class="fa-solid fa-chevron-right text-muted"></i>
                     </a>
+                    <a href="{{ url_for('admin.training_medical') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 bg-info bg-opacity-10">
+                        <div>
+                            <strong class="text-dark"><i class="fa-solid fa-graduation-cap me-2 text-primary"></i> Training & Medical (PME) Management</strong>
+                            <small class="text-muted d-block ms-4">Refresher ELEC/DSL/GR, ABS (6M), A-One PME age rules, weekly Excel sync</small>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-muted"></i>
+                    </a>
                 </div>
 
                 <div class="bg-light p-3 rounded border small">
@@ -154,8 +161,8 @@
                         <a href="{{ url_for('admin.download_template', template_type='counselling') }}" class="btn btn-outline-danger btn-sm py-0">
                             Counselling
                         </a>
-                        <a href="{{ url_for('admin.download_template', template_type='training') }}" class="btn btn-outline-info btn-sm py-0">
-                            Training
+                        <a href="{{ url_for('admin.download_training_medical_template') }}" class="btn btn-outline-info btn-sm py-0 fw-bold">
+                            Training & PME
                         </a>
                     </div>
                 </div>

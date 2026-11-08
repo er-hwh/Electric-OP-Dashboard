@@ -252,3 +252,212 @@ def export_crew_master_to_excel(crews, custom_fields=None):
     wb.save(buf)
     buf.seek(0)
     return buf
+
+
+# ---------------------------------------------------------------------------
+# PHASE 4: TRAINING & PERIODICAL MEDICAL EXAMINATION (PME) EXCEL ENGINE
+# ---------------------------------------------------------------------------
+
+def parse_excel_date(val):
+    if not val:
+        return None
+    if isinstance(val, (datetime, date)):
+        return val.date() if isinstance(val, datetime) else val
+    s = str(val).strip()
+    if not s or s.upper() in ('NA', 'N/A', '-', '#N/A', 'NONE', 'NIL', 'NULL', 'UNKNOWN', '0'):
+        return None
+    for fmt in [
+        "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d",
+        "%d.%m.%Y", "%d-%b-%Y", "%d-%B-%Y", "%d-%b-%y"
+    ]:
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            pass
+    try:
+        f = float(s)
+        if f > 30000:
+            return (datetime(1899, 12, 30) + timedelta(days=f)).date()
+    except Exception:
+        pass
+    return None
+
+
+def generate_training_medical_template():
+    """Generates formatted Excel template for Weekly Training & PME Bulk Upload."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Training & PME Update"
+
+    # Header styling
+    title_fill = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
+    header_fill = PatternFill(start_color="2F5597", end_color="2F5597", fill_type="solid")
+    font_title = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
+    font_header = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+    font_sample = Font(name="Calibri", size=9, italic=True, color="555555")
+
+    # Title Block
+    ws.merge_cells("A1:J1")
+    ws["A1"] = "EASTERN RAILWAY - HOWRAH DIVISION (ELECTRIC OPERATION) | WEEKLY TRAINING & PME UPDATE TEMPLATE"
+    ws["A1"].font = font_title
+    ws["A1"].fill = title_fill
+    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 30
+
+    headers = [
+        "Employee PF / Mobile *",
+        "Crew Name",
+        "Record Type *",
+        "Course / Exam Name *",
+        "Institute / Hospital",
+        "Last Done Date * (YYYY-MM-DD)",
+        "Next Due Date (Auto if blank)",
+        "Certificate / Memo No.",
+        "Fitness / Result",
+        "Remarks"
+    ]
+    ws.append([]) # blank row 2
+    ws.append(headers) # row 3
+    ws.row_dimensions[3].height = 24
+
+    for col_idx in range(1, len(headers) + 1):
+        cell = ws.cell(row=3, column=col_idx)
+        cell.font = font_header
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    # Sample rows demonstrating Refresher ELEC, DSL, GR&SR, ABS, and PME
+    sample_rows = [
+        ["5020999001", "Ramesh Kumar Sharma", "Training", "Refresher ELEC", "ZRTI Bhuli", "2026-03-15", "", "CERT-ELEC-4401", "Passed", "3-Year validity cycle auto-calculated"],
+        ["5020999002", "Anoop Singh", "Training", "Refresher DSL", "ZRTI Bhuli", "2026-04-10", "", "CERT-DSL-3190", "Passed", "Diesel traction cycle"],
+        ["5020999001", "Ramesh Kumar Sharma", "Training", "Refresher GR & SR", "ZRTI Bhuli", "2026-05-20", "", "CERT-GRSR-1122", "Passed", "Operating rules refresher"],
+        ["5020999003", "Deepak Das", "Training", "Automatic Block System", "DTTC HWH", "2026-08-01", "", "ABS-HWH-882", "Certified", "6-Month validity auto-calculated"],
+        ["5020999001", "Ramesh Kumar Sharma", "PME", "Periodic Medical Examination", "Divisional Hospital HWH", "2026-06-12", "", "FIT-A1-90123", "Fit A-One", "Age-based frequency auto-applied"]
+    ]
+
+    for r in sample_rows:
+        ws.append(r)
+        row_idx = ws.max_row
+        for col_idx in range(1, len(r) + 1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            cell.font = font_sample
+
+    for col in ws.columns:
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = 22
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+
+def parse_training_medical_excel(file_stream):
+    """
+    Parses uploaded Weekly Training & PME Excel sheet, matching crew members
+    and applying railway validity cycle calculations.
+    """
+    from models import User, TrainingRecord
+    wb = openpyxl.load_workbook(file_stream, data_only=True)
+    ws = wb.active
+
+    # Detect header row (contains 'Employee' or 'PF' or 'Course')
+    header_row_idx = 3
+    for r in range(1, min(10, ws.max_row + 1)):
+        row_vals = [clean_cell_str(ws.cell(r, c).value).lower() for c in range(1, min(15, ws.max_column + 1))]
+        if any('pf' in v or 'employee' in v or 'mobile' in v for v in row_vals) and any('course' in v or 'exam' in v or 'type' in v for v in row_vals):
+            header_row_idx = r
+            break
+
+    # Build col map
+    col_map = {}
+    for c in range(1, ws.max_column + 1):
+        val = clean_cell_str(ws.cell(header_row_idx, c).value).lower()
+        if 'pf' in val or 'employee' in val or 'mobile' in val or 'staff' in val:
+            col_map['identifier'] = c
+        elif 'name' in val:
+            col_map['crew_name'] = c
+        elif 'record' in val and 'type' in val:
+            col_map['record_type'] = c
+        elif 'course' in val or 'exam' in val or 'training' in val:
+            col_map['course_name'] = c
+        elif 'institute' in val or 'hospital' in val or 'place' in val:
+            col_map['institute'] = c
+        elif 'last' in val or 'done' in val:
+            col_map['last_done_date'] = c
+        elif 'due' in val:
+            col_map['due_date'] = c
+        elif 'cert' in val or 'memo' in val or 'no' in val:
+            col_map['certificate_no'] = c
+        elif 'fit' in val or 'result' in val or 'status' in val:
+            col_map['status'] = c
+        elif 'remark' in val or 'note' in val:
+            col_map['remarks'] = c
+
+    parsed_rows = []
+    seen_identifiers = set()
+
+    for r in range(header_row_idx + 1, ws.max_row + 1):
+        raw_id = clean_cell_str(ws.cell(r, col_map.get('identifier', 1)).value)
+        if not raw_id:
+            continue
+
+        raw_name = clean_cell_str(ws.cell(r, col_map.get('crew_name', 2)).value)
+        rec_type = clean_cell_str(ws.cell(r, col_map.get('record_type', 3)).value) or 'Training'
+        course = clean_cell_str(ws.cell(r, col_map.get('course_name', 4)).value)
+        institute = clean_cell_str(ws.cell(r, col_map.get('institute', 5)).value)
+        raw_done = ws.cell(r, col_map.get('last_done_date', 6)).value
+        raw_due = ws.cell(r, col_map.get('due_date', 7)).value
+        cert_no = clean_cell_str(ws.cell(r, col_map.get('certificate_no', 8)).value)
+        status_val = clean_cell_str(ws.cell(r, col_map.get('status', 9)).value) or 'Passed'
+        remarks = clean_cell_str(ws.cell(r, col_map.get('remarks', 10)).value)
+
+        done_date = parse_excel_date(raw_done)
+        due_date = parse_excel_date(raw_due)
+
+        # Match Crew in Database
+        id_clean = clean_mobile_10(raw_id) or raw_id
+        crew_user = User.query.filter(
+            (User.mobile == id_clean) |
+            (User.pf_number == raw_id) |
+            (User.username == raw_id)
+        ).first()
+
+        row_errors = []
+        if not crew_user:
+            row_errors.append(f"No matching crew found for '{raw_id}'")
+        if not done_date:
+            row_errors.append("Invalid or missing Last Done Date")
+        if not course:
+            row_errors.append("Course or Exam Name is required")
+
+        # Auto-calculate due date if missing
+        is_pme = 'PME' in rec_type.upper() or 'PME' in course.upper() or 'MEDICAL' in course.upper()
+        if done_date and not due_date:
+            if is_pme and crew_user:
+                due_date = crew_user.calculate_next_pme_due(done_date)
+            elif is_pme:
+                # Default age <= 45 (4 years) if user not found yet
+                due_date = done_date.replace(year=done_date.year + 4)
+            else:
+                due_date = TrainingRecord.calculate_due_date(done_date, course)
+
+        parsed_rows.append({
+            'row_num': r,
+            'identifier': raw_id,
+            'crew_user_id': crew_user.id if crew_user else None,
+            'crew_name': crew_user.full_name if crew_user else (raw_name or 'Unknown'),
+            'record_type': 'PME' if is_pme else 'Training',
+            'course_name': course,
+            'institute': institute or ('Divisional Hospital HWH' if is_pme else 'ZRTI Bhuli'),
+            'last_done_date': done_date.strftime('%Y-%m-%d') if done_date else '',
+            'due_date': due_date.strftime('%Y-%m-%d') if due_date else '',
+            'certificate_no': cert_no,
+            'status': status_val,
+            'remarks': remarks,
+            'is_valid': len(row_errors) == 0,
+            'errors': row_errors
+        })
+
+    return parsed_rows
+

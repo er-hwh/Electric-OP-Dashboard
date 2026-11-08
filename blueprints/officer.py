@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from database import db
 from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, 
-    CounsellingAcknowledgement, TrainingRecord, Message, FootplateInspection,
+    CounsellingAcknowledgement, TrainingRecord, MedicalRecord, Message, FootplateInspection,
     CLIMovement, CrewCounsellingRecord
 )
 from blueprints.auth import role_required
@@ -353,33 +353,86 @@ def reply_message(message_id):
 @officer_bp.route('/training-monitor')
 def training_monitor():
     lobbies = Lobby.query.order_by(Lobby.code).all()
-    status_filter = request.args.get('status', 'ALL')
-    lobby_filter = request.args.get('lobby', 'ALL')
-
-    query = TrainingRecord.query.join(User, TrainingRecord.crew_id == User.id)
-
-    if lobby_filter != 'ALL':
-        query = query.filter(User.lobby_id == int(lobby_filter))
+    clis = User.query.filter_by(role='supervisor', sub_role='CLI', is_active=True).order_by(User.full_name).all()
+    status_filter = request.args.get('status', 'ALL').strip().upper()
+    lobby_filter = request.args.get('lobby', 'ALL').strip()
+    cli_filter = request.args.get('cli', 'ALL').strip()
+    record_type = request.args.get('type', 'ALL').strip().upper() # ALL, TRAINING, PME
+    course_filter = request.args.get('course', 'ALL').strip()
+    q = request.args.get('q', '').strip()
 
     today = date.today()
-    if status_filter == 'OVERDUE':
-        query = query.filter(TrainingRecord.due_date < today)
-    elif status_filter == 'DUE_SOON':
-        query = query.filter(
-            TrainingRecord.due_date >= today,
-            TrainingRecord.due_date <= today + timedelta(days=30)
-        )
-    elif status_filter == 'VALID':
-        query = query.filter(TrainingRecord.due_date > today + timedelta(days=30))
 
-    records = query.order_by(TrainingRecord.due_date.asc()).all()
+    # Query Training Records
+    trainings = []
+    if record_type in ['ALL', 'TRAINING']:
+        t_query = TrainingRecord.query.join(User, TrainingRecord.crew_id == User.id)
+        if lobby_filter != 'ALL' and lobby_filter.isdigit():
+            t_query = t_query.filter(User.lobby_id == int(lobby_filter))
+        if cli_filter != 'ALL' and cli_filter.isdigit():
+            t_query = t_query.filter(User.cli_id == int(cli_filter))
+        if course_filter != 'ALL' and course_filter:
+            t_query = t_query.filter(TrainingRecord.training_type.ilike(f"%{course_filter}%"))
+        if status_filter == 'OVERDUE':
+            t_query = t_query.filter(TrainingRecord.due_date < today)
+        elif status_filter == 'DUE_SOON':
+            t_query = t_query.filter(TrainingRecord.due_date >= today, TrainingRecord.due_date <= today + timedelta(days=30))
+        elif status_filter == 'VALID':
+            t_query = t_query.filter(TrainingRecord.due_date > today + timedelta(days=30))
+        if q:
+            q_wild = f"%{q}%"
+            t_query = t_query.filter(
+                (User.full_name.ilike(q_wild)) |
+                (User.pf_number.ilike(q_wild)) |
+                (User.mobile.ilike(q_wild))
+            )
+        trainings = t_query.order_by(TrainingRecord.due_date.asc()).all()
+
+    # Query Medical / PME Records
+    medicals = []
+    if record_type in ['ALL', 'PME']:
+        m_query = MedicalRecord.query.join(User, MedicalRecord.crew_id == User.id)
+        if lobby_filter != 'ALL' and lobby_filter.isdigit():
+            m_query = m_query.filter(User.lobby_id == int(lobby_filter))
+        if cli_filter != 'ALL' and cli_filter.isdigit():
+            m_query = m_query.filter(User.cli_id == int(cli_filter))
+        if status_filter == 'OVERDUE':
+            m_query = m_query.filter(MedicalRecord.due_date < today)
+        elif status_filter == 'DUE_SOON':
+            m_query = m_query.filter(MedicalRecord.due_date >= today, MedicalRecord.due_date <= today + timedelta(days=30))
+        elif status_filter == 'VALID':
+            m_query = m_query.filter(MedicalRecord.due_date > today + timedelta(days=30))
+        if q:
+            q_wild = f"%{q}%"
+            m_query = m_query.filter(
+                (User.full_name.ilike(q_wild)) |
+                (User.pf_number.ilike(q_wild)) |
+                (User.mobile.ilike(q_wild))
+            )
+        medicals = m_query.order_by(MedicalRecord.due_date.asc()).all()
+
+    # Summary Metrics across division
+    overdue_trainings = TrainingRecord.query.filter(TrainingRecord.due_date < today).count()
+    due_trainings = TrainingRecord.query.filter(TrainingRecord.due_date >= today, TrainingRecord.due_date <= today + timedelta(days=30)).count()
+    overdue_pmes = MedicalRecord.query.filter(MedicalRecord.due_date < today).count()
+    due_pmes = MedicalRecord.query.filter(MedicalRecord.due_date >= today, MedicalRecord.due_date <= today + timedelta(days=30)).count()
 
     return render_template(
         'officer/training_monitor.html',
-        records=records,
+        trainings=trainings,
+        medicals=medicals,
         lobbies=lobbies,
+        clis=clis,
+        overdue_trainings=overdue_trainings,
+        due_trainings=due_trainings,
+        overdue_pmes=overdue_pmes,
+        due_pmes=due_pmes,
         current_status=status_filter,
-        current_lobby=lobby_filter
+        current_lobby=lobby_filter,
+        current_cli=cli_filter,
+        current_type=record_type,
+        current_course=course_filter,
+        current_q=q
     )
 
 
