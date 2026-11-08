@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime, date, timedelta
 
 # Set up paths
+sys.path.insert(0, r"C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\backup\hwh-division-operation-dashboard\hwh-division-operation-dashboard\venv\Lib\site-packages")
 project_dir = r"C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\Electric-OP-Dashboard"
 if project_dir not in sys.path:
     sys.path.insert(0, project_dir)

@@ -1033,3 +1033,100 @@ class UnusualIncident(db.Model):
         return labels.get(self.incident_category, self.incident_category)
 
 
+class CarouselSlide(db.Model):
+    __tablename__ = 'carousel_slides'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    subtitle = db.Column(db.String(300), nullable=True)
+    image_path = db.Column(db.String(300), nullable=False) # e.g. uploads/carousel/slide_1.jpg
+    button_text = db.Column(db.String(100), nullable=True)
+    button_url = db.Column(db.String(300), nullable=True)
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    author = db.relationship('User', foreign_keys=[created_by_id])
+
+
+class SafetyBulletin(db.Model):
+    __tablename__ = 'safety_bulletins'
+
+    id = db.Column(db.Integer, primary_key=True)
+    bulletin_no = db.Column(db.String(100), nullable=True) # e.g. SB/HWH/2026/04
+    title = db.Column(db.String(250), nullable=False)
+    bulletin_date = db.Column(db.Date, default=date.today)
+    category = db.Column(db.String(100), default='Safety Bulletin') # Safety Bulletin, Technical Circular, Caution Notice, General Order
+    description = db.Column(db.Text, nullable=True)
+    attachment_path = db.Column(db.String(300), nullable=True) # PDF file path
+    is_active = db.Column(db.Boolean, default=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    author = db.relationship('User', foreign_keys=[created_by_id])
+
+
+class RuleDocument(db.Model):
+    __tablename__ = 'rule_documents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(250), nullable=False)
+    category = db.Column(db.String(100), nullable=False) # General Rules (GR), Subsidiary Rules (SR), Station Working Rules (SWR), Accident Manual, Operating Manual, High Speed / Vande Bharat
+    rule_reference = db.Column(db.String(100), nullable=True) # e.g. GR 3.78, SR 4.19, SWR-BWN
+    description = db.Column(db.Text, nullable=True)
+    pdf_path = db.Column(db.String(300), nullable=False) # Uploaded PDF file
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    author = db.relationship('User', foreign_keys=[created_by_id])
+
+
+class LearningMaterial(db.Model):
+    __tablename__ = 'learning_materials'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(250), nullable=False)
+    traction_type = db.Column(db.String(50), default='COMMON') # ELECTRIC, DIESEL, COMMON
+    category = db.Column(db.String(100), default='Loco Study Material') # Loco Study Material, Troubleshooting Directory, Electrical Diagrams, Brake System Guides, E-Learning Modules
+    description = db.Column(db.Text, nullable=True)
+    content = db.Column(db.Text, nullable=True) # Rich text / HTML learning notes
+    attachment_path = db.Column(db.String(300), nullable=True) # Uploaded PDF document
+    external_url = db.Column(db.String(300), nullable=True) # e.g. https://elearninghwh.in/home_page.html
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    author = db.relationship('User', foreign_keys=[created_by_id])
+
+
+class PageContent(db.Model):
+    __tablename__ = 'page_contents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    content_key = db.Column(db.String(100), unique=True, nullable=False, index=True) # home_mission, home_vision, safety_slogan, emergency_contacts, etc.
+    title = db.Column(db.String(200), nullable=False)
+    content_value = db.Column(db.Text, nullable=False)
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
+
+    @classmethod
+    def get_val(cls, key, default=''):
+        item = cls.query.filter_by(content_key=key).first()
+        return item.content_value if item and item.content_value else default
+
+
+

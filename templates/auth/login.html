@@ -18,11 +18,11 @@
                 <form method="POST" action="{{ url_for('auth.login') }}">
                     <div class="mb-3">
                         <label for="username" class="form-label fw-bold small text-dark">
-                            <i class="fa-solid fa-user me-1 text-primary"></i> Login Identifier (CMS ID / CLI ID / Username / Mobile):
+                            <i class="fa-solid fa-user me-1 text-primary"></i> Login Identifier (CLI ID / CMS ID / Username / Mobile):
                         </label>
-                        <input type="text" class="form-control form-control-lg fs-6" id="username" name="username" placeholder="e.g. admin, Sr. DEE(OP)/HWH, CNL_HWH, CLI_HWH_01, HWH0001, 9876543210" required autofocus>
+                        <input type="text" class="form-control form-control-lg fs-6" id="username" name="username" placeholder="e.g. HWH0095, admin, Sr. DEE(OP)/HWH, TLC, PCNL, 9876543210" required autofocus>
                         <div class="form-text small">
-                            Crew: CMS ID (e.g. HWH0001) or Mobile; CLI: CLI ID or Name; Officer/Admin: Official ID.
+                            <strong class="text-primary">CLIs:</strong> Enter your designated <strong>CLI ID (e.g. HWH0095, HWH0097)</strong> &bull; <strong class="text-success">Crew:</strong> CMS ID or Mobile &bull; <strong class="text-danger">Admin:</strong> admin.
                         </div>
                     </div>
 
@@ -108,7 +108,7 @@
                                         <strong>CLI Login</strong><br>
                                         <small class="text-muted">Chief Loco Inspector & CCC</small>
                                     </td>
-                                    <td><code>CLI_HWH_01</code> / <code>CCC_HWH</code></td>
+                                    <td><code>HWH0095</code> (CLI ID)<br><code>CLI_HWH_01</code> / <code>CCC_HWH</code></td>
                                     <td><code>12345</code></td>
                                 </tr>
                                 <tr class="table-secondary border-start border-3 border-secondary">

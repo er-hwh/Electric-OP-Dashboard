@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Rules & Regulations Management | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap border-bottom pb-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger"><i class="fa-solid fa-lock me-1"></i> Admin CMS</span>
+                <span class="badge bg-success">Rules &amp; Regulations Repository</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Rules &amp; Regulations PDF Upload &amp; Management</h3>
+            <small class="text-muted">Upload and categorize official railway rulebooks (General Rules, Subsidiary Rules, SWR, Accident Manual, Operating Manual) with direct PDF attachments.</small>
+        </div>
+        <div class="d-flex gap-2 mt-2 mt-md-0">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm fw-bold">
+                <i class="fa-solid fa-arrow-left me-1"></i> Admin Console
+            </a>
+            <a href="{{ url_for('public.rules') }}" target="_blank" class="btn btn-outline-success btn-sm fw-bold">
+                <i class="fa-solid fa-eye me-1"></i> View Public Rules Page
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Upload Form -->
+        <div class="col-lg-4">
+            <div class="rail-card p-3 shadow-sm h-100">
+                <div class="rail-card-header accent-gold mb-3">
+                    <span><i class="fa-solid fa-file-circle-plus text-success me-2"></i> Upload Rule Document</span>
+                </div>
+                <form method="POST" action="{{ url_for('admin.cms_rules') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Rule Document Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. General Rules &amp; Eastern Railway Subsidiary Rules 2026" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Category / Rule Type <span class="text-danger">*</span></label>
+                        <select name="category" class="form-select form-select-sm" required>
+                            <option value="General Rules (GR)" selected>General Rules (GR)</option>
+                            <option value="Subsidiary Rules (SR)">Subsidiary Rules (SR)</option>
+                            <option value="Station Working Rules (SWR)">Station Working Rules (SWR)</option>
+                            <option value="Accident Manual">Accident Manual</option>
+                            <option value="Operating Manual">Operating Manual</option>
+                            <option value="High Speed &amp; Vande Bharat Rules">High Speed &amp; Vande Bharat Rules</option>
+                            <option value="Block Working Manual">Block Working Manual</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Rule Reference / Chapter</label>
+                        <input type="text" name="rule_reference" class="form-control form-control-sm" placeholder="e.g. GR 3.78, SR 4.19, SWR-BWN">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Description &amp; Key Applicability</label>
+                        <textarea name="description" rows="3" class="form-control form-control-sm" placeholder="Summary of chapters covered, running staff duties, amendments..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark"><i class="fa-solid fa-file-pdf text-danger me-1"></i> Rulebook PDF File <span class="text-danger">*</span></label>
+                        <input type="file" name="pdf_file" class="form-control form-control-sm" accept=".pdf" required>
+                        <small class="text-muted">Upload official complete PDF document.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Display Order</label>
+                        <input type="number" name="display_order" class="form-control form-control-sm" value="0">
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_active" value="1" id="is_active_rule" checked>
+                        <label class="form-check-label fw-bold small text-dark" for="is_active_rule">Active &amp; Available for Download</label>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-sm fw-bold">
+                            <i class="fa-solid fa-upload me-1"></i> Upload Rule Document
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Rules List Table -->
+        <div class="col-lg-8">
+            <div class="rail-card p-3 shadow-sm h-100">
+                <div class="rail-card-header accent-blue mb-3">
+                    <span><i class="fa-solid fa-book text-primary me-2"></i> Current Rule Documents ({{ docs|length }})</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category &amp; Ref</th>
+                                <th>Title &amp; Description</th>
+                                <th>PDF Document</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if docs %}
+                                {% for d in docs %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-success">{{ d.category }}</span>
+                                            {% if d.rule_reference %}
+                                                <br><code class="small">{{ d.rule_reference }}</code>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong class="text-dark">{{ d.title }}</strong>
+                                            {% if d.description %}
+                                                <small class="text-muted d-block mt-1">{{ d.description[:100] }}{% if d.description|length > 100 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('static', filename=d.pdf_path) }}" target="_blank" class="btn btn-outline-danger btn-sm py-0">
+                                                <i class="fa-solid fa-file-pdf me-1"></i> View PDF
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {% if d.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Hidden</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <form method="POST" action="{{ url_for('admin.cms_rule_toggle', rule_id=d.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-outline-warning btn-sm py-0" title="Toggle Active">
+                                                    <i class="fa-solid fa-power-off"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('admin.cms_rule_delete', rule_id=d.id) }}" class="d-inline" onsubmit="return confirm('Delete this rule document?');">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 ms-1" title="Delete">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fa-solid fa-book-open fa-2x mb-2 d-block opacity-50"></i>
+                                        No rule documents uploaded yet. Upload GR, SR, or SWR documents using the form on the left.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

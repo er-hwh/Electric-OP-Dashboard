@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Page Content CMS | Electric Operation Howrah{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap border-bottom pb-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger"><i class="fa-solid fa-lock me-1"></i> Admin CMS</span>
+                <span class="badge bg-info text-dark fw-bold">Live Content Management</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Portal Page Content Management (CMS)</h3>
+            <small class="text-muted">Edit departmental vision, mission statements, safety slogans, and emergency contact details rendered across the public web portal.</small>
+        </div>
+        <div class="d-flex gap-2 mt-2 mt-md-0">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm fw-bold">
+                <i class="fa-solid fa-arrow-left me-1"></i> Admin Console
+            </a>
+            <a href="{{ url_for('public.index') }}" target="_blank" class="btn btn-outline-primary btn-sm fw-bold">
+                <i class="fa-solid fa-eye me-1"></i> View Live Site
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.cms_pages') }}">
+        <div class="row g-4">
+            <!-- Existing Content Keys -->
+            <div class="col-lg-8">
+                <div class="rail-card p-3 shadow-sm mb-4">
+                    <div class="rail-card-header accent-blue mb-3">
+                        <span><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Editable System Content Blocks</span>
+                    </div>
+
+                    {% for p in pages %}
+                        <div class="card mb-3 border border-light-subtle shadow-sm">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                                <div>
+                                    <strong class="text-dark">{{ p.title }}</strong>
+                                    <code class="ms-2 text-muted small">key: {{ p.content_key }}</code>
+                                </div>
+                                <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>{{ p.updated_at.strftime('%d-%b-%Y %H:%M') if p.updated_at else 'Initial' }}</small>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold text-muted">Section Title / Header:</label>
+                                    <input type="text" name="title_{{ p.id }}" class="form-control form-control-sm" value="{{ p.title }}" required>
+                                </div>
+                                <div>
+                                    <label class="form-label small fw-bold text-muted">Content Body / Text:</label>
+                                    <textarea name="content_{{ p.id }}" rows="3" class="form-control form-control-sm" required>{{ p.content_value }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary fw-bold shadow-sm px-4">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save All Content Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add New Custom Key -->
+            <div class="col-lg-4">
+                <div class="rail-card p-3 shadow-sm mb-4">
+                    <div class="rail-card-header accent-gold mb-3">
+                        <span><i class="fa-solid fa-plus text-primary me-2"></i> Add New Content Key</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Unique Key Identifier <span class="text-danger">*</span></label>
+                        <input type="text" name="new_content_key" class="form-control form-control-sm" placeholder="e.g. monsoon_safety_guideline">
+                        <small class="text-muted">Alphanumeric lowercase with underscores.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Block Title <span class="text-danger">*</span></label>
+                        <input type="text" name="new_title" class="form-control form-control-sm" placeholder="e.g. Monsoon Traction Advisory">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Content Value / Text <span class="text-danger">*</span></label>
+                        <textarea name="new_content_value" rows="4" class="form-control form-control-sm" placeholder="Enter paragraph content or instructions..."></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-outline-success btn-sm fw-bold">
+                            <i class="fa-solid fa-plus me-1"></i> Create Content Key
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CMS Guide Card -->
+                <div class="rail-card p-3 bg-light border small shadow-sm">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-circle-info text-primary me-1"></i> How CMS Keys Work</h6>
+                    <ul class="text-muted ps-3 mb-0">
+                        <li><code>home_mission</code>: Powers Department Mission text on Home and About pages.</li>
+                        <li><code>home_vision</code>: Powers Department Vision statement.</li>
+                        <li><code>safety_slogan</code>: Dynamic slogan banner across portal headers.</li>
+                        <li><code>emergency_contacts</code>: Renders in the footer emergency contact block.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -3,6 +3,8 @@ import sys
 from datetime import datetime, date, timedelta
 
 # Add workspace and site-packages
+sys.path.insert(0, r"C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\backup\hwh-division-operation-dashboard\hwh-division-operation-dashboard\venv\Lib\site-packages")
+sys.path.insert(0, r"C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\Electric-OP-Dashboard")
 sys.path.insert(0, os.path.abspath('.'))
 
 from app import create_app
