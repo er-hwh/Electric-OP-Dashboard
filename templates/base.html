@@ -72,6 +72,9 @@
                                 {% if current_user.is_admin() %}
                                     <li><a class="dropdown-item fw-bold text-danger" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>Admin Console (System Edit)</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.crew_master') }}"><i class="fa-solid fa-users-gear me-2 text-primary"></i>Crew Master Database</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.notices_list') }}"><i class="fa-solid fa-bullhorn me-2 text-danger"></i>Notices & Circulars (Phase 5)</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.counselling_list') }}"><i class="fa-solid fa-chalkboard-user me-2 text-info"></i>Safety Counselling Topics</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.training_medical') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Management</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.important_tools') }}"><i class="fa-solid fa-screwdriver-wrench me-2 text-warning"></i>Important Tools (Admin Only)</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin.retention_policy') }}"><i class="fa-solid fa-clock-rotate-left me-2 text-danger"></i>Retention Policy (90 Days)</a></li>
@@ -80,12 +83,18 @@
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>Supervisor Console (View)</a></li>
                                 {% elif current_user.is_officer() %}
                                     <li><a class="dropdown-item fw-bold text-primary" href="{{ url_for('officer.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Officer Dashboard ({{ current_user.sub_role }})</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.notice_compliance') }}"><i class="fa-solid fa-bullhorn me-2 text-danger"></i>Notice Assurance Compliance</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.counselling_monitor') }}"><i class="fa-solid fa-chalkboard-user me-2 text-info"></i>Safety Counselling Monitor (30 Days)</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.training_monitor') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Compliance</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Daily Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_performance') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i>CLI Performance Monitoring</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.crew_performance') }}"><i class="fa-solid fa-users me-2 text-info"></i>Crew Performance Monitoring</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>Operational Control View</a></li>
                                 {% elif current_user.is_control() %}
                                     <li><a class="dropdown-item fw-bold text-warning" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-headset me-2 text-warning"></i>{% if current_user.is_tlc() %}TLC (Electric){% elif current_user.is_pcnl() %}PCNL (Diesel){% else %}TLC / PCNL Control{% endif %} Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.notice_compliance') }}"><i class="fa-solid fa-bullhorn me-2 text-danger"></i>Notice Assurance Compliance</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.counselling_monitor') }}"><i class="fa-solid fa-chalkboard-user me-2 text-info"></i>Safety Counselling Monitor (30 Days)</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.training_monitor') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Compliance</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Daily Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_performance') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i>CLI Performance Monitoring</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.crew_performance') }}"><i class="fa-solid fa-users me-2 text-info"></i>Crew Performance Monitoring</a></li>
@@ -93,6 +102,10 @@
                                     <li><a class="dropdown-item" href="{{ url_for('control.pf_entry_speed') }}"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>PF Entry Speed Checking</a></li>
                                 {% elif current_user.is_supervisor() %}
                                     <li><a class="dropdown-item fw-bold text-info" href="{{ url_for('supervisor.dashboard') }}"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>CLI Supervisor Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.notices_status') }}"><i class="fa-solid fa-bullhorn me-2 text-danger"></i>Squad Circular Assurances</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.counselling_logs') }}"><i class="fa-solid fa-chalkboard-user me-2 text-info"></i>Squad Counselling Register</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.new_counselling_log') }}"><i class="fa-solid fa-plus me-2 text-primary"></i>Record Counselling Session</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.training_medical') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Squad Training & PME</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>Daily Activity & Movement Log</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.counselling') }}"><i class="fa-solid fa-clipboard-user me-2 text-danger"></i>Crew Supervision Register</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.export_roster_excel') }}"><i class="fa-solid fa-file-excel me-2 text-success"></i>Export Crew Master Excel</a></li>
@@ -183,6 +196,9 @@
                             <a href="{{ url_for('admin.dashboard') }}" class="btn btn-dashboard-nav shadow-sm btn-sm">
                                 <i class="fa-solid fa-gauge-high me-1"></i> Admin Portal
                             </a>
+                            <a href="{{ url_for('admin.notices_list') }}" class="btn btn-outline-danger btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                                <i class="fa-solid fa-bullhorn me-1"></i> Notices
+                            </a>
                             <a href="{{ url_for('admin.training_medical') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
                                 <i class="fa-solid fa-graduation-cap me-1 text-primary"></i> Training & PME
                             </a>
@@ -193,12 +209,18 @@
                             <a href="{{ url_for('control.dashboard') }}" class="btn btn-warning btn-sm text-dark fw-bold shadow-sm">
                                 <i class="fa-solid fa-headset me-1"></i> Control Desk
                             </a>
-                            <a href="{{ url_for('officer.training_monitor') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                            <a href="{{ url_for('control.notice_compliance') }}" class="btn btn-outline-danger btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                                <i class="fa-solid fa-bullhorn me-1"></i> Notices
+                            </a>
+                            <a href="{{ url_for('control.training_monitor') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
                                 <i class="fa-solid fa-graduation-cap me-1"></i> Training Monitor
                             </a>
                         {% elif current_user.is_officer() %}
                             <a href="{{ url_for('officer.dashboard') }}" class="btn btn-dashboard-nav shadow-sm btn-sm">
                                 <i class="fa-solid fa-shield-halved me-1"></i> Officer Desk
+                            </a>
+                            <a href="{{ url_for('officer.notice_compliance') }}" class="btn btn-outline-danger btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                                <i class="fa-solid fa-bullhorn me-1"></i> Notices
                             </a>
                             <a href="{{ url_for('officer.training_monitor') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
                                 <i class="fa-solid fa-graduation-cap me-1"></i> Training Monitor
@@ -206,6 +228,9 @@
                         {% elif current_user.is_supervisor() %}
                             <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-dashboard-nav shadow-sm btn-sm">
                                 <i class="fa-solid fa-clipboard-check me-1"></i> Supervisor Console
+                            </a>
+                            <a href="{{ url_for('supervisor.notices_status') }}" class="btn btn-outline-danger btn-sm fw-bold shadow-sm d-none d-md-inline-block">
+                                <i class="fa-solid fa-bullhorn me-1"></i> Notices
                             </a>
                             <a href="{{ url_for('supervisor.training_medical') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-none d-md-inline-block">
                                 <i class="fa-solid fa-graduation-cap me-1"></i> Squad Training & PME

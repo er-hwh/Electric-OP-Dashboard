@@ -154,26 +154,96 @@
 
         <!-- Urgent Notices / Circulars -->
         <div class="col-lg-7 col-12">
-            <div class="rail-card h-100 p-3 border-start border-4 border-danger">
+            <div class="rail-card h-100 p-3 border-start border-4 {% if mandatory_pending_notices %}border-danger bg-danger-subtle bg-opacity-25{% else %}border-primary{% endif %}">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold text-danger mb-0">
-                        <i class="fa-solid fa-triangle-exclamation me-2"></i> Safety Notices Awaiting Acknowledgement
+                    <h6 class="fw-bold {% if mandatory_pending_notices %}text-danger{% else %}text-dark{% endif %} mb-0">
+                        <i class="fa-solid fa-bullhorn me-2 {% if mandatory_pending_notices %}text-danger{% else %}text-primary{% endif %}"></i>
+                        Departmental Safety Circulars & Directives
                     </h6>
-                    <span class="badge bg-danger">{{ pending_notices|length }} Pending</span>
+                    <div class="d-flex gap-1">
+                        {% if mandatory_pending_notices %}
+                        <span class="badge bg-danger animate__animated animate__pulse animate__infinite">
+                            <i class="fa-solid fa-lock me-1"></i>{{ mandatory_pending_notices|length }} Mandatory Gate
+                        </span>
+                        {% endif %}
+                        <span class="badge {% if pending_notices %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                            {{ pending_notices|length }} Pending
+                        </span>
+                    </div>
                 </div>
+
                 {% if pending_notices %}
-                    <div class="list-group list-group-flush small">
-                        {% for n in pending_notices[:3] %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
-                                <div>
-                                    <strong class="text-dark">{{ n.title }}</strong>
-                                    <div class="text-muted" style="font-size: 0.75rem;">{{ n.category }} &bull; {{ n.created_at.strftime('%d-%b-%Y') }}</div>
+                    <div class="list-group list-group-flush small mb-2">
+                        {% for n in pending_notices[:4] %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 bg-transparent">
+                                <div class="me-2">
+                                    <div class="fw-bold text-dark">
+                                        {{ n.title }}
+                                        {% if n.is_mandatory %}
+                                        <span class="badge bg-danger ms-1" style="font-size: 0.68rem;">MANDATORY</span>
+                                        {% endif %}
+                                        {% if n.traction_type == 'ELECTRIC' %}
+                                        <span class="badge bg-info text-dark" style="font-size: 0.65rem;">ELEC</span>
+                                        {% elif n.traction_type == 'DIESEL' %}
+                                        <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">DSL</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        Ref: {{ n.notice_number or 'HWH/E-OP' }} &bull; {{ n.created_at.strftime('%d-%b-%Y') if n.created_at else '' }}
+                                        {% if n.attachment_path %}
+                                        &bull; <a href="{{ url_for('static', filename=n.attachment_path) }}" target="_blank" class="text-primary text-decoration-none"><i class="fa-solid fa-paperclip"></i> View PDF</a>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                <form action="{{ url_for('crew.acknowledge_notice', notice_id=n.id) }}" method="POST">
-                                    <button type="submit" class="btn btn-danger btn-sm py-0 px-2 fw-bold" style="font-size:0.75rem;">
-                                        <i class="fa-solid fa-check me-1"></i> Acknowledge
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm {% if n.is_mandatory %}btn-danger{% else %}btn-outline-primary{% endif %} fw-bold px-2 py-1"
+                                        data-bs-toggle="modal" data-bs-target="#ackModal{{ n.id }}" style="font-size:0.75rem;">
+                                    <i class="fa-solid fa-signature me-1"></i> Assure
+                                </button>
+
+                                <!-- Notice Assurance Modal -->
+                                <div class="modal fade" id="ackModal{{ n.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header {% if n.is_mandatory %}bg-danger text-white{% else %}bg-primary text-white{% endif %}">
+                                                <h6 class="modal-title fw-bold"><i class="fa-solid fa-stamp me-2"></i>Safety Assurance: {{ n.notice_number or 'Circular' }}</h6>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form action="{{ url_for('crew.acknowledge_notice', notice_id=n.id) }}" method="POST">
+                                                <div class="modal-body small p-3">
+                                                    <h6 class="fw-bold text-dark">{{ n.title }}</h6>
+                                                    <p class="text-muted mb-3" style="max-height: 180px; overflow-y: auto;">
+                                                        {{ n.content }}
+                                                    </p>
+                                                    {% if n.attachment_path %}
+                                                    <div class="mb-3">
+                                                        <a href="{{ url_for('static', filename=n.attachment_path) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                                            <i class="fa-solid fa-file-pdf me-1 text-danger"></i> Read Full Attachment PDF
+                                                        </a>
+                                                    </div>
+                                                    {% endif %}
+                                                    <div class="p-2 bg-light rounded border mb-3">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="confirmAck{{ n.id }}" required>
+                                                            <label class="form-check-label fw-bold text-dark" for="confirmAck{{ n.id }}">
+                                                                I hereby confirm that I have read and completely understood the instructions laid down in this safety circular, and assure strict compliance during locomotive operation.
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label fw-bold">Remarks / Doubt Cleared (Optional)</label>
+                                                        <input type="text" name="remarks" class="form-control form-control-sm" placeholder="Read and understood instructions.">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                                    <button type="submit" class="btn btn-success btn-sm fw-bold">
+                                                        <i class="fa-solid fa-check-circle me-1"></i> Submit Digital Assurance
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -182,6 +252,28 @@
                         <i class="fa-solid fa-circle-check fa-2x mb-2 d-block"></i>
                         All division safety notices and circulars are digitally acknowledged!
                     </div>
+                {% endif %}
+
+                <!-- CLI ONE-TO-ONE COUNSELLING SESSION AWAITING CONFIRMATION -->
+                {% if pending_counselling_logs %}
+                <div class="border-top pt-2 mt-2">
+                    <h6 class="small fw-bold text-primary mb-2">
+                        <i class="fa-solid fa-chalkboard-user me-1"></i> One-to-One Counselling Awaiting Your Confirmation:
+                    </h6>
+                    {% for log in pending_counselling_logs %}
+                    <div class="p-2 bg-white rounded border mb-2 d-flex justify-content-between align-items-center">
+                        <div class="small">
+                            <strong>{{ log.topic }}</strong> ({{ log.counselling_date.strftime('%d-%b-%Y') }})
+                            <div class="text-muted" style="font-size: 0.72rem;">Imparted by CLI: {{ log.cli.full_name }} &bull; Mode: {{ log.counselling_mode }}</div>
+                        </div>
+                        <form action="{{ url_for('crew.acknowledge_counselling_log', log_id=log.id) }}" method="POST">
+                            <button type="submit" class="btn btn-sm btn-outline-success fw-bold py-0 px-2" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-check me-1"></i> Confirm
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -561,5 +653,82 @@
         </div>
     </div>
 </div>
+
+<!-- MANDATORY NOTICE GATE MODAL (Auto-enforced for unacknowledged safety circulars) -->
+{% if mandatory_pending_notices %}
+{% set m_notice = mandatory_pending_notices[0] %}
+<div class="modal fade" id="mandatoryNoticeGateModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>MANDATORY SAFETY CIRCULAR ASSURANCE REQUIRED
+                </h5>
+            </div>
+            <form action="{{ url_for('crew.acknowledge_notice', notice_id=m_notice.id) }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger d-flex align-items-center gap-2 mb-3">
+                        <i class="fa-solid fa-lock fs-4"></i>
+                        <div>
+                            <strong>Operational Notice Gate:</strong>
+                            Eastern Railway Safety Regulations require all running staff to acknowledge this circular before performing routine activities.
+                        </div>
+                    </div>
+
+                    <div class="border rounded p-3 bg-light mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-danger">{{ m_notice.notice_number or 'HWH/E-OP/SAFETY' }}</span>
+                            <small class="text-muted"><i class="fa-regular fa-calendar me-1"></i>{{ m_notice.created_at.strftime('%d-%b-%Y') if m_notice.created_at else '' }}</small>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">{{ m_notice.title }}</h5>
+                        <div class="p-3 bg-white rounded border text-secondary mb-3" style="max-height: 220px; overflow-y: auto; font-size: 0.95rem; white-space: pre-line;">
+                            {{ m_notice.content }}
+                        </div>
+                        {% if m_notice.attachment_path %}
+                        <div>
+                            <a href="{{ url_for('static', filename=m_notice.attachment_path) }}" target="_blank" class="btn btn-outline-danger btn-sm fw-bold">
+                                <i class="fa-solid fa-file-pdf me-1"></i> Open & Read Circular Attachment PDF
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="p-3 bg-light rounded border border-danger mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="gateAckCheck" required>
+                            <label class="form-check-label fw-bold text-dark" for="gateAckCheck">
+                                I hereby confirm and certify that I have read and understood the contents of this Safety Circular and I undertake to adhere strictly to all operating instructions, GR & SR provisions, and safety precautions contained herein.
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label fw-bold small">Queries / Feedback (Optional):</label>
+                        <input type="text" name="remarks" class="form-control" placeholder="Understood and noted for strict compliance.">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <div class="text-muted small me-auto">
+                        <i class="fa-solid fa-shield-halved me-1"></i> Digital signature and IP timestamp will be recorded.
+                    </div>
+                    <button type="submit" class="btn btn-danger fw-bold px-4 py-2">
+                        <i class="fa-solid fa-stamp me-1"></i> Digitally Acknowledge & Continue
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var gateModal = new bootstrap.Modal(document.getElementById('mandatoryNoticeGateModal'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+    gateModal.show();
+});
+</script>
+{% endif %}
 
 {% endblock %}

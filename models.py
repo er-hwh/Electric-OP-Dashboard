@@ -263,6 +263,39 @@ class User(db.Model):
         else:
             return {'status': 'VALID', 'class': 'success', 'badge': f'Valid ({days_left}d left)', 'days': days_left, 'days_left': days_left}
 
+    def get_last_counselling_date(self):
+        """Returns the date of last safety counselling."""
+        log = CrewCounsellingLog.query.filter_by(crew_id=self.id).order_by(CrewCounsellingLog.counselling_date.desc()).first()
+        if log:
+            return log.counselling_date
+        rec = CrewCounsellingRecord.query.filter(
+            (CrewCounsellingRecord.crew_user_id == self.id) |
+            (CrewCounsellingRecord.cug == self.mobile) |
+            (CrewCounsellingRecord.crew_id_str == self.username)
+        ).first()
+        if rec and rec.safety_counselling:
+            try:
+                from blueprints.supervisor import parse_date_value
+                return parse_date_value(rec.safety_counselling)
+            except Exception:
+                return None
+        return None
+
+    @property
+    def counselling_status(self):
+        """Returns status of monthly safety counselling (>30 days alert)."""
+        last_d = self.get_last_counselling_date()
+        if not last_d:
+            return {'status': 'OVERDUE', 'days_ago': 999, 'days_elapsed': 999, 'is_overdue': True, 'badge': 'danger', 'last_date': None, 'text': 'Overdue (>30d)'}
+        days_ago = (date.today() - last_d).days
+        is_over = (days_ago > 30)
+        if is_over:
+            return {'status': 'OVERDUE', 'days_ago': days_ago, 'days_elapsed': days_ago, 'is_overdue': True, 'badge': 'danger', 'last_date': last_d, 'text': f'Overdue ({days_ago}d ago)'}
+        elif days_ago >= 25:
+            return {'status': 'DUE_SOON', 'days_ago': days_ago, 'days_elapsed': days_ago, 'is_overdue': False, 'badge': 'warning', 'last_date': last_d, 'text': f'Due Soon ({30 - days_ago}d left)'}
+        else:
+            return {'status': 'OK', 'days_ago': days_ago, 'days_elapsed': days_ago, 'is_overdue': False, 'badge': 'success', 'last_date': last_d, 'text': f'Valid ({days_ago}d ago)'}
+
 
 
 class Notice(db.Model):
@@ -270,7 +303,9 @@ class Notice(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
-    category = db.Column(db.String(50), default='Notice') # 'Notice', 'Circular', 'Safety Drive', 'Instruction', 'Seniority', 'Result'
+    notice_number = db.Column(db.String(100), nullable=True) # Official circular reference e.g. HWH/E-OP/SAFETY/2026/04
+    category = db.Column(db.String(100), default='Safety Circular') # 'Safety Circular', 'Electric Traction', 'Diesel Traction', 'GR & SR', 'Technical Bulletin', 'Notice'
+    traction_type = db.Column(db.String(20), default='ALL') # 'ALL', 'ELECTRIC', 'DIESEL', 'BOTH'
     content = db.Column(db.Text)
     file_path = db.Column(db.String(255))
     target_audience = db.Column(db.String(50), default='ALL') # 'ALL', 'CLI_ONLY', 'CREW_ONLY', 'LOBBY_WISE'
@@ -278,12 +313,70 @@ class Notice(db.Model):
     published_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     is_active = db.Column(db.Boolean, default=True)
     is_urgent = db.Column(db.Boolean, default=False)
+    is_mandatory = db.Column(db.Boolean, default=True) # Must be acknowledged by running crews before full portal access
+    requires_signature = db.Column(db.Boolean, default=False) # Digital officer endorsement/sign-off required
+    approved_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    approval_date = db.Column(db.DateTime, nullable=True)
+    officer_remarks = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationship
+    @property
+    def attachment_path(self):
+        return self.file_path
+
+    @attachment_path.setter
+    def attachment_path(self, val):
+        self.file_path = val
+
+    @property
+    def posted_by_id(self):
+        return self.published_by_id
+
+    @posted_by_id.setter
+    def posted_by_id(self, val):
+        self.published_by_id = val
+
+    @property
+    def approved_by(self):
+        return self.approver
+
+    # Relationships
     publisher = db.relationship('User', foreign_keys=[published_by_id])
+    approver = db.relationship('User', foreign_keys=[approved_by_id])
     target_lobby = db.relationship('Lobby', foreign_keys=[target_lobby_id])
     acknowledgements = db.relationship('NoticeAcknowledgement', backref='notice', lazy='dynamic', cascade='all, delete-orphan')
+
+    def get_ack_count(self):
+        return self.acknowledgements.count()
+
+    def is_acknowledged_by(self, user_id):
+        return self.acknowledgements.filter_by(user_id=user_id).first() is not None
+
+    def get_compliance_stats(self, lobby_id=None):
+        """Returns total eligible, acknowledged, and percentage."""
+        query = User.query.filter_by(role='crew', is_active=True)
+        if self.target_lobby_id:
+            query = query.filter_by(lobby_id=self.target_lobby_id)
+        elif lobby_id:
+            query = query.filter_by(lobby_id=lobby_id)
+        total_eligible = query.count() or 1
+        
+        acked = self.acknowledgements.join(User, NoticeAcknowledgement.user_id == User.id).filter(User.role == 'crew', User.is_active == True)
+        if self.target_lobby_id:
+            acked = acked.filter(User.lobby_id == self.target_lobby_id)
+        elif lobby_id:
+            acked = acked.filter(User.lobby_id == lobby_id)
+        ack_cnt = acked.count()
+        pct = round((ack_cnt / total_eligible) * 100, 1) if total_eligible else 0
+        return {
+            'eligible': total_eligible,
+            'total_crews': total_eligible,
+            'acknowledged': ack_cnt,
+            'acked_count': ack_cnt,
+            'pending': max(0, total_eligible - ack_cnt),
+            'unacked_count': max(0, total_eligible - ack_cnt),
+            'percentage': min(100.0, pct)
+        }
 
 
 class NoticeAcknowledgement(db.Model):
@@ -293,6 +386,9 @@ class NoticeAcknowledgement(db.Model):
     notice_id = db.Column(db.Integer, db.ForeignKey('notices.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     acknowledged_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(50), nullable=True)
+    device_info = db.Column(db.String(255), nullable=True)
+    is_confirmed = db.Column(db.Boolean, default=True)
     remarks = db.Column(db.String(255))
 
     user = db.relationship('User', foreign_keys=[user_id])
@@ -303,6 +399,8 @@ class CounsellingTopic(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     counselling_type = db.Column(db.String(50), default='MONTHLY') # 'MONTHLY', 'SPECIAL'
+    traction_type = db.Column(db.String(20), default='ALL') # 'ALL', 'ELECTRIC', 'DIESEL', 'GENERAL'
+    drive_name = db.Column(db.String(100), nullable=True)
     month_year = db.Column(db.String(50)) # e.g. "October 2026"
     topic_date = db.Column(db.Date, default=date.today)
     title = db.Column(db.String(255), nullable=False)
@@ -310,6 +408,7 @@ class CounsellingTopic(db.Model):
     case_analysis = db.Column(db.Text) # Unusual occurrence / safety case study
     rule_reference = db.Column(db.String(100)) # e.g. "GR 3.61 & SR 3.61(d), SR 4.50"
     file_path = db.Column(db.String(255))
+    is_mandatory = db.Column(db.Boolean, default=True)
     
     # Workflow: DRAFT -> PENDING_APPROVAL -> APPROVED / REJECTED
     status = db.Column(db.String(50), default='APPROVED') 
@@ -336,6 +435,9 @@ class CounsellingTopic(db.Model):
         except Exception:
             return []
 
+    def get_ack_count(self):
+        return self.acknowledgements.count()
+
 
 class CounsellingAcknowledgement(db.Model):
     __tablename__ = 'counselling_acknowledgements'
@@ -350,6 +452,46 @@ class CounsellingAcknowledgement(db.Model):
     doubt_or_query = db.Column(db.Text)
 
     crew = db.relationship('User', foreign_keys=[crew_id])
+
+
+class CrewCounsellingLog(db.Model):
+    """
+    Individual CLI-to-crew safety and operational counselling sessions.
+    Captures: Topic, Date, Location, Mode, Crew Response, CLI Remarks, and Crew Acknowledgement.
+    """
+    __tablename__ = 'crew_counselling_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    cli_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    crew_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    counselling_date = db.Column(db.Date, default=date.today, nullable=False)
+    counselling_type = db.Column(db.String(50), default='MONTHLY_SAFETY') # 'MONTHLY_SAFETY', 'SPECIAL_DRIVE', 'TECHNICAL', 'SPAD_PREVENTION', 'FOOTPLATE'
+    topic = db.Column(db.String(255), nullable=False)
+    topic_id = db.Column(db.Integer, db.ForeignKey('counselling_topics.id'), nullable=True)
+    location = db.Column(db.String(100), default='Lobby')
+    counselling_mode = db.Column(db.String(50), default='One-to-One') # 'One-to-One', 'Cab / Footplate', 'Group Briefing'
+    crew_response = db.Column(db.Text) # Crew feedback, understanding, doubts
+    cli_remarks = db.Column(db.Text) # CLI directives / observations
+    
+    crew_acknowledged = db.Column(db.Boolean, default=False)
+    acknowledged_at = db.Column(db.DateTime, nullable=True)
+    acknowledgement_note = db.Column(db.String(255), nullable=True)
+
+    officer_remarks = db.Column(db.Text, nullable=True)
+    officer_remarked_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    officer_remarked_at = db.Column(db.DateTime, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    cli = db.relationship('User', foreign_keys=[cli_id])
+    crew = db.relationship('User', foreign_keys=[crew_id])
+    topic_ref = db.relationship('CounsellingTopic', foreign_keys=[topic_id])
+    officer_remarker = db.relationship('User', foreign_keys=[officer_remarked_by_id])
+
+    @property
+    def is_recent(self):
+        return (date.today() - self.counselling_date).days <= 30
 
 
 class TrainingRecord(db.Model):

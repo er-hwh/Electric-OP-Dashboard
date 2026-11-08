@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Counselling History & Squad Tracker | Chief Loco Inspector{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- PAGE TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger px-3 py-2 fs-6">
+                    <i class="fa-solid fa-chalkboard-user me-1"></i> CLI Supervision Desk
+                </span>
+                <span class="badge bg-secondary">Safety Counselling History</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Running Staff Counselling Register & Compliance</h3>
+            <p class="text-muted small mb-0">
+                Log and monitor individual safety counselling sessions for your assigned squad members.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('supervisor.new_counselling_log') }}" class="btn btn-primary fw-bold shadow-sm">
+                <i class="fa-solid fa-plus-circle me-1"></i> New Counselling Session
+            </a>
+            <a href="{{ url_for('supervisor.notices_status') }}" class="btn btn-outline-info fw-bold">
+                <i class="fa-solid fa-bullhorn me-1"></i> Squad Notices
+            </a>
+            <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> CLI Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- OVERDUE SQUAD CREWS BANNER -->
+    {% if overdue_crews %}
+    <div class="card border-0 shadow-sm border-start border-danger border-4 bg-white mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-danger fs-5"></i>
+                <h6 class="fw-bold text-danger mb-0">Squad Members Overdue for Safety Counselling (&gt;30 Days)</h6>
+            </div>
+            <span class="badge bg-danger">{{ overdue_crews|length }} Crews Due</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Crew Name & ID</th>
+                        <th>Category</th>
+                        <th>Lobby</th>
+                        <th>Last Safety Counselling</th>
+                        <th>Days Elapsed</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for crew in overdue_crews %}
+                    {% set cs = crew.counselling_status %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">{{ crew.full_name }}</div>
+                            <small class="text-muted">CMS ID: {{ crew.username }} | CUG: {{ crew.mobile }}</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ crew.sub_role }}</span></td>
+                        <td><span class="badge bg-secondary">{{ crew.lobby.code if crew.lobby else 'HWH' }}</span></td>
+                        <td>
+                            {% if cs.last_date %}
+                            <span class="fw-bold text-dark">{{ cs.last_date.strftime('%d-%b-%Y') }}</span>
+                            {% else %}
+                            <span class="badge bg-danger">Never Recorded</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-danger-subtle text-danger border border-danger fw-bold">
+                                {{ cs.days_elapsed }} Days Ago
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('supervisor.new_counselling_log', crew_id=crew.id) }}" class="btn btn-sm btn-danger fw-bold">
+                                <i class="fa-solid fa-chalkboard-user me-1"></i> Counsel Now
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-3 mb-4">
+        <i class="fa-solid fa-circle-check fs-3"></i>
+        <div>
+            <h6 class="fw-bold mb-0">Squad Safety Counselling Up to Date!</h6>
+            <small>All running staff under your supervision have received safety counselling within the mandatory 30-day interval.</small>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- COUNSELLING LOGS REGISTER -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-book-open me-2 text-primary"></i>Conducted Counselling Sessions Register</h5>
+            <span class="text-muted small">Total {{ logs|length }} session(s) recorded</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Date & Mode</th>
+                        <th>Crew Member</th>
+                        <th>Topic & Type</th>
+                        <th>Location</th>
+                        <th>CLI Remarks</th>
+                        <th>Crew Assurance</th>
+                        <th>Officer Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in logs %}
+                    <tr>
+                        <td class="text-muted fw-bold">{{ loop.index }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ l.counselling_date.strftime('%d-%b-%Y') }}</div>
+                            <span class="badge bg-light text-dark border">{{ l.counselling_mode }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ l.crew.full_name }}</div>
+                            <small class="text-muted">{{ l.crew.sub_role }} ({{ l.crew.username }})</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ l.topic }}</div>
+                            <span class="badge bg-primary-subtle text-primary border">{{ l.counselling_type }}</span>
+                        </td>
+                        <td><small class="text-muted">{{ l.location or 'Lobby' }}</small></td>
+                        <td>
+                            <small class="text-muted text-truncate d-inline-block" style="max-width: 200px;">
+                                {{ l.cli_remarks or 'Satisfactory counselling' }}
+                            </small>
+                        </td>
+                        <td>
+                            {% if l.crew_acknowledged %}
+                            <span class="badge bg-success" title="Acknowledged on {{ l.crew_ack_date.strftime('%d-%b-%Y') if l.crew_ack_date else '' }}">
+                                <i class="fa-solid fa-check me-1"></i>Confirmed
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"><i class="fa-solid fa-hourglass-start me-1"></i>Awaiting Crew</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if l.officer_remarks %}
+                            <span class="badge bg-success-subtle text-success border border-success p-1" title="{{ l.officer_remarks }}">
+                                <i class="fa-solid fa-comment-check me-1"></i>Noted by Officer
+                            </span>
+                            {% else %}
+                            <span class="text-muted small fst-italic">None</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-chalkboard-user fs-2 mb-2 d-block text-secondary"></i>
+                            No counselling sessions recorded yet. Click "New Counselling Session" to record one.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

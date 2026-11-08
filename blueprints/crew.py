@@ -6,7 +6,7 @@ from database import db
 from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, 
     CounsellingAcknowledgement, TrainingRecord, MedicalRecord, FootplateInspection, Message,
-    CrewCounsellingRecord
+    CrewCounsellingRecord, CrewCounsellingLog
 )
 from blueprints.auth import role_required
 from blueprints.supervisor import compute_overdue_status, parse_date_value
@@ -27,17 +27,21 @@ def dashboard():
     pme_record = MedicalRecord.query.filter_by(crew_id=crew.id).order_by(MedicalRecord.due_date.desc()).first()
 
     # 2. Notices requiring acknowledgement
-    all_notices = Notice.query.filter_by(is_active=True).order_by(Notice.created_at.desc()).limit(15).all()
-    acked_notice_ids = [a.notice_id for a in NoticeAcknowledgement.query.filter_by(user_id=crew.id).all()]
+    all_notices = Notice.query.filter_by(is_active=True).order_by(Notice.created_at.desc()).limit(25).all()
+    acked_notice_ids = {a.notice_id for a in NoticeAcknowledgement.query.filter_by(user_id=crew.id).all()}
     
     pending_notices = [n for n in all_notices if n.id not in acked_notice_ids]
     acked_notices = [n for n in all_notices if n.id in acked_notice_ids]
+    mandatory_pending_notices = [n for n in pending_notices if n.is_mandatory]
 
-    # 3. Counselling topics (Approved only)
+    # 3. Counselling topics & One-to-one Counselling Logs
     counselling_list = CounsellingTopic.query.filter(
         (CounsellingTopic.status == 'APPROVED') | (CounsellingTopic.status.is_(None))
-    ).order_by(CounsellingTopic.topic_date.desc(), CounsellingTopic.created_at.desc()).limit(10).all()
-    acked_counsel_ids = [ca.counselling_id for ca in CounsellingAcknowledgement.query.filter_by(crew_id=crew.id).all()]
+    ).order_by(CounsellingTopic.topic_date.desc(), CounsellingTopic.created_at.desc()).limit(15).all()
+    acked_counsel_ids = {ca.counselling_id for ca in CounsellingAcknowledgement.query.filter_by(crew_id=crew.id).all()}
+
+    my_counselling_logs = CrewCounsellingLog.query.filter_by(crew_id=crew.id).order_by(CrewCounsellingLog.counselling_date.desc()).all()
+    pending_counselling_logs = [l for l in my_counselling_logs if not l.crew_acknowledged]
 
     # 4. Recent footplate monitoring on this crew
     inspections = FootplateInspection.query.filter_by(crew_id=crew.id).order_by(FootplateInspection.inspection_date.desc()).all()
@@ -93,8 +97,11 @@ def dashboard():
         pme_record=pme_record,
         pending_notices=pending_notices,
         acked_notices=acked_notices,
+        mandatory_pending_notices=mandatory_pending_notices,
         counselling_list=counselling_list,
         acked_counsel_ids=acked_counsel_ids,
+        my_counselling_logs=my_counselling_logs,
+        pending_counselling_logs=pending_counselling_logs,
         inspections=inspections,
         inbox=inbox,
         sent_messages=sent_messages
@@ -217,17 +224,48 @@ def report_problem():
 @crew_bp.route('/acknowledge-notice/<int:notice_id>', methods=['POST'])
 def acknowledge_notice(notice_id):
     crew = User.query.get(session['user_id'])
+    notice = Notice.query.get_or_404(notice_id)
+    remarks = request.form.get('remarks', 'Read, understood, and assured strict compliance.').strip()
+    
     existing = NoticeAcknowledgement.query.filter_by(notice_id=notice_id, user_id=crew.id).first()
     if not existing:
         ack = NoticeAcknowledgement(
             notice_id=notice_id,
             user_id=crew.id,
             acknowledged_at=datetime.utcnow(),
-            remarks="Read and understood"
+            remarks=remarks,
+            ip_address=request.remote_addr,
+            device_info=str(request.user_agent)[:250] if request.user_agent else None,
+            is_confirmed=True
         )
         db.session.add(ack)
         db.session.commit()
-        flash('Safety Notice acknowledged and logged into electronic assurance register.', 'success')
+        flash(f'Safety Circular [{notice.notice_number or notice.title}] successfully acknowledged and recorded with electronic assurance timestamp.', 'success')
+    else:
+        existing.acknowledged_at = datetime.utcnow()
+        existing.remarks = remarks
+        existing.is_confirmed = True
+        existing.ip_address = request.remote_addr
+        db.session.commit()
+        flash(f'Safety Circular assurance updated.', 'info')
+    return redirect(url_for('crew.dashboard'))
+
+
+@crew_bp.route('/acknowledge-counselling-log/<int:log_id>', methods=['POST'])
+def acknowledge_counselling_log(log_id):
+    crew = User.query.get(session['user_id'])
+    log = CrewCounsellingLog.query.get_or_404(log_id)
+    if log.crew_id != crew.id:
+        flash('Unauthorized access to counselling session record.', 'danger')
+        return redirect(url_for('crew.dashboard'))
+
+    response_text = request.form.get('crew_response', '').strip()
+    log.crew_acknowledged = True
+    log.crew_ack_date = datetime.utcnow()
+    if response_text:
+        log.crew_response = response_text
+    db.session.commit()
+    flash(f'One-to-one Counselling on "{log.topic}" acknowledged and confirmed.', 'success')
     return redirect(url_for('crew.dashboard'))
 
 @crew_bp.route('/acknowledge-counselling/<int:counselling_id>', methods=['POST'])

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Record Safety Counselling Session | Chief Loco Inspector{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-chalkboard-user text-primary me-2"></i>Record Safety Counselling Session
+                    </h3>
+                    <p class="text-muted small mb-0">Electric Operation Department &bull; CLI Supervision Desk</p>
+                </div>
+                <a href="{{ url_for('supervisor.counselling_logs') }}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to History
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <span class="fw-bold text-primary"><i class="fa-solid fa-pen-nib me-2"></i>Counselling Session Details</span>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="row g-3">
+                            <!-- Crew Selection -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Select Running Staff Member <span class="text-danger">*</span></label>
+                                <select name="crew_id" class="form-select" required>
+                                    <option value="">-- Choose Squad Crew --</option>
+                                    {% for c in my_crews %}
+                                    <option value="{{ c.id }}" {% if preselect_crew_id == c.id %}selected{% endif %}>
+                                        {{ c.full_name }} ({{ c.username }} - {{ c.sub_role }}) - {{ c.lobby.code if c.lobby else 'HWH' }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Counselling Date -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Date of Counselling <span class="text-danger">*</span></label>
+                                <input type="date" name="counselling_date" class="form-control" required>
+                                <div class="form-text">Defaults to today if empty.</div>
+                            </div>
+
+                            <!-- Counselling Type & Mode -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Counselling Category</label>
+                                <select name="counselling_type" class="form-select">
+                                    <option value="MONTHLY_SAFETY">Monthly Mandatory Safety Counselling</option>
+                                    <option value="TECHNICAL">Technical & Locomotive Trouble-shooting</option>
+                                    <option value="SPECIAL_DRIVE">Special Safety Drive / Seasonal Precautions</option>
+                                    <option value="POST_INCIDENT">Post-Incident / Corrective Counselling</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Counselling Mode</label>
+                                <select name="counselling_mode" class="form-select">
+                                    <option value="One-to-One">One-to-One Personal Counselling</option>
+                                    <option value="Group / Classroom">Group / Classroom Session</option>
+                                    <option value="Footplate / En-route">Footplate / En-route Coaching</option>
+                                    <option value="Pre-Departure Briefing">Pre-Departure Lobby Briefing</option>
+                                </select>
+                            </div>
+
+                            <!-- Approved Topic Selection or Custom -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Active Departmental Topic (Optional Fast-Select)</label>
+                                <select name="topic_id" id="topicSelect" class="form-select" onchange="fillTopicText(this)">
+                                    <option value="">-- Choose from approved monthly topics or type custom below --</option>
+                                    {% for top in active_topics %}
+                                    <option value="{{ top.id }}" data-title="{{ top.title }}">{{ top.title }} ({{ top.traction_type }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Topic Title & Key Rule Reference <span class="text-danger">*</span></label>
+                                <input type="text" name="topic" id="topicText" class="form-control" placeholder="e.g. SPAD Prevention, Braking technique in adverse weather, GR & SR 4.19" required>
+                            </div>
+
+                            <!-- Location -->
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Location / Place of Counselling</label>
+                                <input type="text" name="location" class="form-control" placeholder="e.g. HWH Crew Lobby / Cab of WAP-7 #30452">
+                            </div>
+
+                            <!-- CLI Observations & Crew Response -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">CLI Observations & Safety Instructions Imparted</label>
+                                <textarea name="cli_remarks" rows="3" class="form-control" placeholder="Describe the safety guidance imparted, specific rules refreshed, and instructions given to the crew."></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Crew Response & Comprehension Assessment</label>
+                                <textarea name="crew_response" rows="2" class="form-control" placeholder="e.g. Understood and cleared doubts regarding brake feel test and aspect perception."></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="alert alert-info small mb-0">
+                                    <i class="fa-solid fa-circle-info me-1"></i> Saving this session will automatically update the crew's 30-day compliance counter, update their bio-data counselling record, and log the activity into your <strong>CLI Daily Movement Diary</strong>.
+                                </div>
+                            </div>
+
+                            <!-- Submit -->
+                            <div class="col-12 text-end mt-4">
+                                <a href="{{ url_for('supervisor.counselling_logs') }}" class="btn btn-secondary me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary fw-bold px-4">
+                                    <i class="fa-solid fa-check-circle me-1"></i> Save Counselling Session
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function fillTopicText(select) {
+    var opt = select.options[select.selectedIndex];
+    var title = opt.getAttribute('data-title');
+    if (title) {
+        document.getElementById('topicText').value = title;
+    }
+}
+</script>
+{% endblock %}

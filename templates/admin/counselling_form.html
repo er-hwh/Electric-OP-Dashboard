@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Create Safety Counselling Drive | Admin Console{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-chalkboard-user text-primary me-2"></i>Schedule Safety Counselling Topic
+                    </h3>
+                    <p class="text-muted small mb-0">Electric Operation Department &bull; Howrah Division</p>
+                </div>
+                <a href="{{ url_for('admin.counselling_list') }}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Topics
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <span class="fw-bold text-primary"><i class="fa-solid fa-pen-nib me-2"></i>Drive Specifications & Syllabus</span>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="row g-3">
+                            <!-- Drive Name & Traction -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Safety Drive / Campaign Name</label>
+                                <input type="text" name="drive_name" class="form-control" placeholder="e.g. Intensive Monsoon Safety Drive 2026">
+                                <div class="form-text">Optional specific safety campaign title.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Traction System <span class="text-danger">*</span></label>
+                                <select name="traction_type" class="form-select" required>
+                                    <option value="BOTH">Both (Combined Electric & Diesel)</option>
+                                    <option value="ELECTRIC">Electric Traction Only (ELEC)</option>
+                                    <option value="DIESEL">Diesel Traction Only (DSL)</option>
+                                </select>
+                            </div>
+
+                            <!-- Topic Title -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Counselling Topic Title <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" placeholder="e.g. Signal Passing At Danger (SPAD) Prevention & Brake Feel Test" required>
+                            </div>
+
+                            <!-- Schedule Date & Target Audience -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Effective Month / Date</label>
+                                <input type="date" name="topic_date" class="form-control">
+                                <div class="form-text">Defaults to today's date if omitted.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Target Running Cadre</label>
+                                <select name="target_audience" class="form-select">
+                                    <option value="ALL">All Running Staff (LPM, LPP, MMAN, LPG, LPS, SALP, ALP)</option>
+                                    <option value="LP_ONLY">Loco Pilots Only (LPM, LPP, LPG, LPS)</option>
+                                    <option value="ALP_ONLY">Assistant Loco Pilots Only (SALP, ALP)</option>
+                                    <option value="GOODS_CREW">Goods Crew Only (LPG, SALP, ALP)</option>
+                                    <option value="PASSENGER_CREW">Passenger / Mail Crews (LPM, LPP)</option>
+                                    <option value="SHUNTER_CREW">Shunting Crews (LPS-I, LPS-II)</option>
+                                </select>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Topic Syllabus & Detailed Counselling Instructions <span class="text-danger">*</span></label>
+                                <textarea name="content" rows="7" class="form-control" placeholder="Outline key GR & SR rules, operational check procedures, critical pitfalls, and safety counselling points for CLIs to impart." required></textarea>
+                            </div>
+
+                            <!-- Mandatory Checkbox -->
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="is_mandatory" value="true" id="checkMandatory" checked>
+                                        <label class="form-check-label fw-bold text-dark" for="checkMandatory">
+                                            Mark as Mandatory Monthly Safety Topic
+                                        </label>
+                                        <div class="form-text small">Requires all running staff in scope to receive safety counselling within the 30-day monitoring window.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="col-12 mt-4 text-end">
+                                <a href="{{ url_for('admin.counselling_list') }}" class="btn btn-secondary me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary fw-bold px-4">
+                                    <i class="fa-solid fa-check-circle me-1"></i> Publish Safety Topic
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

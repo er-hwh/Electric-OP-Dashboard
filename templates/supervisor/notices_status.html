@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Squad Circular Assurances | Chief Loco Inspector{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- PAGE TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger px-3 py-2 fs-6">
+                    <i class="fa-solid fa-bullhorn me-1"></i> CLI Supervisory Portal
+                </span>
+                <span class="badge bg-secondary">Squad Circular Compliance</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Assurance Status of Assigned Running Staff</h3>
+            <p class="text-muted small mb-0">
+                Supervise digital acknowledgements of safety circulars and notices for crews under your charge.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('supervisor.new_counselling_log') }}" class="btn btn-primary fw-bold shadow-sm">
+                <i class="fa-solid fa-chalkboard-user me-1"></i> Record Counselling Session
+            </a>
+            <a href="{{ url_for('supervisor.counselling_logs') }}" class="btn btn-outline-info fw-bold">
+                <i class="fa-solid fa-clock-rotate-left me-1"></i> Counselling History
+            </a>
+            <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> CLI Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- SQUAD SUMMARY CARD -->
+    <div class="card border-0 shadow-sm bg-white mb-4">
+        <div class="card-body py-3 d-flex flex-wrap justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-3 bg-primary-subtle text-primary rounded-circle">
+                    <i class="fa-solid fa-user-shield fs-4"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-dark mb-0">CLI Squad: {{ cli.full_name }}</h5>
+                    <small class="text-muted">Assigned Lobby: <strong>{{ cli.lobby.code if cli.lobby else 'HWH' }}</strong> &bull; Squad Size: <strong>{{ my_crews|length }} running crews</strong></small>
+                </div>
+            </div>
+            <div class="text-end mt-2 mt-md-0">
+                <span class="badge bg-light text-dark border p-2">
+                    <i class="fa-solid fa-circle-info text-info me-1"></i> Ensure all squad crews acknowledge mandatory safety circulars promptly.
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CIRCULARS COMPLIANCE CARDS -->
+    <div class="row g-4">
+        {% for card in notice_cards %}
+        {% set n = card.notice %}
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100 rounded-3 border-top border-4 {% if card.percentage == 100 %}border-success{% elif card.percentage >= 60 %}border-warning{% else %}border-danger{% endif %}">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="badge bg-light text-dark border fw-bold me-1">{{ n.notice_number or 'HWH/E-OP/CIRCULAR' }}</span>
+                            {% if n.is_mandatory %}
+                            <span class="badge bg-danger"><i class="fa-solid fa-lock me-1"></i>Mandatory Gate</span>
+                            {% endif %}
+                            {% if n.traction_type == 'ELECTRIC' %}
+                            <span class="badge bg-info text-dark">Electric</span>
+                            {% elif n.traction_type == 'DIESEL' %}
+                            <span class="badge bg-warning text-dark">Diesel</span>
+                            {% else %}
+                            <span class="badge bg-primary">Combined</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted"><i class="fa-regular fa-calendar me-1"></i>{{ n.created_at.strftime('%d-%b-%Y') if n.created_at else '' }}</small>
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-2">{{ n.title }}</h5>
+                    <p class="text-muted small mb-3">
+                        {{ n.content[:130] }}{% if n.content|length > 130 %}...{% endif %}
+                    </p>
+
+                    <!-- PROGRESS BAR -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-bold text-dark">Squad Assurance Rate</span>
+                            <span class="small fw-bold {% if card.percentage == 100 %}text-success{% else %}text-danger{% endif %}">{{ card.acked_count }} of {{ card.total_squad }} ({{ card.percentage }}%)</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar {% if card.percentage == 100 %}bg-success{% elif card.percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                                 style="width: {{ card.percentage }}%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- UNACKNOWLEDGED CREW LIST IN SQUAD -->
+                    {% if card.unacked_crews %}
+                    <div class="border-top pt-3 mt-3">
+                        <h6 class="small fw-bold text-danger mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i>Pending Squad Members ({{ card.unacked_crews|length }}):</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for c in card.unacked_crews %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger p-2" title="{{ c.sub_role }} | CUG: {{ c.mobile }}">
+                                <i class="fa-solid fa-user-clock me-1"></i>{{ c.full_name }} ({{ c.username }})
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="border-top pt-3 mt-3 text-success small fw-bold">
+                        <i class="fa-solid fa-check-circle me-1"></i> All squad members have completed digital assurance!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5 text-muted">
+            <i class="fa-solid fa-bullhorn fs-2 mb-2 d-block text-secondary"></i>
+            No active notices or circulars currently in circulation.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

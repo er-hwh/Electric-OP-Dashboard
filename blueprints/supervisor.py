@@ -10,7 +10,8 @@ from werkzeug.utils import secure_filename
 from database import db
 from models import (
     User, Lobby, FootplateInspection, Message, TrainingRecord, MedicalRecord,
-    CounsellingTopic, Notice, CrewCounsellingRecord, CLIMovement
+    CounsellingTopic, CounsellingAcknowledgement, Notice, NoticeAcknowledgement, 
+    CrewCounsellingRecord, CLIMovement, CrewCounsellingLog
 )
 from blueprints.auth import role_required
 
@@ -386,6 +387,21 @@ def quick_counselling():
             corrective_action=remarks
         )
         db.session.add(cli_mov)
+
+        # Create unified individual counselling log
+        if crew:
+            c_log = CrewCounsellingLog(
+                cli_id=cli.id,
+                crew_id=crew.id,
+                counselling_date=c_date,
+                counselling_type='TECHNICAL' if counsel_type == 'TECHNICAL' else 'MONTHLY_SAFETY',
+                topic=topic or f"{counsel_type.capitalize()} Safety Counselling",
+                location=cli.lobby.code if cli.lobby else 'Lobby',
+                counselling_mode='One-to-One',
+                crew_response='Counselling received and understood.',
+                cli_remarks=remarks or 'Satisfactory compliance on safety rules.'
+            )
+            db.session.add(c_log)
 
         db.session.commit()
         flash(f"{counsel_type.capitalize()} Counselling logged for {rec.crew_name}. Status marked compliant as of {formatted_date}.", "success")
@@ -1477,11 +1493,11 @@ def record_training_medical():
     if not crew_id or not last_done_str or not course_name:
         flash('Crew, Course/Exam Name, and Last Done Date are required.', 'danger')
         return redirect(url_for('supervisor.training_medical'))
-
     crew = User.query.get(int(crew_id))
     if not crew:
         flash('Selected crew not found.', 'danger')
         return redirect(url_for('supervisor.training_medical'))
+
 
     done_date = parse_date_value(last_done_str) or date.today()
     due_date = parse_date_value(due_date_str)
@@ -1545,4 +1561,156 @@ def record_training_medical():
         flash(f'Training Course [{course_name}] recorded for {crew.full_name} (Next Due: {due_date.strftime("%d-%b-%Y")}).', 'success')
 
     return redirect(url_for('supervisor.training_medical'))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 5: SQUAD NOTICES & CLI-TO-CREW COUNSELLING SESSIONS
+# ---------------------------------------------------------------------------
+
+@supervisor_bp.route('/notices-status')
+def notices_status():
+    """CLI Squad Notice Acknowledgement Status Overview."""
+    cli = User.query.get(session['user_id'])
+    my_crews = cli.assigned_crews.filter_by(is_active=True).all() if cli.sub_role == 'CLI' else User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).all()
+    squad_ids = {c.id for c in my_crews}
+    squad_total = len(my_crews) or 1
+
+    active_notices = Notice.query.filter_by(is_active=True).order_by(Notice.created_at.desc()).all()
+    notice_cards = []
+
+    for n in active_notices:
+        acked_squad_members = []
+        unacked_squad_members = []
+
+        acked_user_ids = {a.user_id for a in n.acknowledgements.filter(NoticeAcknowledgement.user_id.in_(squad_ids)).all()} if squad_ids else set()
+
+        for c in my_crews:
+            if c.id in acked_user_ids:
+                acked_squad_members.append(c)
+            else:
+                unacked_squad_members.append(c)
+
+        pct = round((len(acked_squad_members) / squad_total) * 100, 1)
+        notice_cards.append({
+            'notice': n,
+            'acked_count': len(acked_squad_members),
+            'unacked_count': len(unacked_squad_members),
+            'total_squad': squad_total,
+            'percentage': pct,
+            'unacked_crews': unacked_squad_members
+        })
+
+    return render_template(
+        'supervisor/notices_status.html',
+        cli=cli,
+        notice_cards=notice_cards,
+        my_crews=my_crews
+    )
+
+
+@supervisor_bp.route('/counselling/log', methods=['GET', 'POST'])
+def new_counselling_log():
+    """CLI records a detailed one-to-one or group counselling session with a squad crew member."""
+    cli = User.query.get(session['user_id'])
+    my_crews = cli.assigned_crews.filter_by(is_active=True).order_by(User.full_name).all() if cli.sub_role == 'CLI' else User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).order_by(User.full_name).all()
+    active_topics = CounsellingTopic.query.filter_by(status='APPROVED').order_by(CounsellingTopic.topic_date.desc()).limit(10).all()
+
+    if request.method == 'POST':
+        crew_id_val = request.form.get('crew_id')
+        c_date_str = request.form.get('counselling_date', '').strip()
+        c_type = request.form.get('counselling_type', 'MONTHLY_SAFETY').strip()
+        topic = request.form.get('topic', '').strip()
+        topic_id_val = request.form.get('topic_id')
+        location = request.form.get('location', 'Lobby').strip()
+        c_mode = request.form.get('counselling_mode', 'One-to-One').strip()
+        crew_response = request.form.get('crew_response', '').strip()
+        cli_remarks = request.form.get('cli_remarks', '').strip()
+
+        if not crew_id_val or not topic:
+            flash('Crew Member and Counselling Topic are mandatory fields.', 'danger')
+            return redirect(url_for('supervisor.new_counselling_log'))
+
+        crew = User.query.get_or_404(int(crew_id_val))
+        c_date = parse_date_value(c_date_str) or date.today()
+
+        log = CrewCounsellingLog(
+            cli_id=cli.id,
+            crew_id=crew.id,
+            counselling_date=c_date,
+            counselling_type=c_type,
+            topic=topic,
+            topic_id=int(topic_id_val) if topic_id_val and topic_id_val.isdigit() else None,
+            location=location,
+            counselling_mode=c_mode,
+            crew_response=crew_response or 'Acknowledged and noted instructions.',
+            cli_remarks=cli_remarks or 'Satisfactory counselling compliance.',
+            crew_acknowledged=False
+        )
+        db.session.add(log)
+
+        # Update CrewCounsellingRecord
+        formatted_date = c_date.strftime('%d-%m-%Y')
+        rec = CrewCounsellingRecord.query.filter(
+            (CrewCounsellingRecord.crew_user_id == crew.id) |
+            (CrewCounsellingRecord.cug == crew.mobile) |
+            (CrewCounsellingRecord.crew_id_str == crew.username)
+        ).first()
+
+        if rec:
+            if c_type == 'TECHNICAL':
+                rec.technical_counselling = formatted_date
+            else:
+                rec.safety_counselling = formatted_date
+            rec.counselling_verified_by = cli.full_name
+            if cli_remarks:
+                rec.remarks = f"[{c_date.strftime('%d-%b')}]: {topic} - {cli_remarks}"
+
+        # Sync to CLIMovement diary
+        cli_mov = CLIMovement(
+            cli_id=cli.id,
+            activity_date=c_date,
+            activity_type='Crew Counselling',
+            lobby_id=crew.lobby_id or cli.lobby_id,
+            location=location,
+            crew_id=crew.id,
+            crew_name_manual=crew.full_name,
+            crew_id_str=crew.pf_number or crew.username,
+            crew_category=crew.sub_role,
+            grading=rec.grade if rec else 'A',
+            observations_irregularities=f"Topic: {topic}",
+            corrective_action=cli_remarks
+        )
+        db.session.add(cli_mov)
+
+        db.session.commit()
+        flash(f'Safety Counselling session recorded for {crew.full_name}. Synchronized with Movement Diary.', 'success')
+        return redirect(url_for('supervisor.counselling_logs'))
+
+    preselect_crew_id = request.args.get('crew_id')
+    return render_template(
+        'supervisor/counselling_log_form.html',
+        cli=cli,
+        my_crews=my_crews,
+        active_topics=active_topics,
+        preselect_crew_id=int(preselect_crew_id) if preselect_crew_id and preselect_crew_id.isdigit() else None
+    )
+
+
+@supervisor_bp.route('/counselling-logs')
+def counselling_logs():
+    """List of all counselling sessions conducted by this CLI."""
+    cli = User.query.get(session['user_id'])
+    logs = CrewCounsellingLog.query.filter_by(cli_id=cli.id).order_by(CrewCounsellingLog.counselling_date.desc()).all()
+    my_crews = cli.assigned_crews.filter_by(is_active=True).all() if cli.sub_role == 'CLI' else User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).all()
+
+    # Identify overdue crews in squad
+    overdue_crews = [c for c in my_crews if c.counselling_status['status'] == 'OVERDUE']
+
+    return render_template(
+        'supervisor/counselling_logs.html',
+        cli=cli,
+        logs=logs,
+        my_crews=my_crews,
+        overdue_crews=overdue_crews
+    )
 

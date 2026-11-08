@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Notice & Circular Management | Admin Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- PAGE TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger px-3 py-2 fs-6">
+                    <i class="fa-solid fa-bullhorn me-1"></i> Departmental Notices & Circulars
+                </span>
+                <span class="badge bg-primary">Phase 5 Management</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Electric & Diesel Operational Instructions & Safety Circulars</h3>
+            <p class="text-muted small mb-0">
+                Publish, manage, and enforce mandatory acknowledgements for divisional safety drives, technical bulletins, and general notices.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('admin.new_notice') }}" class="btn btn-primary fw-bold shadow-sm">
+                <i class="fa-solid fa-plus-circle me-1"></i> Publish Notice / Circular
+            </a>
+            <a href="{{ url_for('admin.counselling_list') }}" class="btn btn-outline-info fw-bold shadow-sm">
+                <i class="fa-solid fa-chalkboard-user me-1"></i> Safety Counselling Topics
+            </a>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Admin Console
+            </a>
+        </div>
+    </div>
+
+    <!-- METRICS CARDS -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-primary border-4 h-100">
+                <div class="text-muted small text-uppercase fw-bold">Total Notices</div>
+                <div class="fs-3 fw-bold text-primary mt-1">{{ total_notices }}</div>
+                <small class="text-muted">In Departmental Archive</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-success border-4 h-100">
+                <div class="text-muted small text-uppercase fw-bold">Active in Circulation</div>
+                <div class="fs-3 fw-bold text-success mt-1">{{ active_count }}</div>
+                <small class="text-muted">Live for crew assurance</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-danger border-4 h-100">
+                <div class="text-muted small text-uppercase fw-bold">Mandatory Acks</div>
+                <div class="fs-3 fw-bold text-danger mt-1">{{ mandatory_count }}</div>
+                <small class="text-muted">Login gate enforced</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-warning border-4 h-100">
+                <div class="text-muted small text-uppercase fw-bold">Traction Coverage</div>
+                <div class="fs-4 fw-bold text-dark mt-1">ELEC &bull; DSL &bull; BOTH</div>
+                <small class="text-muted">Unified operations</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-3">
+            <form method="GET" action="{{ url_for('admin.notices_list') }}" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fa-solid fa-search text-muted"></i></span>
+                        <input type="text" name="q" value="{{ current_q }}" class="form-control" placeholder="Search notice number, title, content...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="traction" class="form-select">
+                        <option value="ALL" {% if current_traction == 'ALL' %}selected{% endif %}>All Traction Types</option>
+                        <option value="ELECTRIC" {% if current_traction == 'ELECTRIC' %}selected{% endif %}>Electric Traction (ELEC)</option>
+                        <option value="DIESEL" {% if current_traction == 'DIESEL' %}selected{% endif %}>Diesel Traction (DSL)</option>
+                        <option value="BOTH" {% if current_traction == 'BOTH' %}selected{% endif %}>Both (Combined)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select">
+                        <option value="ALL" {% if current_cat == 'ALL' %}selected{% endif %}>All Categories</option>
+                        <option value="SAFETY" {% if current_cat == 'SAFETY' %}selected{% endif %}>Safety Circular</option>
+                        <option value="TECHNICAL" {% if current_cat == 'TECHNICAL' %}selected{% endif %}>Technical Bulletin</option>
+                        <option value="GENERAL" {% if current_cat == 'GENERAL' %}selected{% endif %}>General Notice</option>
+                        <option value="URGENT" {% if current_cat == 'URGENT' %}selected{% endif %}>Urgent Order</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-secondary w-100 fw-bold">
+                        <i class="fa-solid fa-filter me-1"></i> Filter
+                    </button>
+                    <a href="{{ url_for('admin.notices_list') }}" class="btn btn-outline-secondary">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTICES TABLE -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+            <h5 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-list-check me-2 text-primary"></i>Published Notices & Circulars</h5>
+            <span class="text-muted small">Showing {{ notices|length }} record(s)</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 14%;">Circular No. / Date</th>
+                        <th style="width: 25%;">Title & Subject</th>
+                        <th style="width: 10%;">Traction</th>
+                        <th style="width: 10%;">Category</th>
+                        <th style="width: 10%;">Mandatory Gate</th>
+                        <th style="width: 12%;">Assurance Compliance</th>
+                        <th style="width: 14%;" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in notices %}
+                    {% set n = item.notice if item.notice is defined else item %}
+                    {% set stats = item.stats if item.stats is defined else n.get_compliance_stats() %}
+                    <tr class="{% if not n.is_active %}table-secondary opacity-75{% endif %}">
+                        <td class="text-muted fw-bold">{{ loop.index }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ n.notice_number or 'HWH/E-OP/CIRCULAR' }}</div>
+                            <small class="text-muted"><i class="fa-regular fa-calendar me-1"></i>{{ n.created_at.strftime('%d-%b-%Y') if n.created_at else 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ n.title }}</div>
+                            <small class="text-muted text-truncate d-inline-block" style="max-width: 320px;">
+                                {{ n.content[:85] }}{% if n.content|length > 85 %}...{% endif %}
+                            </small>
+                            {% if n.attachment_path %}
+                            <div class="mt-1">
+                                <a href="{{ url_for('static', filename=n.attachment_path) }}" target="_blank" class="badge bg-light text-dark border text-decoration-none">
+                                    <i class="fa-solid fa-paperclip me-1 text-primary"></i> View Document
+                                </a>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if n.traction_type == 'ELECTRIC' %}
+                            <span class="badge bg-info text-dark"><i class="fa-solid fa-bolt me-1"></i>Electric</span>
+                            {% elif n.traction_type == 'DIESEL' %}
+                            <span class="badge bg-warning text-dark"><i class="fa-solid fa-gas-pump me-1"></i>Diesel</span>
+                            {% else %}
+                            <span class="badge bg-primary"><i class="fa-solid fa-arrows-split-up-and-left me-1"></i>Both</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if n.category == 'SAFETY' %}
+                            <span class="badge bg-danger">Safety Circular</span>
+                            {% elif n.category == 'TECHNICAL' %}
+                            <span class="badge bg-info text-dark">Technical</span>
+                            {% elif n.is_urgent %}
+                            <span class="badge bg-warning text-dark">Urgent</span>
+                            {% else %}
+                            <span class="badge bg-secondary">General</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if n.is_mandatory %}
+                            <span class="badge bg-danger"><i class="fa-solid fa-lock me-1"></i>Mandatory Gate</span>
+                            {% else %}
+                            <span class="badge bg-light text-muted border">Optional</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div class="progress-bar {% if stats.percentage >= 80 %}bg-success{% elif stats.percentage >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                         role="progressbar" style="width: {{ stats.percentage }}%;"></div>
+                                </div>
+                                <span class="badge bg-light text-dark border fw-bold">{{ stats.percentage }}%</span>
+                            </div>
+                            <small class="text-muted">{{ stats.acked_count }} of {{ stats.total_crews }} crew(s)</small>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('admin.notice_compliance', notice_id=n.id) }}" class="btn btn-outline-info" title="View Detailed Compliance">
+                                    <i class="fa-solid fa-chart-pie"></i>
+                                </a>
+                                <a href="{{ url_for('admin.edit_notice', notice_id=n.id) }}" class="btn btn-outline-primary" title="Edit Circular">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('admin.toggle_notice', notice_id=n.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-warning" title="{% if n.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                        <i class="fa-solid {% if n.is_active %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.delete_notice', notice_id=n.id) }}" class="d-inline" onsubmit="return confirm('Delete this circular completely?');">
+                                    <button type="submit" class="btn btn-outline-danger" title="Delete Circular">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-bullhorn fs-2 mb-2 d-block text-secondary"></i>
+                            No notices or circulars match your filter criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

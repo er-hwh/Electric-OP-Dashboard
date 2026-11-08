@@ -11,7 +11,8 @@ except ImportError:
 from werkzeug.utils import secure_filename
 from database import db
 from models import (
-    User, Lobby, Notice, CounsellingTopic, TrainingRecord, MedicalRecord, FootplateInspection, 
+    User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, CounsellingAcknowledgement, 
+    CrewCounsellingLog, TrainingRecord, MedicalRecord, FootplateInspection, 
     Message, OfficerSay, CrewCounsellingRecord, PhotoGallery, CustomField, CLIMovement
 )
 from blueprints.auth import role_required
@@ -1795,6 +1796,394 @@ def add_training_medical_single():
         flash(f'Training Course [{course_name}] saved for {crew.full_name} (Next Due: {due_date.strftime("%d-%b-%Y")}).', 'success')
 
     return redirect(url_for('admin.training_medical'))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 5: NOTICE & CIRCULAR MANAGEMENT
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/notices')
+@admin_bp.route('/notices', endpoint='notices_list')
+def notices():
+    """Notice & Circular Management Console."""
+    category = request.args.get('category', 'ALL').strip()
+    traction = request.args.get('traction', 'ALL').strip().upper()
+    status_filter = request.args.get('status', 'ALL').strip().upper()
+    q = request.args.get('q', '').strip()
+
+    query = Notice.query
+    if category != 'ALL' and category:
+        query = query.filter_by(category=category)
+    if traction != 'ALL' and traction:
+        query = query.filter_by(traction_type=traction)
+    if status_filter == 'ACTIVE':
+        query = query.filter_by(is_active=True)
+    elif status_filter == 'INACTIVE':
+        query = query.filter_by(is_active=False)
+    if q:
+        query = query.filter(
+            (Notice.title.ilike(f"%{q}%")) |
+            (Notice.content.ilike(f"%{q}%"))
+        )
+
+    all_notices = query.order_by(Notice.created_at.desc()).all()
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    total_crew = User.query.filter_by(role='crew', is_active=True).count() or 1
+
+    # Attach live stats to each notice
+    notice_data = []
+    for n in all_notices:
+        stats = n.get_compliance_stats()
+        notice_data.append({
+            'notice': n,
+            'stats': stats
+        })
+
+    active_count = Notice.query.filter_by(is_active=True).count()
+    mandatory_count = Notice.query.filter_by(is_active=True, is_mandatory=True).count()
+
+    return render_template(
+        'admin/notices.html',
+        notices=notice_data,
+        lobbies=lobbies,
+        total_crew=total_crew,
+        active_count=active_count,
+        mandatory_count=mandatory_count,
+        current_category=category,
+        current_traction=traction,
+        current_status=status_filter,
+        current_q=q
+    )
+
+
+@admin_bp.route('/notices/new', methods=['GET', 'POST'])
+def new_notice():
+    """Publish a new notice or circular."""
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        category = request.form.get('category', 'Safety Circular').strip()
+        traction_type = request.form.get('traction_type', 'ALL').strip().upper()
+        content = request.form.get('content', '').strip()
+        target_audience = request.form.get('target_audience', 'ALL').strip().upper()
+        target_lobby_id = request.form.get('target_lobby_id')
+        is_urgent = bool(request.form.get('is_urgent'))
+        is_mandatory = bool(request.form.get('is_mandatory'))
+        requires_signature = bool(request.form.get('requires_signature'))
+
+        if not title:
+            flash('Notice title is mandatory.', 'danger')
+            return redirect(url_for('admin.new_notice'))
+
+        file = request.files.get('file')
+        file_path = None
+        if file and file.filename:
+            fname = secure_filename(file.filename)
+            ext = fname.rsplit('.', 1)[-1].lower() if '.' in fname else ''
+            if ext in {'pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'}:
+                unique_name = f"notice_{int(datetime.utcnow().timestamp())}_{fname}"
+                target = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_name)
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                file.save(target)
+                file_path = f"uploads/{unique_name}"
+
+        notice = Notice(
+            title=title,
+            category=category,
+            traction_type=traction_type,
+            content=content,
+            file_path=file_path,
+            target_audience=target_audience,
+            target_lobby_id=int(target_lobby_id) if target_lobby_id and target_audience == 'LOBBY_WISE' else None,
+            published_by_id=session.get('user_id'),
+            is_urgent=is_urgent,
+            is_mandatory=is_mandatory,
+            requires_signature=requires_signature,
+            is_active=True
+        )
+        db.session.add(notice)
+        db.session.commit()
+        flash(f'Circular "{title}" published successfully across target lobbies.', 'success')
+        return redirect(url_for('admin.notices'))
+
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    return render_template('admin/notice_form.html', lobbies=lobbies, notice=None)
+
+
+@admin_bp.route('/notices/<int:notice_id>/edit', methods=['GET', 'POST'])
+def edit_notice(notice_id):
+    """Edit an existing notice."""
+    notice = Notice.query.get_or_404(notice_id)
+    if request.method == 'POST':
+        notice.title = request.form.get('title', '').strip() or notice.title
+        notice.category = request.form.get('category', notice.category).strip()
+        notice.traction_type = request.form.get('traction_type', notice.traction_type).strip().upper()
+        notice.content = request.form.get('content', '').strip()
+        target_audience = request.form.get('target_audience', 'ALL').strip().upper()
+        notice.target_audience = target_audience
+        target_lobby_id = request.form.get('target_lobby_id')
+        notice.target_lobby_id = int(target_lobby_id) if target_lobby_id and target_audience == 'LOBBY_WISE' else None
+        notice.is_urgent = bool(request.form.get('is_urgent'))
+        notice.is_mandatory = bool(request.form.get('is_mandatory'))
+        notice.requires_signature = bool(request.form.get('requires_signature'))
+        notice.is_active = bool(request.form.get('is_active'))
+
+        file = request.files.get('file')
+        if file and file.filename:
+            fname = secure_filename(file.filename)
+            ext = fname.rsplit('.', 1)[-1].lower() if '.' in fname else ''
+            if ext in {'pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'}:
+                unique_name = f"notice_{int(datetime.utcnow().timestamp())}_{fname}"
+                target = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_name)
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                file.save(target)
+                notice.file_path = f"uploads/{unique_name}"
+
+        db.session.commit()
+        flash(f'Notice "{notice.title}" updated successfully.', 'success')
+        return redirect(url_for('admin.notices'))
+
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    return render_template('admin/notice_form.html', lobbies=lobbies, notice=notice)
+
+
+@admin_bp.route('/notices/<int:notice_id>/toggle', methods=['POST'])
+def toggle_notice(notice_id):
+    """Toggle notice active status."""
+    notice = Notice.query.get_or_404(notice_id)
+    notice.is_active = not notice.is_active
+    db.session.commit()
+    state = "activated" if notice.is_active else "deactivated"
+    flash(f'Notice "{notice.title}" {state}.', 'info')
+    return redirect(url_for('admin.notices'))
+
+
+@admin_bp.route('/notices/<int:notice_id>/delete', methods=['POST'])
+def delete_notice(notice_id):
+    """Delete a notice and its acknowledgements."""
+    notice = Notice.query.get_or_404(notice_id)
+    title = notice.title
+    db.session.delete(notice)
+    db.session.commit()
+    flash(f'Notice "{title}" and all related acknowledgement logs deleted.', 'warning')
+    return redirect(url_for('admin.notices'))
+
+
+@admin_bp.route('/notices/<int:notice_id>/compliance')
+def notice_compliance(notice_id):
+    """Division-wide real-time acknowledgement compliance report."""
+    notice = Notice.query.get_or_404(notice_id)
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    status_filter = request.args.get('status', 'ALL').strip().upper() # ALL, ACKNOWLEDGED, PENDING
+    lobby_filter = request.args.get('lobby', 'ALL').strip().upper()
+    q = request.args.get('q', '').strip()
+
+    # Target crews
+    crew_query = User.query.filter_by(role='crew', is_active=True)
+    if notice.target_lobby_id:
+        crew_query = crew_query.filter_by(lobby_id=notice.target_lobby_id)
+    elif lobby_filter != 'ALL' and lobby_filter:
+        lob = Lobby.query.filter_by(code=lobby_filter).first()
+        if lob:
+            crew_query = crew_query.filter_by(lobby_id=lob.id)
+
+    if q:
+        crew_query = crew_query.filter(
+            (User.full_name.ilike(f"%{q}%")) |
+            (User.username.ilike(f"%{q}%")) |
+            (User.mobile.ilike(f"%{q}%")) |
+            (User.pf_number.ilike(f"%{q}%"))
+        )
+
+    all_target_crews = crew_query.order_by(User.full_name).all()
+    acked_records = {a.user_id: a for a in notice.acknowledgements.all()}
+
+    crew_rows = []
+    for c in all_target_crews:
+        ack = acked_records.get(c.id)
+        is_acked = ack is not None
+        if status_filter == 'ACKNOWLEDGED' and not is_acked:
+            continue
+        if status_filter == 'PENDING' and is_acked:
+            continue
+
+        crew_rows.append({
+            'crew': c,
+            'is_acknowledged': is_acked,
+            'ack': ack,
+            'cli': c.nominated_cli
+        })
+
+    # Lobby breakdown
+    lobby_breakdown = []
+    for lob in lobbies:
+        l_crews = User.query.filter_by(lobby_id=lob.id, role='crew', is_active=True).all()
+        l_total = len(l_crews)
+        if l_total == 0:
+            continue
+        l_acked = sum(1 for c in l_crews if c.id in acked_records)
+        pct = round((l_acked / l_total) * 100, 1)
+        lobby_breakdown.append({
+            'lobby': lob,
+            'total': l_total,
+            'acknowledged': l_acked,
+            'pending': l_total - l_acked,
+            'percentage': pct
+        })
+
+    # CLI breakdown
+    cli_users = User.query.filter_by(role='supervisor', sub_role='CLI', is_active=True).all()
+    cli_breakdown = []
+    for cli in cli_users:
+        squad = cli.assigned_crews.filter_by(is_active=True).all()
+        s_total = len(squad)
+        if s_total == 0:
+            continue
+        s_acked = sum(1 for c in squad if c.id in acked_records)
+        pct = round((s_acked / s_total) * 100, 1)
+        cli_breakdown.append({
+            'cli': cli,
+            'total': s_total,
+            'acknowledged': s_acked,
+            'pending': s_total - s_acked,
+            'percentage': pct
+        })
+
+    stats = notice.get_compliance_stats()
+
+    return render_template(
+        'admin/notice_compliance.html',
+        notice=notice,
+        crew_rows=crew_rows,
+        lobby_breakdown=lobby_breakdown,
+        cli_breakdown=cli_breakdown,
+        stats=stats,
+        current_status=status_filter,
+        current_lobby=lobby_filter,
+        current_q=q,
+        lobbies=lobbies
+    )
+
+
+@admin_bp.route('/notices/<int:notice_id>/send-reminder', methods=['POST'])
+@admin_bp.route('/notices/<int:notice_id>/send-reminder', methods=['POST'], endpoint='send_notice_reminder')
+def notice_send_reminder(notice_id):
+    """Broadcasts a compliance alert to all unacknowledged running staff."""
+    notice = Notice.query.get_or_404(notice_id)
+    acked_user_ids = {a.user_id for a in notice.acknowledgements.all()}
+    
+    target_crews = User.query.filter_by(role='crew', is_active=True)
+    if notice.target_lobby_id:
+        target_crews = target_crews.filter_by(lobby_id=notice.target_lobby_id)
+    unacked = [c for c in target_crews.all() if c.id not in acked_user_ids]
+
+    sent_cnt = 0
+    admin_user = User.query.get(session.get('user_id'))
+    sender_id = admin_user.id if admin_user else 1
+
+    for c in unacked:
+        msg = Message(
+            sender_id=sender_id,
+            recipient_id=c.id,
+            subject=f"URGENT COMPLIANCE REMINDER: {notice.title[:60]}",
+            body=(
+                f"Attention Running Staff {c.full_name} ({c.username}):\n\n"
+                f"Safety Circular/Notice '{notice.title}' requires mandatory digital acknowledgement. "
+                f"Please log in to your Crew Running Desk immediately and digitally record your compliance acknowledgement.\n\n"
+                f"Issued by Division Electric Operation HQ."
+            ),
+            status='SENT'
+        )
+        db.session.add(msg)
+        sent_cnt += 1
+
+    db.session.commit()
+    flash(f"Urgent compliance reminder dispatched to {sent_cnt} unacknowledged running staff.", 'success')
+    return redirect(url_for('admin.notice_compliance', notice_id=notice.id))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 5: COUNSELLING TOPICS & SPECIAL SAFETY DRIVES
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/counselling')
+@admin_bp.route('/counselling', endpoint='counselling_list')
+def counselling():
+    """Divisional Safety Counselling Topics & Drives Manager."""
+    c_type = request.args.get('type', 'ALL').strip().upper()
+    traction = request.args.get('traction', 'ALL').strip().upper()
+    status_filter = request.args.get('status', 'ALL').strip().upper()
+
+    query = CounsellingTopic.query
+    if c_type != 'ALL' and c_type:
+        query = query.filter_by(counselling_type=c_type)
+    if traction != 'ALL' and traction:
+        query = query.filter_by(traction_type=traction)
+    if status_filter != 'ALL' and status_filter:
+        query = query.filter_by(status=status_filter)
+
+    topics = query.order_by(CounsellingTopic.topic_date.desc()).all()
+    total_crew = User.query.filter_by(role='crew', is_active=True).count() or 1
+
+    return render_template(
+        'admin/counselling.html',
+        topics=topics,
+        total_crew=total_crew,
+        current_type=c_type,
+        current_traction=traction,
+        current_status=status_filter
+    )
+
+
+@admin_bp.route('/counselling/new', methods=['GET', 'POST'])
+def new_counselling_topic():
+    """Create a new monthly safety topic or special drive."""
+    if request.method == 'POST':
+        c_type = request.form.get('counselling_type', 'MONTHLY').strip().upper()
+        traction_type = request.form.get('traction_type', 'ALL').strip().upper()
+        month_year = request.form.get('month_year', '').strip()
+        drive_name = request.form.get('drive_name', '').strip()
+        title = request.form.get('title', '').strip()
+        rule_reference = request.form.get('rule_reference', '').strip()
+        content = request.form.get('content', '').strip()
+        case_analysis = request.form.get('case_analysis', '').strip()
+        is_mandatory = bool(request.form.get('is_mandatory'))
+
+        if not title or not content:
+            flash('Topic title and instructions content are required.', 'danger')
+            return redirect(url_for('admin.new_counselling_topic'))
+
+        topic = CounsellingTopic(
+            counselling_type=c_type,
+            traction_type=traction_type,
+            month_year=month_year or datetime.now().strftime('%B %Y'),
+            drive_name=drive_name,
+            title=title,
+            rule_reference=rule_reference,
+            content=content,
+            case_analysis=case_analysis,
+            status='APPROVED',
+            is_mandatory=is_mandatory,
+            issued_by_id=session.get('user_id'),
+            approval_date=datetime.utcnow()
+        )
+        db.session.add(topic)
+        db.session.commit()
+        flash(f'Safety Counselling Topic "{title}" rolled out division-wide.', 'success')
+        return redirect(url_for('admin.counselling'))
+
+    return render_template('admin/counselling_form.html', topic=None)
+
+
+@admin_bp.route('/counselling/<int:topic_id>/approve', methods=['POST'])
+def approve_counselling_topic(topic_id):
+    """Approve a CLI proposed counselling topic."""
+    topic = CounsellingTopic.query.get_or_404(topic_id)
+    topic.status = 'APPROVED'
+    topic.approved_by_id = session.get('user_id')
+    topic.approval_date = datetime.utcnow()
+    db.session.commit()
+    flash(f'Counselling Topic "{topic.title}" approved and published.', 'success')
+    return redirect(url_for('admin.counselling'))
 
 
 

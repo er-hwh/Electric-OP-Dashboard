@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit Notice / Circular{% else %}Publish New Notice / Circular{% endif %} | Admin Console{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-bullhorn text-danger me-2"></i>
+                        {% if is_edit %}Edit Circular / Notice{% else %}Publish New Circular / Notice{% endif %}
+                    </h3>
+                    <p class="text-muted small mb-0">Electric Operation Department &bull; Howrah Division</p>
+                </div>
+                <a href="{{ url_for('admin.notices_list') }}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Notices
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <span class="fw-bold text-primary"><i class="fa-solid fa-pen-nib me-2"></i>Circular Details & Enforcements</span>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <!-- Circular Number & Traction -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Circular / Notice Reference No.</label>
+                                <input type="text" name="notice_number" class="form-control" placeholder="e.g. HWH/E-OP/SAFETY/2026/04" value="{{ notice.notice_number if notice else '' }}">
+                                <div class="form-text">Official divisional reference identifier.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Traction System <span class="text-danger">*</span></label>
+                                <select name="traction_type" class="form-select" required>
+                                    <option value="BOTH" {% if notice and notice.traction_type == 'BOTH' %}selected{% endif %}>Both (Combined Electric & Diesel)</option>
+                                    <option value="ELECTRIC" {% if notice and notice.traction_type == 'ELECTRIC' %}selected{% endif %}>Electric Traction Only (ELEC)</option>
+                                    <option value="DIESEL" {% if notice and notice.traction_type == 'DIESEL' %}selected{% endif %}>Diesel Traction Only (DSL)</option>
+                                </select>
+                            </div>
+
+                            <!-- Title -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Title / Subject <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" placeholder="Enter clear subject heading of circular" value="{{ notice.title if notice else '' }}" required>
+                            </div>
+
+                            <!-- Category & Priority -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Category</label>
+                                <select name="category" class="form-select">
+                                    <option value="SAFETY" {% if notice and notice.category == 'SAFETY' %}selected{% endif %}>Safety Circular</option>
+                                    <option value="TECHNICAL" {% if notice and notice.category == 'TECHNICAL' %}selected{% endif %}>Technical Bulletin</option>
+                                    <option value="GENERAL" {% if notice and notice.category == 'GENERAL' %}selected{% endif %}>General Notice</option>
+                                    <option value="URGENT" {% if notice and notice.category == 'URGENT' %}selected{% endif %}>Urgent Order</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Priority Level</label>
+                                <select name="priority" class="form-select">
+                                    <option value="NORMAL" {% if notice and notice.priority == 'NORMAL' %}selected{% endif %}>Normal</option>
+                                    <option value="HIGH" {% if notice and notice.priority == 'HIGH' %}selected{% endif %}>High</option>
+                                    <option value="URGENT" {% if notice and notice.priority == 'URGENT' %}selected{% endif %}>Urgent / Immediate Action</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Expiry Date</label>
+                                <input type="date" name="expires_at" class="form-control" value="{{ notice.expires_at.strftime('%Y-%m-%d') if notice and notice.expires_at else '' }}">
+                                <div class="form-text">Leave blank if permanently valid.</div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Circular Content / Detailed Instructions <span class="text-danger">*</span></label>
+                                <textarea name="content" rows="6" class="form-control" placeholder="Enter detailed operational instructions, rule references, caution directives, etc." required>{{ notice.content if notice else '' }}</textarea>
+                            </div>
+
+                            <!-- File Attachment -->
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Attachment Document (PDF, PNG, JPG)</label>
+                                <input type="file" name="attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
+                                {% if notice and notice.attachment_path %}
+                                <div class="form-text mt-1 text-success">
+                                    <i class="fa-solid fa-file-circle-check me-1"></i> Current file: {{ notice.attachment_path }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Enforcement Checkboxes -->
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-shield-halved me-1 text-primary"></i>Compliance & Gate Controls</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="is_mandatory" value="true" id="checkMandatory" {% if notice and notice.is_mandatory %}checked{% endif %}>
+                                                <label class="form-check-label fw-bold text-danger" for="checkMandatory">
+                                                    Mandatory Digital Acknowledgement Gate
+                                                </label>
+                                                <div class="form-text small">Crews must digitally acknowledge before accessing normal operational dashboard tools.</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="is_urgent" value="true" id="checkUrgent" {% if notice and notice.is_urgent %}checked{% endif %}>
+                                                <label class="form-check-label fw-bold text-warning" for="checkUrgent">
+                                                    Mark as Urgent Safety Banner
+                                                </label>
+                                                <div class="form-text small">Prominently highlighted with flashing alert banner.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="col-12 mt-4 text-end">
+                                <a href="{{ url_for('admin.notices_list') }}" class="btn btn-secondary me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary fw-bold px-4">
+                                    <i class="fa-solid fa-check-circle me-1"></i>
+                                    {% if is_edit %}Save Changes{% else %}Publish Notice to Division{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

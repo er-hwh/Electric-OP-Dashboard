@@ -1202,3 +1202,16 @@ def training_monitor():
     return redirect(url_for('officer.training_monitor', **request.args))
 
 
+@control_bp.route('/notice-compliance')
+@control_login_required
+def notice_compliance():
+    return redirect(url_for('officer.notice_compliance', **request.args))
+
+
+@control_bp.route('/counselling-monitor')
+@control_login_required
+def counselling_monitor():
+    return redirect(url_for('officer.counselling_monitor', **request.args))
+
+
+

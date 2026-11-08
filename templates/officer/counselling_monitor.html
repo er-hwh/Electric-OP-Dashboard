@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Safety Counselling Compliance Desk | Officer Monitoring{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- PAGE TITLE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger px-3 py-2 fs-6">
+                    <i class="fa-solid fa-chalkboard-user me-1"></i> Running Staff Safety Counselling Monitor
+                </span>
+                <span class="badge bg-primary">30-Day Mandatory Interval Surveillance</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Divisional Safety Counselling & CLI Supervision Audit</h3>
+            <p class="text-muted small mb-0">
+                Tracking monthly safety counselling frequency, CLI targets, and one-on-one session compliance under Howrah Division.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('officer.notice_compliance') if officer.role == 'officer' else url_for('control.notice_compliance') }}" class="btn btn-outline-info fw-bold">
+                <i class="fa-solid fa-bullhorn me-1"></i> Circular Assurances
+            </a>
+            <a href="{{ url_for('officer.dashboard') if officer.role == 'officer' else url_for('control.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- METRICS CARDS -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-primary border-4 h-100">
+                <div class="text-muted small text-uppercase fw-bold">Cadre Strength</div>
+                <div class="fs-3 fw-bold text-primary mt-1">{{ total_crews }}</div>
+                <small class="text-muted">Active running crews</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-success border-4 h-100">
+                <div class="text-muted small text-uppercase fw-bold">Counselled (&le;30 Days)</div>
+                <div class="fs-3 fw-bold text-success mt-1">{{ ok_count }}</div>
+                <small class="text-muted">Compliant within interval</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-danger border-4 h-100">
+                <div class="text-muted small text-uppercase fw-bold">Overdue (&gt;30 Days)</div>
+                <div class="fs-3 fw-bold text-danger mt-1">{{ overdue_count }}</div>
+                <small class="text-muted">Mandatory counselling elapsed</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-center bg-white border-start border-info border-4 h-100">
+                <div class="text-muted small text-uppercase fw-bold">Divisional Compliance</div>
+                <div class="fs-3 fw-bold text-info mt-1">{{ compliance_pct }}%</div>
+                <div class="progress mt-2" style="height: 6px;">
+                    <div class="progress-bar {% if compliance_pct >= 80 %}bg-success{% elif compliance_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                         style="width: {{ compliance_pct }}%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLI & LOBBY PERFORMANCE TABLES -->
+    <div class="row g-4 mb-4">
+        <!-- CLI SQUAD TARGET COMPLIANCE -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-user-tie me-2 text-primary"></i>CLI Monthly Counselling Coverage</h6>
+                    <span class="badge bg-secondary">{{ cli_summary|length }} CLIs</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Chief Loco Inspector</th>
+                                <th>HQ</th>
+                                <th class="text-center">Squad</th>
+                                <th class="text-center text-success">Counselled</th>
+                                <th class="text-center text-danger">Overdue</th>
+                                <th style="width: 25%;">Compliance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in cli_summary %}
+                            <tr>
+                                <td class="fw-bold text-dark">{{ c.cli_name }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ c.lobby }}</span></td>
+                                <td class="text-center text-muted">{{ c.total }}</td>
+                                <td class="text-center text-success fw-bold">{{ c.ok }}</td>
+                                <td class="text-center text-danger fw-bold">{{ c.overdue }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                            <div class="progress-bar {% if c.pct >= 80 %}bg-success{% elif c.pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                 style="width: {{ c.pct }}%;"></div>
+                                        </div>
+                                        <span class="small fw-bold">{{ c.pct }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center py-3 text-muted">No CLI data available.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOBBY COVERAGE -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-building-flag me-2 text-info"></i>Lobby Performance</h6>
+                    <span class="badge bg-secondary">{{ lobby_summary|length }} Lobbies</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Lobby</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center text-success">Done</th>
+                                <th class="text-center text-danger">Due</th>
+                                <th style="width: 30%;">Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for l in lobby_summary %}
+                            <tr>
+                                <td class="fw-bold text-dark">{{ l.lobby_code }}</td>
+                                <td class="text-center text-muted">{{ l.total }}</td>
+                                <td class="text-center text-success fw-bold">{{ l.ok }}</td>
+                                <td class="text-center text-danger fw-bold">{{ l.overdue }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                            <div class="progress-bar {% if l.pct >= 80 %}bg-success{% elif l.pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                 style="width: {{ l.pct }}%;"></div>
+                                        </div>
+                                        <span class="small fw-bold">{{ l.pct }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No lobby data available.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERDUE CREWS TABLE -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-danger">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>Crews Overdue For Safety Counselling (&gt;30 Days)
+            </h5>
+            <span class="badge bg-danger fs-6">{{ overdue_crews|length }} Crews Flagged</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Crew Name & ID</th>
+                        <th>Category</th>
+                        <th>Base Lobby</th>
+                        <th>Nominated CLI</th>
+                        <th>Last Counselling Date</th>
+                        <th>Interval Elapsed</th>
+                        <th class="text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in overdue_crews %}
+                    {% set crew = item.crew if item.crew is defined else item %}
+                    {% set cs = item.status if item.status is defined else crew.counselling_status %}
+                    <tr>
+                        <td class="text-muted fw-bold">{{ loop.index }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ crew.full_name }}</div>
+                            <small class="text-muted">CMS ID: {{ crew.username }} | CUG: {{ crew.mobile }}</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ crew.sub_role }}</span></td>
+                        <td><span class="badge bg-secondary">{{ item.lobby_code if item.lobby_code is defined else (crew.lobby.code if crew.lobby else 'HWH') }}</span></td>
+                        <td>
+                            {% if item.cli_name is defined %}
+                            <span class="text-dark fw-bold">{{ item.cli_name }}</span>
+                            {% elif crew.nominated_cli %}
+                            <span class="text-dark fw-bold">{{ crew.nominated_cli.full_name }}</span>
+                            {% else %}
+                            <span class="text-muted fst-italic">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cs.last_date %}
+                            <div class="fw-bold text-dark">{{ cs.last_date.strftime('%d-%b-%Y') }}</div>
+                            {% else %}
+                            <span class="badge bg-danger">Never Recorded</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1 fw-bold">
+                                <i class="fa-solid fa-clock me-1"></i>{{ cs.days_elapsed }} Days Ago
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <span class="badge bg-danger">OVERDUE</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-success fw-bold">
+                            <i class="fa-solid fa-circle-check fs-2 mb-2 d-block"></i>
+                            All active running staff in Howrah Division have received safety counselling within the mandatory 30-day window!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- RECENT ONE-TO-ONE COUNSELLING SESSIONS LOG -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-clipboard-list me-2 text-primary"></i>Recent CLI Counselling Sessions Conducted</h5>
+            <span class="text-muted small">Showing latest {{ recent_logs|length }} session(s)</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date & Mode</th>
+                        <th>Crew Member</th>
+                        <th>Supervising CLI</th>
+                        <th>Topic & Safety Focus</th>
+                        <th>CLI Remarks</th>
+                        <th>Crew Assurance</th>
+                        <th>Officer Endorsement</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">{{ log.counselling_date.strftime('%d-%b-%Y') }}</div>
+                            <span class="badge bg-light text-dark border">{{ log.counselling_mode }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ log.crew.full_name }}</div>
+                            <small class="text-muted">{{ log.crew.sub_role }} ({{ log.crew.username }})</small>
+                        </td>
+                        <td>
+                            <div class="text-dark fw-bold">{{ log.cli.full_name }}</div>
+                            <small class="text-muted">{{ log.location }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ log.topic }}</div>
+                            <span class="badge bg-primary-subtle text-primary border">{{ log.counselling_type }}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted text-truncate d-inline-block" style="max-width: 200px;">
+                                {{ log.cli_remarks or 'Satisfactory counselling' }}
+                            </small>
+                        </td>
+                        <td>
+                            {% if log.crew_acknowledged %}
+                            <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Confirmed</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"><i class="fa-solid fa-hourglass-start me-1"></i>Awaiting</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.officer_remarks %}
+                            <span class="badge bg-success-subtle text-success border border-success p-1">
+                                <i class="fa-solid fa-comment-check me-1"></i>{{ log.officer_remarks[:25] }}...
+                            </span>
+                            {% else %}
+                            <span class="text-muted small fst-italic">No remarks</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if officer.role == 'officer' %}
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#remarkModal{{ log.id }}">
+                                <i class="fa-solid fa-comment-dots me-1"></i> Add Remark
+                            </button>
+
+                            <!-- Modal for Officer Remark -->
+                            <div class="modal fade text-start" id="remarkModal{{ log.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title fw-bold">Officer Observation & Directive</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('officer.add_counselling_log_remark', log_id=log.id) }}">
+                                            <div class="modal-body p-4">
+                                                <p class="small text-muted mb-3">
+                                                    Session: <strong>{{ log.topic }}</strong> &bull; Crew: <strong>{{ log.crew.full_name }}</strong> &bull; CLI: <strong>{{ log.cli.full_name }}</strong>
+                                                </p>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Executive Remark</label>
+                                                    <textarea name="officer_remarks" class="form-control" rows="4" placeholder="Enter officer guidance or notes on this counselling session..." required>{{ log.officer_remarks or '' }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary fw-bold">Save Remark</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            No one-to-one counselling sessions recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

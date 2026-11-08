@@ -7,7 +7,7 @@ from database import db
 from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, 
     CounsellingAcknowledgement, TrainingRecord, MedicalRecord, Message, FootplateInspection,
-    CLIMovement, CrewCounsellingRecord
+    CLIMovement, CrewCounsellingRecord, CrewCounsellingLog
 )
 from blueprints.auth import role_required
 
@@ -654,3 +654,364 @@ def crew_performance():
         current_category=category_filter,
         current_q=q
     )
+
+
+# ---------------------------------------------------------------------------
+# PHASE 5: OFFICER NOTICE COMPLIANCE & DIGITAL SIGN-OFF
+# ---------------------------------------------------------------------------
+
+@officer_bp.route('/notice-compliance')
+def notice_compliance():
+    """Divisional Safety Notice & Circular Acknowledgement Oversight."""
+    officer = User.query.get(session['user_id'])
+    notice_id = request.args.get('notice_id')
+    lobby_id = request.args.get('lobby_id', 'ALL')
+    cli_id = request.args.get('cli_id', 'ALL')
+    status_filter = request.args.get('status', 'ALL').strip().upper() # ALL, ACKNOWLEDGED, PENDING
+    traction_filter = request.args.get('traction', 'ALL').strip().upper()
+    q = request.args.get('q', '').strip()
+
+    # Notices available for inspection
+    notices_query = Notice.query.filter_by(is_active=True)
+    if traction_filter != 'ALL' and traction_filter:
+        notices_query = notices_query.filter_by(traction_type=traction_filter)
+    active_notices = notices_query.order_by(Notice.created_at.desc()).all()
+
+    selected_notice = None
+    if notice_id and notice_id.isdigit():
+        selected_notice = Notice.query.get(int(notice_id))
+    elif active_notices:
+        selected_notice = active_notices[0]
+
+    crew_rows = []
+    lobby_breakdown = []
+    cli_breakdown = []
+    stats = {'eligible': 0, 'acknowledged': 0, 'pending': 0, 'percentage': 0.0}
+
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    all_clis = User.query.filter_by(role='supervisor', sub_role='CLI', is_active=True).order_by(User.full_name).all()
+
+    if selected_notice:
+        stats = selected_notice.get_compliance_stats()
+        acked_map = {a.user_id: a for a in selected_notice.acknowledgements.all()}
+
+        # Build crew rows
+        crew_query = User.query.filter_by(role='crew', is_active=True)
+        if selected_notice.target_lobby_id:
+            crew_query = crew_query.filter_by(lobby_id=selected_notice.target_lobby_id)
+        elif lobby_id != 'ALL' and lobby_id.isdigit():
+            crew_query = crew_query.filter_by(lobby_id=int(lobby_id))
+
+        if cli_id != 'ALL' and cli_id.isdigit():
+            crew_query = crew_query.filter_by(cli_id=int(cli_id))
+
+        if q:
+            crew_query = crew_query.filter(
+                (User.full_name.ilike(f"%{q}%")) |
+                (User.username.ilike(f"%{q}%")) |
+                (User.mobile.ilike(f"%{q}%")) |
+                (User.pf_number.ilike(f"%{q}%"))
+            )
+
+        target_crews = crew_query.order_by(User.full_name).all()
+        for c in target_crews:
+            ack = acked_map.get(c.id)
+            is_acked = ack is not None
+            if status_filter == 'ACKNOWLEDGED' and not is_acked:
+                continue
+            if status_filter == 'PENDING' and is_acked:
+                continue
+            crew_rows.append({
+                'crew': c,
+                'is_acknowledged': is_acked,
+                'ack': ack,
+                'cli': c.nominated_cli
+            })
+
+        # Lobby breakdown
+        for lob in lobbies:
+            l_crews = User.query.filter_by(lobby_id=lob.id, role='crew', is_active=True).all()
+            l_total = len(l_crews)
+            if l_total == 0:
+                continue
+            l_acked = sum(1 for c in l_crews if c.id in acked_map)
+            pct = round((l_acked / l_total) * 100, 1)
+            lobby_breakdown.append({
+                'lobby': lob,
+                'total': l_total,
+                'acknowledged': l_acked,
+                'pending': l_total - l_acked,
+                'percentage': pct
+            })
+
+        # CLI breakdown
+        for cli in all_clis:
+            squad = cli.assigned_crews.filter_by(is_active=True).all()
+            s_total = len(squad)
+            if s_total == 0:
+                continue
+            s_acked = sum(1 for c in squad if c.id in acked_map)
+            pct = round((s_acked / s_total) * 100, 1)
+            cli_breakdown.append({
+                'cli': cli,
+                'total': s_total,
+                'acknowledged': s_acked,
+                'pending': s_total - s_acked,
+                'percentage': pct
+            })
+
+    return render_template(
+        'officer/notice_compliance.html',
+        officer=officer,
+        active_notices=active_notices,
+        selected_notice=selected_notice,
+        crew_rows=crew_rows,
+        lobby_breakdown=lobby_breakdown,
+        cli_breakdown=cli_breakdown,
+        stats=stats,
+        lobbies=lobbies,
+        all_clis=all_clis,
+        current_notice_id=selected_notice.id if selected_notice else None,
+        current_lobby=lobby_id,
+        current_cli=cli_id,
+        current_status=status_filter,
+        current_traction=traction_filter,
+        current_q=q
+    )
+
+
+@officer_bp.route('/notices/<int:notice_id>/sign', methods=['POST'])
+def sign_notice(notice_id):
+    """Officer digital signature / executive approval on safety circular."""
+    officer = User.query.get(session['user_id'])
+    if not (officer.is_officer() or officer.is_admin()):
+        flash('Only Divisional Officers can digitally approve circulars.', 'danger')
+        return redirect(url_for('officer.notice_compliance', notice_id=notice_id))
+
+    notice = Notice.query.get_or_404(notice_id)
+    remarks = request.form.get('officer_remarks', '').strip()
+
+    notice.approved_by_id = officer.id
+    notice.approval_date = datetime.utcnow()
+    notice.officer_remarks = remarks or f"Digitally endorsed by {officer.full_name} ({officer.sub_role or 'Officer'}) for strict compliance."
+    db.session.commit()
+
+    flash(f'Safety Circular "{notice.title}" digitally approved with official executive stamp.', 'success')
+    return redirect(url_for('officer.notice_compliance', notice_id=notice.id))
+
+
+@officer_bp.route('/notices/<int:notice_id>/remind', methods=['POST'])
+def remind_notice(notice_id):
+    """Officer dispatches division-wide compliance alert to unacknowledged staff."""
+    officer = User.query.get(session['user_id'])
+    notice = Notice.query.get_or_404(notice_id)
+    acked_user_ids = {a.user_id for a in notice.acknowledgements.all()}
+    
+    target_crews = User.query.filter_by(role='crew', is_active=True)
+    if notice.target_lobby_id:
+        target_crews = target_crews.filter_by(lobby_id=notice.target_lobby_id)
+    unacked = [c for c in target_crews.all() if c.id not in acked_user_ids]
+
+    sent_cnt = 0
+    for c in unacked:
+        msg = Message(
+            sender_id=officer.id,
+            recipient_id=c.id,
+            subject=f"DIRECTIVE FROM {officer.sub_role or 'OFFICER'}: {notice.title[:60]}",
+            body=(
+                f"Running Staff {c.full_name} ({c.username}):\n\n"
+                f"You have not yet digitally acknowledged Safety Circular '{notice.title}'. "
+                f"Under Divisional Safety Regulations, compliance acknowledgement is mandatory. "
+                f"Please open your running desk and complete acknowledgement immediately.\n\n"
+                f"Signed: {officer.full_name}, {officer.sub_role or 'Divisional Officer'}, Howrah Division."
+            ),
+            status='SENT'
+        )
+        db.session.add(msg)
+        sent_cnt += 1
+
+    db.session.commit()
+    flash(f'Direct executive compliance alert dispatched to {sent_cnt} unacknowledged running staff.', 'success')
+    return redirect(url_for('officer.notice_compliance', notice_id=notice.id))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 5: COUNSELLING OVERSIGHT & 30-DAY OVERDUE TRACKER
+# ---------------------------------------------------------------------------
+
+@officer_bp.route('/counselling-monitor')
+def counselling_monitor():
+    """Divisional Safety Counselling Oversight & 30-Day Overdue Tracker."""
+    officer = User.query.get(session['user_id'])
+    lobby_filter = request.args.get('lobby_id', 'ALL')
+    cli_filter = request.args.get('cli_id', 'ALL')
+    status_filter = request.args.get('status', 'ALL').strip().upper()
+    q = request.args.get('q', '').strip()
+
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    all_clis = User.query.filter_by(role='supervisor', sub_role='CLI', is_active=True).order_by(User.full_name).all()
+    cli_name_map = {cli.id: cli.full_name for cli in all_clis}
+    lobby_code_map = {lob.id: lob.code for lob in lobbies}
+
+    crew_query = User.query.filter_by(role='crew', is_active=True)
+    if lobby_filter != 'ALL' and lobby_filter.isdigit():
+        crew_query = crew_query.filter_by(lobby_id=int(lobby_filter))
+    if cli_filter != 'ALL' and cli_filter.isdigit():
+        crew_query = crew_query.filter_by(cli_id=int(cli_filter))
+
+    if q:
+        crew_query = crew_query.filter(
+            (User.full_name.ilike(f"%{q}%")) |
+            (User.username.ilike(f"%{q}%")) |
+            (User.mobile.ilike(f"%{q}%")) |
+            (User.pf_number.ilike(f"%{q}%"))
+        )
+
+    all_crews = crew_query.all()
+    total_crews = len(all_crews)
+
+    # Pre-fetch all CrewCounsellingRecord and CrewCounsellingLog for instant in-memory resolution
+    from blueprints.supervisor import parse_date_value
+
+    all_recs = CrewCounsellingRecord.query.all()
+    rec_by_user = {}
+    rec_by_cug = {}
+    rec_by_str = {}
+    for r in all_recs:
+        if r.crew_user_id:
+            rec_by_user[r.crew_user_id] = r
+        if r.cug:
+            rec_by_cug[r.cug] = r
+        if r.crew_id_str:
+            rec_by_str[r.crew_id_str] = r
+
+    all_logs = CrewCounsellingLog.query.order_by(CrewCounsellingLog.counselling_date.desc()).all()
+    latest_log_by_crew = {}
+    for l in all_logs:
+        if l.crew_id not in latest_log_by_crew:
+            latest_log_by_crew[l.crew_id] = l
+
+    today = date.today()
+    overdue_crews = []
+    ok_count = 0
+    overdue_count = 0
+    crew_status_cache = {}
+
+    from collections import defaultdict
+    crew_by_cli = defaultdict(list)
+    crew_by_lobby = defaultdict(list)
+
+    for c in all_crews:
+        last_d = None
+        if c.id in latest_log_by_crew:
+            last_d = latest_log_by_crew[c.id].counselling_date
+        else:
+            rec = rec_by_user.get(c.id) or rec_by_cug.get(c.mobile) or rec_by_str.get(c.username)
+            if rec and rec.safety_counselling:
+                last_d = parse_date_value(rec.safety_counselling)
+
+        if not last_d:
+            st = {'status': 'OVERDUE', 'days_ago': 999, 'days_elapsed': 999, 'is_overdue': True, 'badge': 'danger', 'last_date': None}
+        else:
+            days_ago = (today - last_d).days
+            if days_ago > 30:
+                st = {'status': 'OVERDUE', 'days_ago': days_ago, 'days_elapsed': days_ago, 'is_overdue': True, 'badge': 'danger', 'last_date': last_d}
+            elif days_ago >= 25:
+                st = {'status': 'DUE_SOON', 'days_ago': days_ago, 'days_elapsed': days_ago, 'is_overdue': False, 'badge': 'warning', 'last_date': last_d}
+            else:
+                st = {'status': 'OK', 'days_ago': days_ago, 'days_elapsed': days_ago, 'is_overdue': False, 'badge': 'success', 'last_date': last_d}
+
+        crew_status_cache[c.id] = st
+        if c.cli_id:
+            crew_by_cli[c.cli_id].append(c)
+        if c.lobby_id:
+            crew_by_lobby[c.lobby_id].append(c)
+
+        if st['status'] == 'OVERDUE':
+            overdue_count += 1
+            overdue_crews.append({
+                'crew': c,
+                'status': st,
+                'cli_name': cli_name_map.get(c.cli_id, 'Unassigned'),
+                'lobby_code': lobby_code_map.get(c.lobby_id, 'HWH')
+            })
+        else:
+            ok_count += 1
+
+    compliance_pct = round((ok_count / (total_crews or 1)) * 100, 1)
+
+    # CLI Summary table (Instant via pre-grouped map)
+    cli_summary = []
+    for cli in all_clis:
+        cli_crews = crew_by_cli.get(cli.id, [])
+        if not cli_crews:
+            continue
+        c_ok = sum(1 for c in cli_crews if crew_status_cache.get(c.id, {}).get('status') != 'OVERDUE')
+        c_over = len(cli_crews) - c_ok
+        c_pct = round((c_ok / len(cli_crews)) * 100, 1)
+        cli_summary.append({
+            'cli_name': cli.full_name,
+            'lobby': cli.lobby.code if cli.lobby else 'HWH',
+            'total': len(cli_crews),
+            'ok': c_ok,
+            'overdue': c_over,
+            'pct': c_pct
+        })
+    cli_summary.sort(key=lambda x: x['pct'], reverse=True)
+
+    # Lobby Summary table (Instant via pre-grouped map)
+    lobby_summary = []
+    for lob in lobbies:
+        lob_crews = crew_by_lobby.get(lob.id, [])
+        if not lob_crews:
+            continue
+        l_ok = sum(1 for c in lob_crews if crew_status_cache.get(c.id, {}).get('status') != 'OVERDUE')
+        l_over = len(lob_crews) - l_ok
+        l_pct = round((l_ok / len(lob_crews)) * 100, 1)
+        lobby_summary.append({
+            'lobby_code': lob.code,
+            'total': len(lob_crews),
+            'ok': l_ok,
+            'overdue': l_over,
+            'pct': l_pct
+        })
+    lobby_summary.sort(key=lambda x: x['pct'], reverse=True)
+
+    if status_filter in ['OK', 'VALID']:
+        overdue_crews = []
+
+    return render_template(
+        'officer/counselling_monitor.html',
+        officer=officer,
+        total_crews=total_crews,
+        ok_count=ok_count,
+        overdue_count=overdue_count,
+        compliance_pct=compliance_pct,
+        cli_summary=cli_summary,
+        lobby_summary=lobby_summary,
+        overdue_crews=overdue_crews[:100],
+        recent_logs=all_logs[:25],
+        lobbies=lobbies,
+        all_clis=all_clis,
+        current_lobby=lobby_filter,
+        current_cli=cli_filter,
+        current_status=status_filter,
+        current_q=q
+    )
+
+
+@officer_bp.route('/counselling-log/<int:log_id>/remark', methods=['POST'])
+@officer_bp.route('/counselling-log/<int:log_id>/remark', methods=['POST'], endpoint='add_counselling_log_remark')
+def remark_counselling_log(log_id):
+    """Officer adds supervisory remark / directive on a CLI counselling log."""
+    officer = User.query.get(session['user_id'])
+    log = CrewCounsellingLog.query.get_or_404(log_id)
+    remarks = request.form.get('officer_remarks', '').strip()
+
+    if remarks:
+        log.officer_remarks = remarks
+        log.officer_remarked_by_id = officer.id
+        log.officer_remarked_at = datetime.utcnow()
+        db.session.commit()
+        flash(f'Officer directive recorded on counselling session with {log.crew.full_name}.', 'success')
+    return redirect(url_for('officer.counselling_monitor'))
