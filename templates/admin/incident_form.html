@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}{% if incident %}Edit Incident: {{ incident.incident_number }}{% else %}Log Unusual Incident{% endif %} | Electric OP HWH{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                        {% if incident %}Edit Unusual Incident: {{ incident.incident_number }}{% else %}Log New Unusual Incident{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        <!-- Date, Time, Section, Location -->
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">1. Occurrence & Location Details</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Incident Date <span class="text-danger">*</span></label>
+                                <input type="date" name="incident_date" class="form-control" required value="{{ incident.incident_date.strftime('%Y-%m-%d') if incident else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Incident Time</label>
+                                <input type="text" name="incident_time" class="form-control" placeholder="e.g. 14:35" value="{{ incident.incident_time if incident else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Section <span class="text-danger">*</span></label>
+                                <input type="text" name="section" class="form-control" required placeholder="e.g. HWH-BWN" value="{{ incident.section if incident else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Station / Location (Km)</label>
+                                <input type="text" name="station_location" class="form-control" placeholder="e.g. BWN Yard, Km 95/4" value="{{ incident.station_location if incident else '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Train, Loco, Traction, Category -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Train No.</label>
+                                <input type="text" name="train_no" class="form-control" placeholder="e.g. 12301 Down" value="{{ incident.train_no if incident else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Loco No.</label>
+                                <input type="text" name="loco_no" class="form-control" placeholder="e.g. WAP-7 30201" value="{{ incident.loco_no if incident else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Traction Type <span class="text-danger">*</span></label>
+                                <select name="traction_type" class="form-select">
+                                    <option value="ELECTRIC" {% if not incident or incident.traction_type == 'ELECTRIC' %}selected{% endif %}>Electric</option>
+                                    <option value="DIESEL" {% if incident and incident.traction_type == 'DIESEL' %}selected{% endif %}>Diesel</option>
+                                    <option value="BOTH" {% if incident and incident.traction_type == 'BOTH' %}selected{% endif %}>Both / Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Incident Category <span class="text-danger">*</span></label>
+                                <select name="incident_category" class="form-select" required>
+                                    <option value="SPAD" {% if incident and incident.incident_category == 'SPAD' %}selected{% endif %}>SPAD (Signal Passing At Danger)</option>
+                                    <option value="LOCO_FAILURE" {% if incident and incident.incident_category == 'LOCO_FAILURE' %}selected{% endif %}>Loco / Equipment Tripping</option>
+                                    <option value="OHE_BREAKDOWN" {% if incident and incident.incident_category == 'OHE_BREAKDOWN' %}selected{% endif %}>OHE Breakdown / No Tension</option>
+                                    <option value="SIGNAL_FAILURE" {% if incident and incident.incident_category == 'SIGNAL_FAILURE' %}selected{% endif %}>Signaling / Track Circuit</option>
+                                    <option value="DERAILMENT" {% if incident and incident.incident_category == 'DERAILMENT' %}selected{% endif %}>Derailment / Track Obstruction</option>
+                                    <option value="FLAT_TYRE" {% if incident and incident.incident_category == 'FLAT_TYRE' %}selected{% endif %}>Hot Axle / Flat Tyre / Brake Binding</option>
+                                    <option value="CATTLE_RUN_OVER" {% if incident and incident.incident_category == 'CATTLE_RUN_OVER' %}selected{% endif %}>Cattle Run Over / Trespass</option>
+                                    <option value="ACP_UNUSUAL" {% if incident and incident.incident_category == 'ACP_UNUSUAL' %}selected{% endif %}>Alarm Chain Pulling (ACP)</option>
+                                    <option value="UNUSUAL_SOUND" {% if incident and incident.incident_category == 'UNUSUAL_SOUND' %}selected{% endif %}>Unusual Sound / Jerk</option>
+                                    <option value="MISC" {% if not incident or incident.incident_category == 'MISC' %}selected{% endif %}>Miscellaneous Unusual</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Crew & Supervisory Details -->
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">2. Running Crew & Supervisory Details</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Loco Pilot (LP) Name</label>
+                                <input type="text" name="crew_name_manual" class="form-control" placeholder="Enter LP Name & ID" value="{{ incident.crew_name_manual if incident else '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Assistant Loco Pilot (ALP) Name</label>
+                                <input type="text" name="alp_name_manual" class="form-control" placeholder="Enter ALP Name & ID" value="{{ incident.alp_name_manual if incident else '' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Home Lobby</label>
+                                <select name="lobby_id" class="form-select">
+                                    <option value="">Select Lobby</option>
+                                    {% for l in lobbies %}
+                                        <option value="{{ l.id }}" {% if incident and incident.lobby_id == l.id %}selected{% endif %}>{{ l.code }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Nominated CLI</label>
+                                <select name="cli_id" class="form-select">
+                                    <option value="">Select CLI</option>
+                                    {% for c in clis %}
+                                        <option value="{{ c.id }}" {% if incident and incident.cli_id == c.id %}selected{% endif %}>{{ c.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Technical Narrative & Cause Analysis -->
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">3. Technical Narrative & Analysis</h6>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Brief Description of Unusual Occurrence <span class="text-danger">*</span></label>
+                            <textarea name="brief_description" class="form-control" rows="3" required placeholder="Describe sequence of events, signals involved, fault indications, cab messages...">{{ incident.brief_description if incident else '' }}</textarea>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Primary / Root Cause</label>
+                                <textarea name="primary_cause" class="form-control" rows="2" placeholder="e.g. Pantograph entangling, DJ tripping on fault, track obstacle...">{{ incident.primary_cause if incident else '' }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Immediate Action Taken</label>
+                                <textarea name="immediate_action" class="form-control" rows="2" placeholder="Troubleshooting carried out by LP, assistance provided by TLC, rear loco attached...">{{ incident.immediate_action if incident else '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Rectification / Clearance Time</label>
+                                <input type="text" name="rectification_time" class="form-control" placeholder="e.g. 15:10 (Cleared)" value="{{ incident.rectification_time if incident else '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Delay (in Minutes)</label>
+                                <input type="number" name="delay_minutes" class="form-control" value="{{ incident.delay_minutes if incident else 0 }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Investigation Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="REPORTED" {% if not incident or incident.status == 'REPORTED' %}selected{% endif %}>Reported</option>
+                                    <option value="UNDER_INVESTIGATION" {% if incident and incident.status == 'UNDER_INVESTIGATION' %}selected{% endif %}>Under Investigation</option>
+                                    <option value="ACTION_COMPLETED" {% if incident and incident.status == 'ACTION_COMPLETED' %}selected{% endif %}>Action Completed</option>
+                                    <option value="CLOSED" {% if incident and incident.status == 'CLOSED' %}selected{% endif %}>Closed</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Attachment -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Attachment (Joint Check Sheet, Photo, Report PDF)</label>
+                            <input type="file" name="attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+                            {% if incident and incident.attachment_path %}
+                                <div class="mt-2 small">
+                                    Current attachment: <a href="{{ url_for('static', filename=incident.attachment_path) }}" target="_blank" class="fw-bold text-danger"><i class="fa-solid fa-paperclip me-1"></i>View File</a>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a href="{{ url_for('admin.incidents') }}" class="btn btn-outline-secondary">
+                                <i class="fa-solid fa-arrow-left me-1"></i> Back to Incident Register
+                            </a>
+                            <button type="submit" class="btn btn-danger px-4 fw-bold shadow-sm">
+                                <i class="fa-solid fa-check me-1"></i> Save Unusual Incident
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

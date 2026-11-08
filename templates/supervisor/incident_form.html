@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Log Squad Incident | Supervisor Console{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Log Unusual Incident – CLI Supervisor
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Incident Date <span class="text-danger">*</span></label>
+                                <input type="date" name="incident_date" class="form-control" required value="{{ '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Time</label>
+                                <input type="text" name="incident_time" class="form-control" placeholder="e.g. 11:20">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Traction</label>
+                                <select name="traction_type" class="form-select">
+                                    <option value="ELECTRIC" selected>Electric</option>
+                                    <option value="DIESEL">Diesel</option>
+                                    <option value="BOTH">Both</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Section <span class="text-danger">*</span></label>
+                                <input type="text" name="section" class="form-control" required placeholder="e.g. HWH-BWN">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Station / Location</label>
+                                <input type="text" name="station_location" class="form-control" placeholder="e.g. DKAE, Km 18/6">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Train No.</label>
+                                <input type="text" name="train_no" class="form-control" placeholder="e.g. 37812 Local">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Loco No.</label>
+                                <input type="text" name="loco_no" class="form-control" placeholder="e.g. WAP-5 30015">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                                <select name="incident_category" class="form-select" required>
+                                    <option value="LOCO_FAILURE">Loco Tripping / Failure</option>
+                                    <option value="SPAD">SPAD (Signal Passing Danger)</option>
+                                    <option value="OHE_BREAKDOWN">OHE Breakdown / No Tension</option>
+                                    <option value="SIGNAL_FAILURE">Signaling Interlocking Failure</option>
+                                    <option value="DERAILMENT">Derailment / Obstruction</option>
+                                    <option value="FLAT_TYRE">Hot Axle / Flat Tyre / Brake Binding</option>
+                                    <option value="CATTLE_RUN_OVER">Cattle Run Over / Trespass</option>
+                                    <option value="ACP_UNUSUAL">Alarm Chain Pulling (ACP)</option>
+                                    <option value="UNUSUAL_SOUND">Unusual Sound / Jerk</option>
+                                    <option value="MISC" selected>Miscellaneous Unusual</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Assigned Crew Member</label>
+                                <select name="crew_id" class="form-select">
+                                    <option value="">Select from Assigned Squad</option>
+                                    {% for c in crews %}
+                                        <option value="{{ c.id }}">{{ c.full_name }} ({{ c.crew_category or 'Crew' }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Or Enter LP Name Manually</label>
+                                <input type="text" name="crew_name_manual" class="form-control" placeholder="LP Name & Mobile / ID">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Brief Description <span class="text-danger">*</span></label>
+                            <textarea name="brief_description" class="form-control" rows="3" required placeholder="Describe what happened, running staff observations, footplate checks..."></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Primary Cause Identified</label>
+                                <input type="text" name="primary_cause" class="form-control" placeholder="Apparent cause...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Immediate Action / Remedial Counselling</label>
+                                <input type="text" name="immediate_action" class="form-control" placeholder="Action taken by CLI on spot...">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a href="{{ url_for('supervisor.incidents') }}" class="btn btn-outline-secondary">
+                                <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-info text-white px-4 fw-bold shadow-sm">
+                                <i class="fa-solid fa-check me-1"></i> Save & Submit Incident
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

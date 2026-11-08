@@ -11,7 +11,7 @@ from database import db
 from models import (
     User, Lobby, FootplateInspection, Message, TrainingRecord, MedicalRecord,
     CounsellingTopic, CounsellingAcknowledgement, Notice, NoticeAcknowledgement, 
-    CrewCounsellingRecord, CLIMovement, CrewCounsellingLog
+    CrewCounsellingRecord, CLIMovement, CrewCounsellingLog, GoogleSheetLink, UnusualIncident
 )
 from blueprints.auth import role_required
 
@@ -1714,3 +1714,176 @@ def counselling_logs():
         overdue_crews=overdue_crews
     )
 
+
+
+# ---------------------------------------------------------------------------
+# PHASE 6: CLI SUPERVISOR GOOGLE SHEETS & SQUAD UNUSUAL INCIDENTS
+# ---------------------------------------------------------------------------
+
+@supervisor_bp.route('/sheets', methods=['GET'])
+def sheets():
+    """View permitted Google Sheets for CLI."""
+    user = User.query.get(session.get('user_id'))
+    category = request.args.get('category', '').strip()
+    traction = request.args.get('traction', '').strip()
+    search = request.args.get('search', '').strip()
+
+    query = GoogleSheetLink.query.filter_by(is_active=True)
+    if category and category != 'ALL':
+        query = query.filter_by(category=category)
+    if traction and traction != 'ALL':
+        query = query.filter(GoogleSheetLink.traction_type.in_([traction, 'BOTH']))
+    if search:
+        query = query.filter(
+            db.or_(
+                GoogleSheetLink.title.ilike(f'%{search}%'),
+                GoogleSheetLink.description.ilike(f'%{search}%')
+            )
+        )
+
+    all_sheets = [s for s in query.order_by(GoogleSheetLink.display_order.asc()).all() if s.is_accessible_by(user)]
+    categories = [
+        ('CLI_PERFORMANCE', 'CLI Performance & Monitoring'),
+        ('CREW_MONITORING', 'Crew Monitoring & Grading'),
+        ('TRAINING', 'Training & Refresher Master'),
+        ('PME', 'Periodic Medical Examination (PME)'),
+        ('SAFETY_MONITORING', 'Safety Drives & Counselling'),
+        ('OPERATIONAL', 'Operational Punctuality & Logs'),
+        ('GENERAL', 'General Administration & Other Links')
+    ]
+    return render_template(
+        'officer/sheets.html',
+        sheets=all_sheets,
+        categories=categories,
+        selected_category=category,
+        selected_traction=traction,
+        search=search,
+        is_supervisor_view=True
+    )
+
+
+@supervisor_bp.route('/incidents', methods=['GET'])
+def incidents():
+    """Squad Unusual Incidents Register for CLI."""
+    cli = User.query.get(session.get('user_id'))
+    status = request.args.get('status', '').strip()
+    search = request.args.get('search', '').strip()
+
+    query = UnusualIncident.query.filter(
+        db.or_(
+            UnusualIncident.cli_id == cli.id,
+            UnusualIncident.lobby_id == cli.lobby_id,
+            UnusualIncident.reported_by_id == cli.id
+        )
+    )
+    if status and status != 'ALL':
+        query = query.filter_by(status=status)
+    if search:
+        query = query.filter(
+            db.or_(
+                UnusualIncident.incident_number.ilike(f'%{search}%'),
+                UnusualIncident.brief_description.ilike(f'%{search}%'),
+                UnusualIncident.train_no.ilike(f'%{search}%'),
+                UnusualIncident.loco_no.ilike(f'%{search}%'),
+                UnusualIncident.crew_name_manual.ilike(f'%{search}%')
+            )
+        )
+
+    squad_incidents = query.order_by(UnusualIncident.incident_date.desc(), UnusualIncident.id.desc()).all()
+    return render_template(
+        'supervisor/incidents.html',
+        incidents=squad_incidents,
+        status=status,
+        search=search
+    )
+
+
+@supervisor_bp.route('/incidents/new', methods=['GET', 'POST'])
+def new_incident():
+    """CLI logs unusual incident observed during footplate or reported by crew."""
+    cli = User.query.get(session.get('user_id'))
+    if request.method == 'POST':
+        incident_date_str = request.form.get('incident_date', '').strip()
+        incident_date = parse_date_value(incident_date_str) or date.today()
+        incident_time = request.form.get('incident_time', '').strip()
+        section = request.form.get('section', '').strip()
+        station_location = request.form.get('station_location', '').strip()
+        train_no = request.form.get('train_no', '').strip()
+        loco_no = request.form.get('loco_no', '').strip()
+        traction_type = request.form.get('traction_type', 'ELECTRIC').strip()
+        incident_category = request.form.get('incident_category', 'MISC').strip()
+        crew_id_raw = request.form.get('crew_id')
+        crew_id = int(crew_id_raw) if crew_id_raw and crew_id_raw.isdigit() else None
+        crew_name_manual = request.form.get('crew_name_manual', '').strip()
+        alp_name_manual = request.form.get('alp_name_manual', '').strip()
+        brief_description = request.form.get('brief_description', '').strip()
+        primary_cause = request.form.get('primary_cause', '').strip()
+        immediate_action = request.form.get('immediate_action', '').strip()
+        delay_minutes = int(request.form.get('delay_minutes', 0) or 0)
+
+        if not section or not brief_description:
+            flash('Section and Brief Description are mandatory.', 'danger')
+            assigned_crews = User.query.filter_by(assigned_cli_id=cli.id).order_by(User.full_name.asc()).all()
+            return render_template('supervisor/incident_form.html', crews=assigned_crews)
+
+        inc_number = UnusualIncident.generate_incident_number()
+        incident = UnusualIncident(
+            incident_number=inc_number,
+            incident_date=incident_date,
+            incident_time=incident_time,
+            section=section,
+            station_location=station_location,
+            train_no=train_no,
+            loco_no=loco_no,
+            traction_type=traction_type,
+            incident_category=incident_category,
+            crew_id=crew_id,
+            crew_name_manual=crew_name_manual,
+            alp_name_manual=alp_name_manual,
+            lobby_id=cli.lobby_id,
+            cli_id=cli.id,
+            brief_description=brief_description,
+            primary_cause=primary_cause,
+            immediate_action=immediate_action,
+            delay_minutes=delay_minutes,
+            status='REPORTED',
+            reported_by_id=cli.id,
+            reported_by_role='CLI'
+        )
+        db.session.add(incident)
+        db.session.commit()
+        flash(f'Unusual Incident registered as [{inc_number}] and forwarded for monitoring.', 'success')
+        return redirect(url_for('supervisor.incidents'))
+
+    assigned_crews = User.query.filter_by(assigned_cli_id=cli.id).order_by(User.full_name.asc()).all()
+    return render_template('supervisor/incident_form.html', crews=assigned_crews)
+
+
+@supervisor_bp.route('/incidents/<int:incident_id>', methods=['GET'])
+def view_incident(incident_id):
+    """View incident dossier by CLI."""
+    incident = UnusualIncident.query.get_or_404(incident_id)
+    return render_template('admin/incident_detail.html', incident=incident, is_supervisor_view=True)
+
+
+@supervisor_bp.route('/incidents/<int:incident_id>/action', methods=['POST'])
+def record_investigation(incident_id):
+    """CLI records joint inspection findings and crew counselling remarks."""
+    incident = UnusualIncident.query.get_or_404(incident_id)
+    findings = request.form.get('findings', '').strip()
+    cause = request.form.get('primary_cause', '').strip()
+    new_status = request.form.get('status', '').strip()
+    cli = User.query.get(session.get('user_id'))
+
+    if cause:
+        incident.primary_cause = cause
+    if findings:
+        existing = incident.immediate_action or ''
+        ts_str = datetime.now().strftime('%d-%m-%Y %H:%M')
+        incident.immediate_action = f"{existing}\n[{ts_str} CLI {cli.full_name} Joint Check]: {findings}".strip()
+    if new_status in ('UNDER_INVESTIGATION', 'ACTION_COMPLETED', 'CLOSED'):
+        incident.status = new_status
+
+    db.session.commit()
+    flash(f'Investigation and corrective counselling logged on [{incident.incident_number}].', 'success')
+    return redirect(url_for('supervisor.view_incident', incident_id=incident.id))

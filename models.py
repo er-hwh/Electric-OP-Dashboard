@@ -839,3 +839,140 @@ class CLIMovement(db.Model):
         cutoff = date.today() - timedelta(days=90)
         return self.activity_date >= cutoff
 
+
+# ---------------------------------------------------------------------------
+# PHASE 6: CENTRALIZED DIRECTORIES (GOOGLE SHEETS & UNUSUAL INCIDENT TRACKER)
+# ---------------------------------------------------------------------------
+
+class GoogleSheetLink(db.Model):
+    __tablename__ = 'google_sheet_links'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    sheet_url = db.Column(db.String(500), nullable=False)
+    category = db.Column(db.String(100), nullable=False) # 'CLI_PERFORMANCE', 'CREW_MONITORING', 'TRAINING', 'PME', 'SAFETY_MONITORING', 'OPERATIONAL'
+    description = db.Column(db.Text, nullable=True)
+    allowed_roles = db.Column(db.String(255), default='admin,officer,control,supervisor,crew') # comma-separated
+    lobby_id = db.Column(db.Integer, db.ForeignKey('lobbies.id'), nullable=True)
+    traction_type = db.Column(db.String(20), default='BOTH') # 'ELECTRIC', 'DIESEL', 'BOTH'
+    is_embedded = db.Column(db.Boolean, default=False)
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    lobby = db.relationship('Lobby', foreign_keys=[lobby_id])
+    creator = db.relationship('User', foreign_keys=[created_by_id])
+
+    def is_accessible_by(self, user):
+        """Check if a User object or role string has permission to view this sheet."""
+        if not user or not self.is_active:
+            return False
+        role = user.role if hasattr(user, 'role') else str(user)
+        if role == 'admin':
+            return True
+        allowed = [r.strip().lower() for r in (self.allowed_roles or '').split(',') if r.strip()]
+        if not allowed or 'all' in allowed or role.lower() in allowed:
+            # Check lobby restriction if present
+            if self.lobby_id and hasattr(user, 'lobby_id') and user.lobby_id:
+                if role.lower() in ('supervisor', 'crew') and user.lobby_id != self.lobby_id:
+                    return False
+            return True
+        return False
+
+    def get_embed_url(self):
+        """Returns clean embed/preview URL for Google Sheets."""
+        url = self.sheet_url or ''
+        if '/edit' in url:
+            return url.split('/edit')[0] + '/preview?rm=minimal'
+        elif '/view' in url:
+            return url.split('/view')[0] + '/preview?rm=minimal'
+        elif not url.endswith('/preview') and 'docs.google.com' in url:
+            return url + '/preview?rm=minimal'
+        return url
+
+
+class UnusualIncident(db.Model):
+    __tablename__ = 'unusual_incidents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    incident_number = db.Column(db.String(100), unique=True, index=True) # e.g. INC/HWH/2026/001
+    incident_date = db.Column(db.Date, nullable=False, index=True)
+    incident_time = db.Column(db.String(10), nullable=True) # e.g. "14:25"
+    section = db.Column(db.String(100), nullable=False) # e.g. "HWH-BWN"
+    station_location = db.Column(db.String(100), nullable=True) # e.g. "BWN Yard, Km 95/4"
+    train_no = db.Column(db.String(50), nullable=True)
+    loco_no = db.Column(db.String(50), nullable=True)
+    traction_type = db.Column(db.String(20), default='BOTH') # 'ELECTRIC', 'DIESEL', 'BOTH'
+    incident_category = db.Column(db.String(100), nullable=False, index=True) # SPAD, LOCO_FAILURE, OHE_BREAKDOWN, SIGNAL_FAILURE, DERAILMENT, FLAT_TYRE, CATTLE_RUN_OVER, ACP_UNUSUAL, UNUSUAL_SOUND, MISC
+    crew_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    crew_name_manual = db.Column(db.String(120), nullable=True)
+    alp_name_manual = db.Column(db.String(120), nullable=True)
+    lobby_id = db.Column(db.Integer, db.ForeignKey('lobbies.id'), nullable=True, index=True)
+    cli_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    brief_description = db.Column(db.Text, nullable=False)
+    primary_cause = db.Column(db.Text, nullable=True)
+    immediate_action = db.Column(db.Text, nullable=True)
+    rectification_time = db.Column(db.String(100), nullable=True)
+    delay_minutes = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(50), default='REPORTED', index=True) # REPORTED, UNDER_INVESTIGATION, ACTION_COMPLETED, CLOSED
+    attachment_path = db.Column(db.String(255), nullable=True)
+    reported_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    reported_by_role = db.Column(db.String(50), nullable=True) # 'TLC', 'PCNL', 'CLI', 'OFFICER', 'ADMIN'
+    officer_remarks = db.Column(db.Text, nullable=True)
+    officer_remarked_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    officer_remarked_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    crew = db.relationship('User', foreign_keys=[crew_id])
+    cli = db.relationship('User', foreign_keys=[cli_id])
+    lobby = db.relationship('Lobby', foreign_keys=[lobby_id])
+    reporter = db.relationship('User', foreign_keys=[reported_by_id])
+    officer_reviewer = db.relationship('User', foreign_keys=[officer_remarked_by_id])
+
+    @classmethod
+    def generate_incident_number(cls):
+        """Generates consecutive incident number e.g. INC/HWH/2026/001."""
+        year = date.today().year
+        prefix = f"INC/HWH/{year}/"
+        last_rec = cls.query.filter(cls.incident_number.like(f"{prefix}%")).order_by(cls.id.desc()).first()
+        if last_rec and last_rec.incident_number:
+            try:
+                seq = int(last_rec.incident_number.split('/')[-1]) + 1
+            except ValueError:
+                seq = cls.query.count() + 1
+        else:
+            seq = cls.query.count() + 1
+        return f"{prefix}{seq:03d}"
+
+    @property
+    def status_badge(self):
+        mapping = {
+            'REPORTED': ('warning text-dark', 'fa-triangle-exclamation', 'Reported'),
+            'UNDER_INVESTIGATION': ('info text-dark', 'fa-magnifying-glass', 'Under Investigation'),
+            'ACTION_COMPLETED': ('primary', 'fa-wrench', 'Action Completed'),
+            'CLOSED': ('success', 'fa-circle-check', 'Closed')
+        }
+        return mapping.get(self.status, ('secondary', 'fa-circle-info', self.status))
+
+    @property
+    def category_label(self):
+        labels = {
+            'SPAD': 'Signal Passing At Danger (SPAD)',
+            'LOCO_FAILURE': 'Locomotive / Equipment Tripping',
+            'OHE_BREAKDOWN': 'OHE Power Supply Disruption',
+            'SIGNAL_FAILURE': 'Signaling & Interlocking Failure',
+            'DERAILMENT': 'Derailment / Track Obstruction',
+            'FLAT_TYRE': 'Hot Axle / Flat Tyre / Brake Binding',
+            'CATTLE_RUN_OVER': 'Cattle Run Over / Trespass',
+            'ACP_UNUSUAL': 'Alarm Chain Pulling (ACP)',
+            'UNUSUAL_SOUND': 'Unusual Sound / Jerk by Crew',
+            'MISC': 'Miscellaneous Operational Unusual'
+        }
+        return labels.get(self.incident_category, self.incident_category)
+
+

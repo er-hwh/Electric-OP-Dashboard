@@ -6,7 +6,7 @@ from database import db
 from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, 
     CounsellingAcknowledgement, TrainingRecord, MedicalRecord, FootplateInspection, Message,
-    CrewCounsellingRecord, CrewCounsellingLog
+    CrewCounsellingRecord, CrewCounsellingLog, GoogleSheetLink, UnusualIncident
 )
 from blueprints.auth import role_required
 from blueprints.supervisor import compute_overdue_status, parse_date_value
@@ -365,3 +365,83 @@ def message_cli():
         return redirect(url_for('crew.dashboard'))
 
     return render_template('crew/message_cli.html', crew=crew)
+
+
+# ---------------------------------------------------------------------------
+# PHASE 6: CREW RUNNING ROSTER SHEETS & SAFETY UNUSUAL CASE STUDIES
+# ---------------------------------------------------------------------------
+
+@crew_bp.route('/sheets', methods=['GET'])
+def sheets():
+    """View permitted Google Sheets & Rosters for Crew."""
+    crew = User.query.get(session.get('user_id'))
+    category = request.args.get('category', '').strip()
+    search = request.args.get('search', '').strip()
+
+    query = GoogleSheetLink.query.filter_by(is_active=True)
+    if category and category != 'ALL':
+        query = query.filter_by(category=category)
+    if search:
+        query = query.filter(
+            db.or_(
+                GoogleSheetLink.title.ilike(f'%{search}%'),
+                GoogleSheetLink.description.ilike(f'%{search}%')
+            )
+        )
+
+    all_sheets = [s for s in query.order_by(GoogleSheetLink.display_order.asc()).all() if s.is_accessible_by(crew)]
+    categories = [
+        ('CREW_MONITORING', 'Crew Duty & Rosters'),
+        ('TRAINING', 'Training Schedule & Circulars'),
+        ('SAFETY_MONITORING', 'Safety Guidelines & Drives'),
+        ('OPERATIONAL', 'Operational Instructions'),
+        ('GENERAL', 'General Links')
+    ]
+    return render_template(
+        'crew/sheets.html',
+        sheets=all_sheets,
+        categories=categories,
+        selected_category=category,
+        search=search
+    )
+
+
+@crew_bp.route('/unusual-reports', methods=['GET'])
+def unusual_reports():
+    """Safety Case Studies & Unusual Incident Alerts for running crews."""
+    category = request.args.get('category', '').strip()
+    search = request.args.get('search', '').strip()
+
+    query = UnusualIncident.query
+    if category and category != 'ALL':
+        query = query.filter_by(incident_category=category)
+    if search:
+        query = query.filter(
+            db.or_(
+                UnusualIncident.incident_number.ilike(f'%{search}%'),
+                UnusualIncident.brief_description.ilike(f'%{search}%'),
+                UnusualIncident.primary_cause.ilike(f'%{search}%')
+            )
+        )
+
+    # Show recent safety incidents with cause analysis and corrective learnings
+    recent_incidents = query.order_by(UnusualIncident.incident_date.desc(), UnusualIncident.id.desc()).limit(30).all()
+    categories = [
+        ('SPAD', 'Signal Passing At Danger (SPAD)'),
+        ('LOCO_FAILURE', 'Locomotive / Equipment Tripping'),
+        ('OHE_BREAKDOWN', 'OHE Power Supply Disruption'),
+        ('SIGNAL_FAILURE', 'Signaling & Interlocking Failure'),
+        ('DERAILMENT', 'Derailment / Track Obstruction'),
+        ('FLAT_TYRE', 'Hot Axle / Flat Tyre / Brake Binding'),
+        ('CATTLE_RUN_OVER', 'Cattle Run Over / Trespass'),
+        ('ACP_UNUSUAL', 'Alarm Chain Pulling (ACP)'),
+        ('UNUSUAL_SOUND', 'Unusual Sound / Jerk by Crew'),
+        ('MISC', 'Miscellaneous Operational Unusual')
+    ]
+    return render_template(
+        'crew/unusual_reports.html',
+        incidents=recent_incidents,
+        categories=categories,
+        selected_category=category,
+        search=search
+    )

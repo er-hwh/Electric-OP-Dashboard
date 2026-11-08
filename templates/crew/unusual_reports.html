@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Safety Alerts & Incident Case Studies | Crew Running Desk{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3 border-bottom pb-3">
+        <div>
+            <h2 class="h3 fw-bold text-dark mb-1">
+                <i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Safety Alerts & Unusual Incident Case Studies
+            </h2>
+            <p class="text-muted mb-0 small">
+                Division-wide operational learnings, SPAD prevention case studies, and safety advisories for Running Staff.
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('crew.dashboard') }}" class="btn btn-outline-success btn-sm fw-bold">
+                <i class="fa-solid fa-arrow-left me-1"></i> Crew Running Desk
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1">Category</label>
+                    <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="ALL" {% if not selected_category or selected_category == 'ALL' %}selected{% endif %}>All Incident Categories</option>
+                        {% for cat_val, cat_label in categories %}
+                            <option value="{{ cat_val }}" {% if selected_category == cat_val %}selected{% endif %}>{{ cat_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-muted mb-1">Search Keywords</label>
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search causes, signals, train..." value="{{ search }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="fa-solid fa-magnifying-glass me-1"></i> Search</button>
+                    <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-rotate-left"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Case Studies Accordion -->
+    {% if incidents %}
+        <div class="accordion shadow-sm" id="caseStudiesAccordion">
+            {% for inc in incidents %}
+                <div class="accordion-item border mb-3 rounded overflow-hidden">
+                    <h2 class="accordion-header" id="heading{{ inc.id }}">
+                        <button class="accordion-button collapsed py-3 {% if inc.incident_category == 'SPAD' %}bg-danger bg-opacity-10 text-danger{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ inc.id }}" aria-expanded="false" aria-controls="collapse{{ inc.id }}">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center w-100 me-3 gap-2">
+                                <div>
+                                    <span class="badge bg-danger me-2">{{ inc.category_label }}</span>
+                                    <span class="fw-bold text-dark">{{ inc.incident_number }}</span>: {{ inc.section }}
+                                    {% if inc.station_location %} ({{ inc.station_location }}){% endif %}
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="fa-regular fa-calendar me-1"></i>{{ inc.incident_date.strftime('%d-%m-%Y') }}
+                                    {% if inc.train_no %}&nbsp;|&nbsp;Train: <span class="fw-bold text-dark">{{ inc.train_no }}</span>{% endif %}
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ inc.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ inc.id }}" data-bs-parent="#caseStudiesAccordion">
+                        <div class="accordion-body p-4 bg-white">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-dark"><i class="fa-solid fa-circle-info me-2 text-primary"></i>Sequence of Events</h6>
+                                <p class="mb-0 text-dark small" style="white-space: pre-line; line-height: 1.6;">{{ inc.brief_description }}</p>
+                            </div>
+
+                            {% if inc.primary_cause %}
+                                <div class="p-3 bg-light rounded border-start border-warning border-4 mb-3">
+                                    <h6 class="fw-bold text-warning-emphasis mb-1"><i class="fa-solid fa-triangle-exclamation me-2"></i>Root Cause / Fault Finding</h6>
+                                    <p class="mb-0 small text-dark" style="white-space: pre-line;">{{ inc.primary_cause }}</p>
+                                </div>
+                            {% endif %}
+
+                            {% if inc.officer_remarks %}
+                                <div class="p-3 bg-light rounded border-start border-primary border-4 mb-3">
+                                    <h6 class="fw-bold text-primary mb-1"><i class="fa-solid fa-signature me-2"></i>Safety Directive & Corrective Guidelines</h6>
+                                    <p class="mb-0 small text-dark" style="white-space: pre-line;">{{ inc.officer_remarks }}</p>
+                                </div>
+                            {% endif %}
+
+                            {% if inc.attachment_path %}
+                                <div class="pt-2">
+                                    <a href="{{ url_for('static', filename=inc.attachment_path) }}" target="_blank" class="btn btn-outline-danger btn-sm fw-bold">
+                                        <i class="fa-solid fa-paperclip me-1"></i> View Case Study Document / Joint Report
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card shadow-sm border-0 p-5 text-center text-muted">
+            <i class="fa-solid fa-shield-halved fa-3x mb-3 text-secondary"></i>
+            <h5>No Case Studies Found</h5>
+            <p class="small">No safety case studies matching your search parameters.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

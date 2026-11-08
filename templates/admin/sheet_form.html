@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{% if sheet %}Edit Google Sheet | {{ sheet.title }}{% else %}Add New Google Sheet{% endif %} | Electric OP HWH{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="fa-solid fa-table-cells me-2"></i>
+                        {% if sheet %}Edit Google Sheet: {{ sheet.title }}{% else %}Register New Google Sheet Link{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Sheet Title <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" required placeholder="e.g. CLI Monthly Monitoring Target Sheet" value="{{ sheet.title if sheet else '' }}">
+                            <div class="form-text">Clear descriptive title displayed on department dashboards.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Google Sheet URL <span class="text-danger">*</span></label>
+                            <input type="url" name="sheet_url" class="form-control" required placeholder="https://docs.google.com/spreadsheets/d/..." value="{{ sheet.sheet_url if sheet else '' }}">
+                            <div class="form-text">Ensure Google Sheet sharing permissions allow viewing by authorized railway accounts.</div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                                <select name="category" class="form-select" required>
+                                    <option value="CLI_PERFORMANCE" {% if sheet and sheet.category == 'CLI_PERFORMANCE' %}selected{% endif %}>CLI Performance & Monitoring</option>
+                                    <option value="CREW_MONITORING" {% if sheet and sheet.category == 'CREW_MONITORING' %}selected{% endif %}>Crew Monitoring & Grading</option>
+                                    <option value="TRAINING" {% if sheet and sheet.category == 'TRAINING' %}selected{% endif %}>Training & Refresher Master</option>
+                                    <option value="PME" {% if sheet and sheet.category == 'PME' %}selected{% endif %}>Periodic Medical Examination (PME)</option>
+                                    <option value="SAFETY_MONITORING" {% if sheet and sheet.category == 'SAFETY_MONITORING' %}selected{% endif %}>Safety Drives & Counselling</option>
+                                    <option value="OPERATIONAL" {% if sheet and sheet.category == 'OPERATIONAL' %}selected{% endif %}>Operational Punctuality & Logs</option>
+                                    <option value="GENERAL" {% if not sheet or sheet.category == 'GENERAL' %}selected{% endif %}>General Administration & Other Links</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Traction Type</label>
+                                <select name="traction_type" class="form-select">
+                                    <option value="BOTH" {% if not sheet or sheet.traction_type == 'BOTH' %}selected{% endif %}>Both (Electric & Diesel)</option>
+                                    <option value="ELECTRIC" {% if sheet and sheet.traction_type == 'ELECTRIC' %}selected{% endif %}>Electric Traction Only</option>
+                                    <option value="DIESEL" {% if sheet and sheet.traction_type == 'DIESEL' %}selected{% endif %}>Diesel Traction Only</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description / Instructions</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Brief note on purpose of this sheet, updating frequency, etc.">{{ sheet.description if sheet else '' }}</textarea>
+                        </div>
+
+                        <!-- Permitted Roles -->
+                        {% set current_roles = (sheet.allowed_roles or 'admin,officer,control,supervisor,crew').split(',') if sheet else ['admin', 'officer', 'control', 'supervisor', 'crew'] %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Permitted Roles (Role-Based Access Control)</label>
+                            <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded border">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="allowed_roles" value="admin" id="role_admin" {% if 'admin' in current_roles %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-danger" for="role_admin">Admin</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="allowed_roles" value="officer" id="role_officer" {% if 'officer' in current_roles %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-primary" for="role_officer">Officers</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="allowed_roles" value="control" id="role_control" {% if 'control' in current_roles %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-warning" for="role_control">TLC / PCNL Control</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="allowed_roles" value="supervisor" id="role_supervisor" {% if 'supervisor' in current_roles %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-info" for="role_supervisor">CLI Supervisors</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="allowed_roles" value="crew" id="role_crew" {% if 'crew' in current_roles %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-success" for="role_crew">Running Staff (Crew)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Lobby Restriction (Optional)</label>
+                                <select name="lobby_id" class="form-select">
+                                    <option value="">All Lobbies (Division-wide)</option>
+                                    {% for l in lobbies %}
+                                        <option value="{{ l.id }}" {% if sheet and sheet.lobby_id == l.id %}selected{% endif %}>{{ l.code }} - {{ l.lobby_name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">If selected, only supervisors and crews belonging to this lobby can view this sheet.</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Display Order</label>
+                                <input type="number" name="display_order" class="form-control" value="{{ sheet.display_order if sheet else 0 }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Status</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="isActiveSwitch" {% if not sheet or sheet.is_active %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-success" for="isActiveSwitch">Active</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a href="{{ url_for('admin.sheets') }}" class="btn btn-outline-secondary">
+                                <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success px-4 fw-bold shadow-sm">
+                                <i class="fa-solid fa-check me-1"></i> Save Google Sheet Link
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

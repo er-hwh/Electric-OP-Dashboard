@@ -13,7 +13,7 @@ from flask import (
     flash, session, jsonify, send_file, current_app, Response
 )
 from werkzeug.utils import secure_filename
-from models import User, Lobby
+from models import User, Lobby, GoogleSheetLink, UnusualIncident
 from database import db
 from blueprints.control_db import get_connection
 
@@ -1215,3 +1215,209 @@ def counselling_monitor():
 
 
 
+
+
+# ---------------------------------------------------------------------------
+# PHASE 6: CONTROL (TLC / PCNL) GOOGLE SHEETS & SHIFT UNUSUAL INCIDENTS
+# ---------------------------------------------------------------------------
+
+def parse_date_value(val):
+    if not val:
+        return None
+    if isinstance(val, (dt, date)):
+        return val.date() if isinstance(val, dt) else val
+    s = str(val).strip()
+    if not s or s.upper() in ('NA', 'N/A', '-', '#N/A', 'NONE', 'NIL', 'NULL', 'UNKNOWN', '0'):
+        return None
+    for fmt in [
+        "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d",
+        "%d.%m.%Y", "%d-%b-%Y", "%d-%B-%Y", "%d-%b-%y"
+    ]:
+        try:
+            return dt.strptime(s, fmt).date()
+        except ValueError:
+            pass
+    return None
+
+
+@control_bp.route('/sheets', methods=['GET'])
+def sheets():
+    """Operational Google Sheets Directory for TLC / PCNL Control."""
+    user = User.query.get(session.get('user_id'))
+    category = request.args.get('category', '').strip()
+    traction = request.args.get('traction', '').strip()
+    search = request.args.get('search', '').strip()
+
+    query = GoogleSheetLink.query.filter_by(is_active=True)
+    if category and category != 'ALL':
+        query = query.filter_by(category=category)
+    if traction and traction != 'ALL':
+        query = query.filter(GoogleSheetLink.traction_type.in_([traction, 'BOTH']))
+    if search:
+        query = query.filter(
+            db.or_(
+                GoogleSheetLink.title.ilike(f'%{search}%'),
+                GoogleSheetLink.description.ilike(f'%{search}%')
+            )
+        )
+
+    all_sheets = [s for s in query.order_by(GoogleSheetLink.display_order.asc()).all() if s.is_accessible_by(user)]
+    categories = [
+        ('CLI_PERFORMANCE', 'CLI Performance & Monitoring'),
+        ('CREW_MONITORING', 'Crew Monitoring & Grading'),
+        ('TRAINING', 'Training & Refresher Master'),
+        ('PME', 'Periodic Medical Examination (PME)'),
+        ('SAFETY_MONITORING', 'Safety Drives & Counselling'),
+        ('OPERATIONAL', 'Operational Punctuality & Logs'),
+        ('GENERAL', 'General Administration & Other Links')
+    ]
+    return render_template(
+        'officer/sheets.html',
+        sheets=all_sheets,
+        categories=categories,
+        selected_category=category,
+        selected_traction=traction,
+        search=search,
+        is_control_view=True
+    )
+
+
+@control_bp.route('/incidents', methods=['GET'])
+def incidents():
+    """Operational Incident Control Room Desk."""
+    category = request.args.get('category', '').strip()
+    status = request.args.get('status', '').strip()
+    traction = request.args.get('traction', '').strip()
+    search = request.args.get('search', '').strip()
+
+    query = UnusualIncident.query
+    if category and category != 'ALL':
+        query = query.filter_by(incident_category=category)
+    if status and status != 'ALL':
+        query = query.filter_by(status=status)
+    if traction and traction != 'ALL':
+        query = query.filter(UnusualIncident.traction_type.in_([traction, 'BOTH']))
+    if search:
+        query = query.filter(
+            db.or_(
+                UnusualIncident.incident_number.ilike(f'%{search}%'),
+                UnusualIncident.brief_description.ilike(f'%{search}%'),
+                UnusualIncident.train_no.ilike(f'%{search}%'),
+                UnusualIncident.loco_no.ilike(f'%{search}%'),
+                UnusualIncident.crew_name_manual.ilike(f'%{search}%'),
+                UnusualIncident.station_location.ilike(f'%{search}%')
+            )
+        )
+
+    all_incidents = query.order_by(UnusualIncident.incident_date.desc(), UnusualIncident.id.desc()).all()
+    categories = [
+        ('SPAD', 'Signal Passing At Danger (SPAD)'),
+        ('LOCO_FAILURE', 'Locomotive / Equipment Tripping'),
+        ('OHE_BREAKDOWN', 'OHE Power Supply Disruption'),
+        ('SIGNAL_FAILURE', 'Signaling & Interlocking Failure'),
+        ('DERAILMENT', 'Derailment / Track Obstruction'),
+        ('FLAT_TYRE', 'Hot Axle / Flat Tyre / Brake Binding'),
+        ('CATTLE_RUN_OVER', 'Cattle Run Over / Trespass'),
+        ('ACP_UNUSUAL', 'Alarm Chain Pulling (ACP)'),
+        ('UNUSUAL_SOUND', 'Unusual Sound / Jerk by Crew'),
+        ('MISC', 'Miscellaneous Operational Unusual')
+    ]
+    return render_template(
+        'control/incidents.html',
+        incidents=all_incidents,
+        categories=categories,
+        selected_category=category,
+        selected_status=status,
+        selected_traction=traction,
+        search=search
+    )
+
+
+@control_bp.route('/incidents/new', methods=['GET', 'POST'])
+def new_incident():
+    """Fast logging of unusual incident by TLC / PCNL during shift."""
+    user = User.query.get(session.get('user_id'))
+    default_role = 'TLC' if user and user.is_tlc() else ('PCNL' if user and user.is_pcnl() else 'CONTROL')
+    if request.method == 'POST':
+        incident_date_str = request.form.get('incident_date', '').strip()
+        incident_date = parse_date_value(incident_date_str) or date.today()
+        incident_time = request.form.get('incident_time', '').strip()
+        section = request.form.get('section', '').strip()
+        station_location = request.form.get('station_location', '').strip()
+        train_no = request.form.get('train_no', '').strip()
+        loco_no = request.form.get('loco_no', '').strip()
+        traction_type = request.form.get('traction_type', 'ELECTRIC' if default_role == 'TLC' else 'DIESEL').strip()
+        incident_category = request.form.get('incident_category', 'MISC').strip()
+        crew_name_manual = request.form.get('crew_name_manual', '').strip()
+        alp_name_manual = request.form.get('alp_name_manual', '').strip()
+        lobby_id_raw = request.form.get('lobby_id')
+        lobby_id = int(lobby_id_raw) if lobby_id_raw and lobby_id_raw.isdigit() else None
+        brief_description = request.form.get('brief_description', '').strip()
+        immediate_action = request.form.get('immediate_action', '').strip()
+        delay_minutes = int(request.form.get('delay_minutes', 0) or 0)
+
+        if not section or not brief_description:
+            flash('Section and Brief Description are mandatory.', 'danger')
+            lobbies = Lobby.query.order_by(Lobby.name.asc()).all()
+            return render_template('control/incident_form.html', lobbies=lobbies, default_role=default_role)
+
+        inc_number = UnusualIncident.generate_incident_number()
+        incident = UnusualIncident(
+            incident_number=inc_number,
+            incident_date=incident_date,
+            incident_time=incident_time,
+            section=section,
+            station_location=station_location,
+            train_no=train_no,
+            loco_no=loco_no,
+            traction_type=traction_type,
+            incident_category=incident_category,
+            crew_name_manual=crew_name_manual,
+            alp_name_manual=alp_name_manual,
+            lobby_id=lobby_id,
+            brief_description=brief_description,
+            immediate_action=immediate_action,
+            delay_minutes=delay_minutes,
+            status='REPORTED',
+            reported_by_id=session.get('user_id'),
+            reported_by_role=default_role
+        )
+        db.session.add(incident)
+        db.session.commit()
+        flash(f'Unusual Incident [{inc_number}] logged into Shift Control Log.', 'success')
+        return redirect(url_for('control.incidents'))
+
+    lobbies = Lobby.query.order_by(Lobby.name.asc()).all()
+    return render_template('control/incident_form.html', lobbies=lobbies, default_role=default_role)
+
+
+@control_bp.route('/incidents/<int:incident_id>', methods=['GET'])
+def view_incident(incident_id):
+    """View incident dossier by Control."""
+    incident = UnusualIncident.query.get_or_404(incident_id)
+    return render_template('admin/incident_detail.html', incident=incident, is_control_view=True)
+
+
+@control_bp.route('/incidents/<int:incident_id>/update-action', methods=['POST'])
+def update_action(incident_id):
+    """Log shift control rectification action & train delay minutes."""
+    incident = UnusualIncident.query.get_or_404(incident_id)
+    action_note = request.form.get('action_note', '').strip()
+    delay = request.form.get('delay_minutes')
+    rect_time = request.form.get('rectification_time', '').strip()
+    new_status = request.form.get('status', '').strip()
+
+    if delay and delay.isdigit():
+        incident.delay_minutes = int(delay)
+    if rect_time:
+        incident.rectification_time = rect_time
+    if action_note:
+        existing = incident.immediate_action or ''
+        ts_str = datetime.now().strftime('%d-%m-%Y %H:%M')
+        incident.immediate_action = f"{existing}\n[{ts_str} Control Action]: {action_note}".strip()
+    if new_status in ('REPORTED', 'UNDER_INVESTIGATION', 'ACTION_COMPLETED', 'CLOSED'):
+        incident.status = new_status
+
+    db.session.commit()
+    flash(f'Operational action updated on [{incident.incident_number}].', 'success')
+    return redirect(url_for('control.view_incident', incident_id=incident.id))

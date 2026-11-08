@@ -75,6 +75,8 @@
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.notices_list') }}"><i class="fa-solid fa-bullhorn me-2 text-danger"></i>Notices & Circulars (Phase 5)</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.counselling_list') }}"><i class="fa-solid fa-chalkboard-user me-2 text-info"></i>Safety Counselling Topics</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.training_medical') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Management</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.sheets') }}"><i class="fa-solid fa-table-cells me-2 text-success"></i>Google Sheets Hub (Phase 6)</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.incidents') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Unusual Incident Tracker (Phase 6)</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.important_tools') }}"><i class="fa-solid fa-screwdriver-wrench me-2 text-warning"></i>Important Tools (Admin Only)</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin.retention_policy') }}"><i class="fa-solid fa-clock-rotate-left me-2 text-danger"></i>Retention Policy (90 Days)</a></li>
@@ -86,6 +88,8 @@
                                     <li><a class="dropdown-item" href="{{ url_for('officer.notice_compliance') }}"><i class="fa-solid fa-bullhorn me-2 text-danger"></i>Notice Assurance Compliance</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.counselling_monitor') }}"><i class="fa-solid fa-chalkboard-user me-2 text-info"></i>Safety Counselling Monitor (30 Days)</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.training_monitor') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Compliance</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.sheets') }}"><i class="fa-solid fa-table-cells me-2 text-success"></i>Google Sheets Hub</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('officer.incidents') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Unusual Incident Surveillance</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Daily Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_performance') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i>CLI Performance Monitoring</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.crew_performance') }}"><i class="fa-solid fa-users me-2 text-info"></i>Crew Performance Monitoring</a></li>
@@ -95,6 +99,8 @@
                                     <li><a class="dropdown-item" href="{{ url_for('control.notice_compliance') }}"><i class="fa-solid fa-bullhorn me-2 text-danger"></i>Notice Assurance Compliance</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('control.counselling_monitor') }}"><i class="fa-solid fa-chalkboard-user me-2 text-info"></i>Safety Counselling Monitor (30 Days)</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('control.training_monitor') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Compliance</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.sheets') }}"><i class="fa-solid fa-table-cells me-2 text-success"></i>Operational Google Sheets</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('control.incidents') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Shift Unusual Incidents</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Daily Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_performance') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i>CLI Performance Monitoring</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.crew_performance') }}"><i class="fa-solid fa-users me-2 text-info"></i>Crew Performance Monitoring</a></li>
@@ -106,12 +112,16 @@
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.counselling_logs') }}"><i class="fa-solid fa-chalkboard-user me-2 text-info"></i>Squad Counselling Register</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.new_counselling_log') }}"><i class="fa-solid fa-plus me-2 text-primary"></i>Record Counselling Session</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.training_medical') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Squad Training & PME</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.sheets') }}"><i class="fa-solid fa-table-cells me-2 text-success"></i>CLI Google Sheets</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('supervisor.incidents') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Squad Unusual Incidents</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>Daily Activity & Movement Log</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.counselling') }}"><i class="fa-solid fa-clipboard-user me-2 text-danger"></i>Crew Supervision Register</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('supervisor.export_roster_excel') }}"><i class="fa-solid fa-file-excel me-2 text-success"></i>Export Crew Master Excel</a></li>
                                 {% elif current_user.is_crew() %}
                                     <li><a class="dropdown-item fw-bold text-success" href="{{ url_for('crew.dashboard') }}"><i class="fa-solid fa-id-card me-2 text-success"></i>Crew Running Desk</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('crew.export_my_pdf') }}" target="_blank"><i class="fa-solid fa-file-pdf me-2 text-danger"></i>My Bio-Data PDF</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('crew.sheets') }}"><i class="fa-solid fa-table-cells me-2 text-success"></i>Running Rosters & Sheets</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('crew.unusual_reports') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Safety Case Studies & Alerts</a></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}"><i class="fa-solid fa-key me-2 text-warning"></i>Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>

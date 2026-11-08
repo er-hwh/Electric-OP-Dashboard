@@ -7,7 +7,7 @@ from database import db
 from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, 
     CounsellingAcknowledgement, TrainingRecord, MedicalRecord, Message, FootplateInspection,
-    CLIMovement, CrewCounsellingRecord, CrewCounsellingLog
+    CLIMovement, CrewCounsellingRecord, CrewCounsellingLog, GoogleSheetLink, UnusualIncident
 )
 from blueprints.auth import role_required
 
@@ -1015,3 +1015,167 @@ def remark_counselling_log(log_id):
         db.session.commit()
         flash(f'Officer directive recorded on counselling session with {log.crew.full_name}.', 'success')
     return redirect(url_for('officer.counselling_monitor'))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 6: OFFICER GOOGLE SHEETS & UNUSUAL INCIDENTS SURVEILLANCE
+# ---------------------------------------------------------------------------
+
+@officer_bp.route('/sheets', methods=['GET'])
+def sheets():
+    """View active Google Sheets accessible to officers."""
+    user = User.query.get(session.get('user_id'))
+    category = request.args.get('category', '').strip()
+    traction = request.args.get('traction', '').strip()
+    search = request.args.get('search', '').strip()
+
+    query = GoogleSheetLink.query.filter_by(is_active=True)
+    if category and category != 'ALL':
+        query = query.filter_by(category=category)
+    if traction and traction != 'ALL':
+        query = query.filter(GoogleSheetLink.traction_type.in_([traction, 'BOTH']))
+    if search:
+        query = query.filter(
+            db.or_(
+                GoogleSheetLink.title.ilike(f'%{search}%'),
+                GoogleSheetLink.description.ilike(f'%{search}%')
+            )
+        )
+
+    all_sheets = [s for s in query.order_by(GoogleSheetLink.display_order.asc()).all() if s.is_accessible_by(user)]
+    categories = [
+        ('CLI_PERFORMANCE', 'CLI Performance & Monitoring'),
+        ('CREW_MONITORING', 'Crew Monitoring & Grading'),
+        ('TRAINING', 'Training & Refresher Master'),
+        ('PME', 'Periodic Medical Examination (PME)'),
+        ('SAFETY_MONITORING', 'Safety Drives & Counselling'),
+        ('OPERATIONAL', 'Operational Punctuality & Logs'),
+        ('GENERAL', 'General Administration & Other Links')
+    ]
+    return render_template(
+        'officer/sheets.html',
+        sheets=all_sheets,
+        categories=categories,
+        selected_category=category,
+        selected_traction=traction,
+        search=search
+    )
+
+
+@officer_bp.route('/incidents', methods=['GET'])
+def incidents():
+    """Officer Surveillance Desk for Unusual Incidents."""
+    category = request.args.get('category', '').strip()
+    status = request.args.get('status', '').strip()
+    traction = request.args.get('traction', '').strip()
+    lobby_id = request.args.get('lobby_id', '').strip()
+    section = request.args.get('section', '').strip()
+    date_from = request.args.get('date_from', '').strip()
+    date_to = request.args.get('date_to', '').strip()
+    search = request.args.get('search', '').strip()
+
+    query = UnusualIncident.query
+    if category and category != 'ALL':
+        query = query.filter_by(incident_category=category)
+    if status and status != 'ALL':
+        query = query.filter_by(status=status)
+    if traction and traction != 'ALL':
+        query = query.filter(UnusualIncident.traction_type.in_([traction, 'BOTH']))
+    if lobby_id and lobby_id != 'ALL':
+        try:
+            query = query.filter_by(lobby_id=int(lobby_id))
+        except ValueError:
+            pass
+    if section:
+        query = query.filter(UnusualIncident.section.ilike(f'%{section}%'))
+    if date_from:
+        d_from = parse_date_value(date_from)
+        if d_from:
+            query = query.filter(UnusualIncident.incident_date >= d_from)
+    if date_to:
+        d_to = parse_date_value(date_to)
+        if d_to:
+            query = query.filter(UnusualIncident.incident_date <= d_to)
+    if search:
+        query = query.filter(
+            db.or_(
+                UnusualIncident.incident_number.ilike(f'%{search}%'),
+                UnusualIncident.brief_description.ilike(f'%{search}%'),
+                UnusualIncident.train_no.ilike(f'%{search}%'),
+                UnusualIncident.loco_no.ilike(f'%{search}%'),
+                UnusualIncident.crew_name_manual.ilike(f'%{search}%'),
+                UnusualIncident.station_location.ilike(f'%{search}%')
+            )
+        )
+
+    all_incidents = query.order_by(UnusualIncident.incident_date.desc(), UnusualIncident.id.desc()).all()
+
+    total_count = len(all_incidents)
+    spad_count = sum(1 for inc in all_incidents if inc.incident_category == 'SPAD')
+    investigating_count = sum(1 for inc in all_incidents if inc.status == 'UNDER_INVESTIGATION')
+    reported_count = sum(1 for inc in all_incidents if inc.status == 'REPORTED')
+    closed_count = sum(1 for inc in all_incidents if inc.status in ('ACTION_COMPLETED', 'CLOSED'))
+    total_delay = sum(inc.delay_minutes or 0 for inc in all_incidents)
+
+    lobbies = Lobby.query.order_by(Lobby.name.asc()).all()
+    categories = [
+        ('SPAD', 'Signal Passing At Danger (SPAD)'),
+        ('LOCO_FAILURE', 'Locomotive / Equipment Tripping'),
+        ('OHE_BREAKDOWN', 'OHE Power Supply Disruption'),
+        ('SIGNAL_FAILURE', 'Signaling & Interlocking Failure'),
+        ('DERAILMENT', 'Derailment / Track Obstruction'),
+        ('FLAT_TYRE', 'Hot Axle / Flat Tyre / Brake Binding'),
+        ('CATTLE_RUN_OVER', 'Cattle Run Over / Trespass'),
+        ('ACP_UNUSUAL', 'Alarm Chain Pulling (ACP)'),
+        ('UNUSUAL_SOUND', 'Unusual Sound / Jerk by Crew'),
+        ('MISC', 'Miscellaneous Operational Unusual')
+    ]
+
+    return render_template(
+        'officer/incidents.html',
+        incidents=all_incidents,
+        lobbies=lobbies,
+        categories=categories,
+        total_count=total_count,
+        spad_count=spad_count,
+        investigating_count=investigating_count,
+        reported_count=reported_count,
+        closed_count=closed_count,
+        total_delay=total_delay,
+        selected_category=category,
+        selected_status=status,
+        selected_traction=traction,
+        selected_lobby=lobby_id,
+        section=section,
+        date_from=date_from,
+        date_to=date_to,
+        search=search
+    )
+
+
+@officer_bp.route('/incidents/<int:incident_id>', methods=['GET'])
+def view_incident(incident_id):
+    """View incident dossier by officer."""
+    incident = UnusualIncident.query.get_or_404(incident_id)
+    return render_template('admin/incident_detail.html', incident=incident, is_officer_view=True)
+
+
+@officer_bp.route('/incidents/<int:incident_id>/remark', methods=['POST'])
+def add_incident_remark(incident_id):
+    """Endorse officer remarks / inquiry directives on unusual incident."""
+    incident = UnusualIncident.query.get_or_404(incident_id)
+    remarks = request.form.get('officer_remarks', '').strip()
+    new_status = request.form.get('status', '').strip()
+    if remarks:
+        existing = incident.officer_remarks or ''
+        officer = User.query.get(session.get('user_id'))
+        officer_name = f"{officer.full_name} ({officer.sub_role or 'Officer'})" if officer else "Officer"
+        ts_str = datetime.now().strftime('%d-%m-%Y %H:%M')
+        incident.officer_remarks = f"{existing}\n[{ts_str} - {officer_name}]: {remarks}".strip()
+        incident.officer_remarked_by_id = session.get('user_id')
+        incident.officer_remarked_at = datetime.utcnow()
+    if new_status in ('REPORTED', 'UNDER_INVESTIGATION', 'ACTION_COMPLETED', 'CLOSED'):
+        incident.status = new_status
+    db.session.commit()
+    flash(f'Officer directive recorded on incident [{incident.incident_number}].', 'success')
+    return redirect(url_for('officer.view_incident', incident_id=incident.id))

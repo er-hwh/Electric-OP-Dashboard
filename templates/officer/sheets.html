@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Google Sheets Hub | Electric OP HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-md-5">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3 border-bottom pb-3">
+        <div>
+            <h2 class="h3 fw-bold text-dark mb-1">
+                <i class="fa-solid fa-table-cells text-success me-2"></i>Google Sheets Central Hub
+            </h2>
+            <p class="text-muted mb-0 small">
+                Authorized departmental monitoring sheets, PME tracking, training matrices, and punctuality registers.
+            </p>
+        </div>
+        <div>
+            {% if is_control_view %}
+                <a href="{{ url_for('control.dashboard') }}" class="btn btn-outline-warning btn-sm fw-bold">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Control Desk
+                </a>
+            {% elif is_supervisor_view %}
+                <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-info btn-sm fw-bold">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Supervisor Console
+                </a>
+            {% else %}
+                <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-primary btn-sm fw-bold">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Officer Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">Category</label>
+                    <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="ALL" {% if not selected_category or selected_category == 'ALL' %}selected{% endif %}>All Categories</option>
+                        {% for cat_val, cat_label in categories %}
+                            <option value="{{ cat_val }}" {% if selected_category == cat_val %}selected{% endif %}>{{ cat_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">Traction</label>
+                    <select name="traction" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="ALL" {% if not selected_traction or selected_traction == 'ALL' %}selected{% endif %}>All Traction</option>
+                        <option value="ELECTRIC" {% if selected_traction == 'ELECTRIC' %}selected{% endif %}>Electric</option>
+                        <option value="DIESEL" {% if selected_traction == 'DIESEL' %}selected{% endif %}>Diesel</option>
+                        <option value="BOTH" {% if selected_traction == 'BOTH' %}selected{% endif %}>Both (Common)</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-muted mb-1">Search Keywords</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="search" class="form-control" placeholder="Search title or description..." value="{{ search }}">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass me-1"></i> Filter</button>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <a href="{{ request.path }}" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sheets Grid View -->
+    {% if sheets %}
+        <div class="row g-4">
+            {% for s in sheets %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm border-0 h-100 hover-shadow transition">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <span class="badge bg-info text-dark">
+                                <i class="fa-solid fa-tag me-1"></i>{{ s.category.replace('_', ' ') }}
+                            </span>
+                            {% if s.traction_type == 'ELECTRIC' %}
+                                <span class="badge bg-primary"><i class="fa-solid fa-bolt me-1"></i>Electric</span>
+                            {% elif s.traction_type == 'DIESEL' %}
+                                <span class="badge bg-warning text-dark"><i class="fa-solid fa-gas-pump me-1"></i>Diesel</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Both</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body p-4 d-flex flex-column">
+                            <h5 class="fw-bold text-dark mb-2">{{ s.title }}</h5>
+                            {% if s.description %}
+                                <p class="text-muted small mb-3 flex-grow-1">{{ s.description }}</p>
+                            {% else %}
+                                <p class="text-muted small mb-3 flex-grow-1 fst-italic">Standard departmental monitoring Google Sheet.</p>
+                            {% endif %}
+
+                            <div class="pt-3 border-top mt-auto d-flex gap-2">
+                                <a href="{{ s.sheet_url }}" target="_blank" class="btn btn-success btn-sm fw-bold flex-grow-1 shadow-sm">
+                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Open Sheet
+                                </a>
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#officerPreviewModal{{ s.id }}" title="Preview in Portal">
+                                    <i class="fa-solid fa-eye me-1"></i> Preview
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Embed Modal -->
+                    <div class="modal fade" id="officerPreviewModal{{ s.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-xl modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header bg-dark text-white">
+                                    <h5 class="modal-title">
+                                        <i class="fa-solid fa-table-cells text-success me-2"></i>{{ s.title }}
+                                    </h5>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ s.sheet_url }}" target="_blank" class="btn btn-sm btn-success">
+                                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Open Full Sheet
+                                        </a>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                </div>
+                                <div class="modal-body p-0 text-center" style="height: 75vh;">
+                                    <iframe src="{{ s.get_embed_url() }}" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card shadow-sm border-0 p-5 text-center text-muted">
+            <i class="fa-solid fa-table-cells fa-3x mb-3 text-secondary"></i>
+            <h5>No Google Sheets Available</h5>
+            <p class="small">No active Google Sheets are registered under this category or permission role.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

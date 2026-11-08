@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Incident Dossier: {{ incident.incident_number }} | Electric OP HWH{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Navigation -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3 border-bottom pb-3">
+        <div>
+            {% set badge_cls, badge_icon, badge_text = incident.status_badge %}
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h2 class="h3 fw-bold text-dark mb-0">{{ incident.incident_number }}</h2>
+                <span class="badge bg-{{ badge_cls }} fs-6">
+                    <i class="fa-solid {{ badge_icon }} me-1"></i>{{ badge_text }}
+                </span>
+                {% if incident.incident_category == 'SPAD' %}
+                    <span class="badge bg-danger fs-6"><i class="fa-solid fa-skull-crossbones me-1"></i>CRITICAL SPAD</span>
+                {% endif %}
+            </div>
+            <p class="text-muted mb-0 small">
+                Division Unusual Incident Dossier & Comprehensive Investigation Log
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if current_user.is_admin() %}
+                <a href="{{ url_for('admin.edit_incident', incident_id=incident.id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit Incident
+                </a>
+                <a href="{{ url_for('admin.incidents') }}" class="btn btn-outline-dark btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> All Incidents
+                </a>
+            {% elif current_user.is_officer() %}
+                <a href="{{ url_for('officer.incidents') }}" class="btn btn-outline-dark btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Incident Surveillance Desk
+                </a>
+            {% elif current_user.is_control() %}
+                <a href="{{ url_for('control.incidents') }}" class="btn btn-outline-dark btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Operational Shift Log
+                </a>
+            {% elif current_user.is_supervisor() %}
+                <a href="{{ url_for('supervisor.incidents') }}" class="btn btn-outline-dark btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Squad Incidents
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Dossier Left Column -->
+        <div class="col-lg-8">
+            <!-- 1. Key Incident Summary Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold"><i class="fa-solid fa-file-lines me-2 text-warning"></i>Operational Incident Profile</h6>
+                    <span class="badge bg-secondary">
+                        <i class="fa-regular fa-clock me-1"></i>Logged: {{ incident.created_at.strftime('%d-%m-%Y %H:%M') }}
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <span class="text-muted small fw-bold">Date & Time of Occurrence:</span>
+                            <div class="fw-bold text-dark fs-6">
+                                <i class="fa-regular fa-calendar me-1 text-primary"></i>{{ incident.incident_date.strftime('%d-%m-%Y') }}
+                                {% if incident.incident_time %}&nbsp;at {{ incident.incident_time }}{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small fw-bold">Category & Traction:</span>
+                            <div class="fw-bold text-dark fs-6">
+                                <span class="badge bg-danger me-1">{{ incident.category_label }}</span>
+                                {% if incident.traction_type == 'ELECTRIC' %}
+                                    <span class="badge bg-primary"><i class="fa-solid fa-bolt me-1"></i>Electric</span>
+                                {% elif incident.traction_type == 'DIESEL' %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-gas-pump me-1"></i>Diesel</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Common</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small fw-bold">Section:</span>
+                            <div class="fw-bold text-dark fs-6">{{ incident.section }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small fw-bold">Station / Location:</span>
+                            <div class="fw-bold text-dark fs-6">
+                                <i class="fa-solid fa-location-dot me-1 text-danger"></i>{{ incident.station_location or 'Section Inter-station' }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small fw-bold">Train Number:</span>
+                            <div class="fw-bold text-dark fs-6"><i class="fa-solid fa-train me-1 text-muted"></i>{{ incident.train_no or 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small fw-bold">Locomotive Number:</span>
+                            <div class="fw-bold text-dark fs-6">{{ incident.loco_no or 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small fw-bold">Train Delay Incurred:</span>
+                            <div class="fw-bold text-danger fs-5">{{ incident.delay_minutes or 0 }} minutes</div>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-muted small fw-bold">Rectification / Clearance:</span>
+                            <div class="fw-bold text-success fs-6">{{ incident.rectification_time or 'Under Investigation' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Technical Narrative & Analysis -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-align-left me-2 text-primary"></i>Brief Description & Event Sequence</h6>
+                </div>
+                <div class="card-body p-4">
+                    <p class="mb-0 text-dark" style="white-space: pre-line; line-height: 1.6;">{{ incident.brief_description }}</p>
+                </div>
+            </div>
+
+            {% if incident.primary_cause %}
+                <div class="card shadow-sm border-0 mb-4 border-start border-warning border-4">
+                    <div class="card-header bg-light py-3">
+                        <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-magnifying-glass me-2 text-warning"></i>Primary / Root Cause Analysis</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="mb-0 text-dark" style="white-space: pre-line;">{{ incident.primary_cause }}</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if incident.immediate_action %}
+                <div class="card shadow-sm border-0 mb-4 border-start border-info border-4">
+                    <div class="card-header bg-light py-3">
+                        <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-wrench me-2 text-info"></i>Immediate Actions Taken & Rectification Log</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="mb-0 text-dark" style="white-space: pre-line; font-family: monospace; font-size: 0.95rem;">{{ incident.immediate_action }}</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- 3. Officer Remarks & Directives Section -->
+            <div class="card shadow-sm border-0 mb-4 border-start border-primary border-4">
+                <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-primary">
+                        <i class="fa-solid fa-signature me-2"></i>Executive Officer Remarks & Directives
+                    </h6>
+                    {% if incident.officer_remarked_at %}
+                        <span class="badge bg-primary">Endorsed on {{ incident.officer_remarked_at.strftime('%d-%m-%Y %H:%M') }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    {% if incident.officer_remarks %}
+                        <div class="p-3 bg-light rounded border mb-3" style="white-space: pre-line; line-height: 1.6;">
+                            {{ incident.officer_remarks }}
+                        </div>
+                    {% else %}
+                        <div class="text-muted small fst-italic mb-3">No officer executive observations recorded yet.</div>
+                    {% endif %}
+
+                    {% if current_user.is_officer() or current_user.is_admin() %}
+                        <form method="POST" action="{{ url_for('officer.add_incident_remark', incident_id=incident.id) if current_user.is_officer() else url_for('admin.update_incident_status', incident_id=incident.id) }}">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">Add Executive Directive / Remedial Action Instructions</label>
+                                <textarea name="officer_remarks" class="form-control" rows="3" placeholder="Enter instructions for CLI enquiry, safety counselling drive, running staff psycho re-test, equipment overhaul..."></textarea>
+                            </div>
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-6">
+                                    <select name="status" class="form-select form-select-sm">
+                                        <option value="">-- Keep Current Status ({{ incident.status }}) --</option>
+                                        <option value="REPORTED">REPORTED</option>
+                                        <option value="UNDER_INVESTIGATION">UNDER_INVESTIGATION</option>
+                                        <option value="ACTION_COMPLETED">ACTION_COMPLETED</option>
+                                        <option value="CLOSED">CLOSED</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button type="submit" class="btn btn-primary btn-sm fw-bold">
+                                        <i class="fa-solid fa-check me-1"></i> Endorse Directive
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Panel -->
+        <div class="col-lg-4">
+            <!-- Crew & Supervision Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-users me-2 text-info"></i>Crew & Supervision</h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="mb-3 border-bottom pb-2">
+                        <span class="text-muted small fw-bold">Loco Pilot (LP):</span>
+                        <div class="fw-bold text-dark">
+                            {{ incident.crew_name_manual or (incident.crew.full_name if incident.crew else 'Not Specified') }}
+                        </div>
+                    </div>
+                    <div class="mb-3 border-bottom pb-2">
+                        <span class="text-muted small fw-bold">Assistant Loco Pilot (ALP):</span>
+                        <div class="fw-bold text-dark">{{ incident.alp_name_manual or 'Not Specified' }}</div>
+                    </div>
+                    <div class="mb-3 border-bottom pb-2">
+                        <span class="text-muted small fw-bold">Home Lobby:</span>
+                        <div>
+                            {% if incident.lobby %}
+                                <span class="badge bg-dark fs-6">{{ incident.lobby.code }} - {{ incident.lobby.lobby_name }}</span>
+                            {% else %}
+                                <span class="text-muted small">Not Linked</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3 border-bottom pb-2">
+                        <span class="text-muted small fw-bold">Nominated CLI:</span>
+                        <div class="fw-bold text-primary">
+                            {{ incident.cli.full_name if incident.cli else 'Unassigned' }}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-bold">Reported By:</span>
+                        <div class="text-dark small">
+                            <span class="badge bg-light text-dark border me-1">{{ incident.reported_by_role or 'SYSTEM' }}</span>
+                            {{ incident.reporter.full_name if incident.reporter else 'Railway Staff' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attachment Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-paperclip me-2 text-danger"></i>Evidence & Document</h6>
+                </div>
+                <div class="card-body p-3 text-center">
+                    {% if incident.attachment_path %}
+                        <div class="mb-2">
+                            <i class="fa-solid fa-file-circle-check fa-3x text-success"></i>
+                        </div>
+                        <div class="small fw-bold text-truncate mb-2">{{ incident.attachment_path.split('/')[-1] }}</div>
+                        <a href="{{ url_for('static', filename=incident.attachment_path) }}" target="_blank" class="btn btn-danger btn-sm w-100 fw-bold">
+                            <i class="fa-solid fa-download me-1"></i> View / Download Document
+                        </a>
+                    {% else %}
+                        <div class="text-muted small p-2">
+                            <i class="fa-regular fa-file me-1"></i>No document or photograph uploaded.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- CLI Investigation Action Form (If Supervisor) -->
+            {% if current_user.is_supervisor() %}
+                <div class="card shadow-sm border-0 mb-4 border-start border-info border-4">
+                    <div class="card-header bg-light py-3">
+                        <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-clipboard-check me-2 text-info"></i>CLI Joint Inquiry & Remedial</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <form method="POST" action="{{ url_for('supervisor.record_investigation', incident_id=incident.id) }}">
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">Primary Cause Identified</label>
+                                <textarea name="primary_cause" class="form-control form-control-sm" rows="2" placeholder="Cause found during joint inquiry...">{{ incident.primary_cause or '' }}</textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">Inquiry Findings & Crew Counselling</label>
+                                <textarea name="findings" class="form-control form-control-sm" rows="3" required placeholder="Log counselling done with LP/ALP, corrective measures..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Update Status</label>
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="UNDER_INVESTIGATION" {% if incident.status == 'UNDER_INVESTIGATION' %}selected{% endif %}>UNDER_INVESTIGATION</option>
+                                    <option value="ACTION_COMPLETED" {% if incident.status == 'ACTION_COMPLETED' %}selected{% endif %}>ACTION_COMPLETED</option>
+                                    <option value="CLOSED" {% if incident.status == 'CLOSED' %}selected{% endif %}>CLOSED</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-info btn-sm text-white fw-bold w-100">
+                                <i class="fa-solid fa-check me-1"></i> Submit CLI Report
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Control Operational Action Form (If Control) -->
+            {% if current_user.is_control() %}
+                <div class="card shadow-sm border-0 mb-4 border-start border-warning border-4">
+                    <div class="card-header bg-light py-3">
+                        <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-headset me-2 text-warning"></i>Shift Control Action Log</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <form method="POST" action="{{ url_for('control.update_action', incident_id=incident.id) }}">
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">Rectification / Clearance Time</label>
+                                <input type="text" name="rectification_time" class="form-control form-control-sm" placeholder="e.g. 15:35 (Relief Loco Attached)" value="{{ incident.rectification_time or '' }}">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">Total Delay Minutes</label>
+                                <input type="number" name="delay_minutes" class="form-control form-control-sm" value="{{ incident.delay_minutes or 0 }}">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">Shift Action Note</label>
+                                <textarea name="action_note" class="form-control form-control-sm" rows="3" placeholder="Log relief train dispatched, section clearance note..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Status</label>
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="REPORTED" {% if incident.status == 'REPORTED' %}selected{% endif %}>REPORTED</option>
+                                    <option value="UNDER_INVESTIGATION" {% if incident.status == 'UNDER_INVESTIGATION' %}selected{% endif %}>UNDER_INVESTIGATION</option>
+                                    <option value="ACTION_COMPLETED" {% if incident.status == 'ACTION_COMPLETED' %}selected{% endif %}>ACTION_COMPLETED</option>
+                                    <option value="CLOSED" {% if incident.status == 'CLOSED' %}selected{% endif %}>CLOSED</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-sm fw-bold w-100">
+                                <i class="fa-solid fa-check me-1"></i> Update Control Action
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

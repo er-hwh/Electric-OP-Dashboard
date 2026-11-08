@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Fast Incident Logging | TLC / PCNL Control{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="fa-solid fa-bolt me-2 text-danger"></i>Fast Unusual Incident Logging – {{ default_role }} Control
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Date <span class="text-danger">*</span></label>
+                                <input type="date" name="incident_date" class="form-control" required value="{{ '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Time (HH:MM)</label>
+                                <input type="text" name="incident_time" class="form-control" placeholder="e.g. 15:40">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Traction</label>
+                                <select name="traction_type" class="form-select">
+                                    <option value="ELECTRIC" {% if default_role == 'TLC' %}selected{% endif %}>Electric Traction</option>
+                                    <option value="DIESEL" {% if default_role == 'PCNL' %}selected{% endif %}>Diesel Traction</option>
+                                    <option value="BOTH">Both / Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Section <span class="text-danger">*</span></label>
+                                <input type="text" name="section" class="form-control" required placeholder="e.g. BWN-RPH">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Station / Location</label>
+                                <input type="text" name="station_location" class="form-control" placeholder="e.g. BHP, Km 150/2">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Train No.</label>
+                                <input type="text" name="train_no" class="form-control" placeholder="e.g. 13010 Up">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Loco No.</label>
+                                <input type="text" name="loco_no" class="form-control" placeholder="e.g. WAG-9 31540">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Incident Category <span class="text-danger">*</span></label>
+                                <select name="incident_category" class="form-select" required>
+                                    <option value="LOCO_FAILURE">Loco Tripping / Failure</option>
+                                    <option value="SPAD">SPAD (Signal Passing Danger)</option>
+                                    <option value="OHE_BREAKDOWN">OHE Breakdown / No Tension</option>
+                                    <option value="SIGNAL_FAILURE">Signaling Interlocking Failure</option>
+                                    <option value="DERAILMENT">Derailment / Obstruction</option>
+                                    <option value="FLAT_TYRE">Hot Axle / Flat Tyre / Brake Binding</option>
+                                    <option value="CATTLE_RUN_OVER">Cattle Run Over / Trespass</option>
+                                    <option value="ACP_UNUSUAL">Alarm Chain Pulling (ACP)</option>
+                                    <option value="UNUSUAL_SOUND">Unusual Sound / Jerk</option>
+                                    <option value="MISC" selected>Miscellaneous Unusual</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">LP Name / ID</label>
+                                <input type="text" name="crew_name_manual" class="form-control" placeholder="Loco Pilot Name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Home Lobby</label>
+                                <select name="lobby_id" class="form-select">
+                                    <option value="">Select Lobby</option>
+                                    {% for l in lobbies %}
+                                        <option value="{{ l.id }}">{{ l.code }} - {{ l.lobby_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Brief Description of Problem <span class="text-danger">*</span></label>
+                            <textarea name="brief_description" class="form-control" rows="3" required placeholder="Describe fault symptoms reported by LP, DJ tripping message, signals..."></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Immediate Control Action Taken</label>
+                                <input type="text" name="immediate_action" class="form-control" placeholder="TLC instructions to LP, resetting done, relief loco arranged...">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Estimated Delay (min)</label>
+                                <input type="number" name="delay_minutes" class="form-control" value="0">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a href="{{ url_for('control.incidents') }}" class="btn btn-outline-secondary">
+                                <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning px-4 fw-bold shadow-sm">
+                                <i class="fa-solid fa-bolt me-1 text-danger"></i> Log into Shift Register
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
