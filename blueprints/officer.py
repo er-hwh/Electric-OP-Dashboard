@@ -1,7 +1,11 @@
+from blueprints.reporting_helper import (
+    get_crew_overview_stats, get_cli_crew_matrix, get_lobby_crew_matrix,
+    filter_crews_query, export_crews_to_excel, export_crews_to_csv
+)
 import os
 import json
 from datetime import datetime, date, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session
+from flask import send_file, Response, Blueprint, render_template, request, redirect, url_for, flash, current_app, session
 from werkzeug.utils import secure_filename
 from database import db
 from models import (
@@ -1179,3 +1183,137 @@ def add_incident_remark(incident_id):
     db.session.commit()
     flash(f'Officer directive recorded on incident [{incident.incident_number}].', 'success')
     return redirect(url_for('officer.view_incident', incident_id=incident.id))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 7: OFFICER ADVANCED REPORTING SUITE & EXPORT ANALYTICS
+# ---------------------------------------------------------------------------
+
+@officer_bp.route('/reports', methods=['GET'])
+def reports():
+    """Advanced Multi-Parameter Filtered Reports & Analytics Suite."""
+    active_tab = request.args.get('tab', 'overview').strip()
+    selected_lobby = request.args.get('lobby_id', '').strip()
+    selected_cli = request.args.get('cli_id', '').strip()
+    selected_category = request.args.get('category', '').strip()
+    selected_traction = request.args.get('traction', '').strip()
+    selected_grading = request.args.get('grading', '').strip()
+    search = request.args.get('search', '').strip()
+
+    overview = get_crew_overview_stats()
+    cli_matrix = get_cli_crew_matrix()
+    lobby_matrix = get_lobby_crew_matrix()
+
+    # Query filtered crews
+    query = filter_crews_query(
+        lobby_id=selected_lobby,
+        cli_id=selected_cli,
+        category=selected_category,
+        traction=selected_traction,
+        grading=selected_grading,
+        search=search
+    )
+    filtered_count = query.count()
+    crews = query.limit(100).all()
+
+    lobbies = Lobby.query.order_by(Lobby.code.asc()).all()
+    clis = User.query.filter_by(role='supervisor').order_by(User.full_name.asc()).all()
+
+    return render_template(
+        'officer/reports.html',
+        overview=overview,
+        cli_matrix=cli_matrix,
+        lobby_matrix=lobby_matrix,
+        crews=crews,
+        filtered_count=filtered_count,
+        lobbies=lobbies,
+        clis=clis,
+        active_tab=active_tab,
+        selected_lobby=selected_lobby,
+        selected_cli=selected_cli,
+        selected_category=selected_category,
+        selected_traction=selected_traction,
+        selected_grading=selected_grading,
+        search=search,
+        export_base_url=url_for('officer.reports'),
+        is_officer_view=True
+    )
+
+
+@officer_bp.route('/reports/export/excel', methods=['GET'])
+def export_reports_excel():
+    """Download filtered crew records as styled Excel (.xlsx)."""
+    selected_lobby = request.args.get('lobby_id', '').strip()
+    selected_cli = request.args.get('cli_id', '').strip()
+    selected_category = request.args.get('category', '').strip()
+    selected_traction = request.args.get('traction', '').strip()
+    selected_grading = request.args.get('grading', '').strip()
+    search = request.args.get('search', '').strip()
+
+    crews = filter_crews_query(
+        lobby_id=selected_lobby,
+        cli_id=selected_cli,
+        category=selected_category,
+        traction=selected_traction,
+        grading=selected_grading,
+        search=search
+    ).all()
+
+    buf = export_crews_to_excel(crews)
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return send_file(
+        buf,
+        as_attachment=True,
+        download_name=f"HWH_Crew_Master_Report_{ts}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+@officer_bp.route('/reports/export/csv', methods=['GET'])
+def export_reports_csv():
+    """Download filtered crew records as standard CSV."""
+    selected_lobby = request.args.get('lobby_id', '').strip()
+    selected_cli = request.args.get('cli_id', '').strip()
+    selected_category = request.args.get('category', '').strip()
+    selected_traction = request.args.get('traction', '').strip()
+    selected_grading = request.args.get('grading', '').strip()
+    search = request.args.get('search', '').strip()
+
+    crews = filter_crews_query(
+        lobby_id=selected_lobby,
+        cli_id=selected_cli,
+        category=selected_category,
+        traction=selected_traction,
+        grading=selected_grading,
+        search=search
+    ).all()
+
+    buf = export_crews_to_csv(crews)
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=HWH_Crew_Report_{ts}.csv"}
+    )
+
+
+@officer_bp.route('/crew/<int:crew_id>/remark', methods=['POST'])
+def add_crew_remark(crew_id):
+    """Add supervisory / performance remark on a running crew."""
+    crew = User.query.get_or_404(crew_id)
+    remark = request.form.get('officer_remark', '').strip()
+    grading = request.form.get('safety_grading', '').strip()
+    officer = User.query.get(session.get('user_id'))
+    officer_name = officer.full_name if officer else "Officer"
+
+    if grading in ('A', 'B', 'C'):
+        crew.safety_grading = grading
+
+    if remark:
+        existing = crew.remarks or ''
+        ts_str = datetime.now().strftime('%d-%m-%Y %H:%M')
+        crew.remarks = f"{existing}\n[{ts_str} - {officer_name}]: {remark}".strip()
+
+    db.session.commit()
+    flash(f'Observation recorded for {crew.full_name}.', 'success')
+    return redirect(url_for('officer.reports', tab='filter'))

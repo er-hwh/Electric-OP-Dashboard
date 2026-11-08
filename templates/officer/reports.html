@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Filtered Reports & Analytics | Electric Operation HWH{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-md-5">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3 border-bottom pb-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary px-3 py-1 fs-6"><i class="fa-solid fa-chart-pie me-1"></i> Reporting Suite (Phase 7)</span>
+                <span class="badge bg-dark text-warning">RBAC Synchronized</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-0">
+                <i class="fa-solid fa-file-waveform text-primary me-2"></i>Division Running Staff Reports & Operational Analytics
+            </h2>
+            <small class="text-muted">Master Crew Overview &bull; CLI Matrix &bull; Lobby Deployment &bull; Dynamic Multi-Parameter Filtering &bull; Excel/CSV Export</small>
+        </div>
+        <div class="d-flex gap-2">
+            {% if is_control_view %}
+                <a href="{{ url_for('control.important_tools') }}" class="btn btn-warning text-dark fw-bold btn-sm shadow-sm">
+                    <i class="fa-solid fa-screwdriver-wrench me-1"></i> Operational Tools
+                </a>
+                <a href="{{ url_for('control.dashboard') }}" class="btn btn-outline-warning text-dark btn-sm fw-bold">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Control Desk
+                </a>
+            {% elif is_admin_view %}
+                <a href="{{ url_for('admin.important_tools') }}" class="btn btn-warning text-dark fw-bold btn-sm shadow-sm">
+                    <i class="fa-solid fa-screwdriver-wrench me-1"></i> Important Tools
+                </a>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm fw-bold">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Admin Console
+                </a>
+            {% else %}
+                <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-primary btn-sm fw-bold">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Officer Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- KPI Summary Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
+                <div class="card-body p-3">
+                    <span class="text-muted small fw-bold text-uppercase">Total Running Staff</span>
+                    <h3 class="fw-bold text-primary mb-0 mt-1">{{ overview.total_count }}</h3>
+                    <div class="small text-muted mt-1"><i class="fa-solid fa-user-check text-success me-1"></i>{{ overview.active_count }} Active Crews</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
+                <div class="card-body p-3">
+                    <span class="text-muted small fw-bold text-uppercase">Chief Loco Inspectors</span>
+                    <h3 class="fw-bold text-info mb-0 mt-1">{{ cli_matrix.matrix|length }}</h3>
+                    <div class="small text-muted mt-1"><i class="fa-solid fa-clipboard-user me-1"></i>Supervising Squads</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 border-start border-warning border-4 h-100">
+                <div class="card-body p-3">
+                    <span class="text-muted small fw-bold text-uppercase">Division Lobbies</span>
+                    <h3 class="fw-bold text-warning mb-0 mt-1">12</h3>
+                    <div class="small text-muted mt-1">9 Main + 3 Sister Lobbies</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+                <div class="card-body p-3">
+                    <span class="text-muted small fw-bold text-uppercase">Grade 'A' Safety Rating</span>
+                    <h3 class="fw-bold text-success mb-0 mt-1">{{ overview.grading_counts['A'] }}</h3>
+                    <div class="small text-muted mt-1">Grade B: {{ overview.grading_counts['B'] }} | Grade C: {{ overview.grading_counts['C'] }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nav Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2 bg-light p-2 rounded shadow-sm border" id="reportsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'overview' or not active_tab %}active{% endif %} fw-bold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                <i class="fa-solid fa-chart-pie me-2"></i>1. Overall Crew Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'cli' %}active{% endif %} fw-bold" id="cli-tab" data-bs-toggle="tab" data-bs-target="#cli" type="button" role="tab">
+                <i class="fa-solid fa-users-gear me-2"></i>2. CLI-wise Crew Details
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'lobby' %}active{% endif %} fw-bold" id="lobby-tab" data-bs-toggle="tab" data-bs-target="#lobby" type="button" role="tab">
+                <i class="fa-solid fa-house-chimney me-2"></i>3. Lobby-wise Crew Details
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'filter' %}active{% endif %} fw-bold" id="filter-tab" data-bs-toggle="tab" data-bs-target="#filter" type="button" role="tab">
+                <i class="fa-solid fa-filter me-2 text-primary"></i>4. Custom Filtered Reports & Export
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Contents -->
+    <div class="tab-content" id="reportsTabContent">
+        <!-- 1. Overall Crew Overview Tab -->
+        <div class="tab-pane fade {% if active_tab == 'overview' or not active_tab %}show active{% endif %}" id="overview" role="tabpanel">
+            <div class="row g-4">
+                <!-- Category Breakdown -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-layer-group text-primary me-2"></i>Category-wise Running Staff Distribution</h6>
+                            <span class="badge bg-light text-dark border">8 Operational Categories</span>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                {% for cat, count in overview.category_counts.items() %}
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="p-3 bg-light rounded text-center border">
+                                            <span class="badge bg-primary px-3 py-1 fs-6 mb-2">{{ cat }}</span>
+                                            <h4 class="fw-bold text-dark mb-0">{{ count }}</h4>
+                                            <small class="text-muted">
+                                                {% if cat == 'LPM' %}Loco Pilot Mail
+                                                {% elif cat == 'LPP' %}Loco Pilot Pass
+                                                {% elif cat == 'MMAN' %}Motorman
+                                                {% elif cat == 'LPG' %}Loco Pilot Goods
+                                                {% elif cat == 'LPS-I' %}Shunting-I
+                                                {% elif cat == 'LPS-II' %}Shunting-II
+                                                {% elif cat == 'SALP' %}Sr. Asst LP
+                                                {% elif cat == 'ALP' %}Asst Loco Pilot
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Traction & Grading Breakdown -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-bolt text-warning me-2"></i>Traction Wing Distribution</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                <span class="fw-bold"><i class="fa-solid fa-bolt text-primary me-2"></i>Electric Traction</span>
+                                <span class="badge bg-primary fs-6">{{ overview.traction_counts['ELECTRIC'] }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                <span class="fw-bold"><i class="fa-solid fa-gas-pump text-warning me-2"></i>Diesel Traction</span>
+                                <span class="badge bg-warning text-dark fs-6">{{ overview.traction_counts['DIESEL'] }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                                <span class="fw-bold"><i class="fa-solid fa-code-merge text-secondary me-2"></i>Dual / Integrated Traction</span>
+                                <span class="badge bg-secondary fs-6">{{ overview.traction_counts['BOTH'] }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-shield-halved text-success me-2"></i>Safety Grading Status</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-success bg-opacity-10 rounded border-start border-success border-4">
+                                <span class="fw-bold text-success">Grade 'A' (Highly Safe)</span>
+                                <span class="badge bg-success fs-6">{{ overview.grading_counts['A'] }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-primary bg-opacity-10 rounded border-start border-primary border-4">
+                                <span class="fw-bold text-primary">Grade 'B' (Normal Safe)</span>
+                                <span class="badge bg-primary fs-6">{{ overview.grading_counts['B'] }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-danger bg-opacity-10 rounded border-start border-danger border-4">
+                                <span class="fw-bold text-danger">Grade 'C' (Caution / Monitor)</span>
+                                <span class="badge bg-danger fs-6">{{ overview.grading_counts['C'] }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                                <span class="text-muted small">Ungraded / Pending</span>
+                                <span class="badge bg-secondary">{{ overview.grading_counts['UNGRADED'] }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CLI-wise Crew Details Tab -->
+        <div class="tab-pane fade {% if active_tab == 'cli' %}show active{% endif %}" id="cli" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark">
+                        <i class="fa-solid fa-users-gear text-info me-2"></i>CLI Supervisory Matrix ({{ cli_matrix.matrix|length }} CLIs)
+                    </h6>
+                    <span class="badge bg-light text-muted border">Unassigned Crews: {{ cli_matrix.unassigned_count }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 25%;">CLI Name & ID</th>
+                                    <th style="width: 15%;">Home Lobby</th>
+                                    <th style="width: 12%;">Nominated Crews</th>
+                                    <th style="width: 25%;">Category Breakdown</th>
+                                    <th style="width: 18%;">Safety Grading (A / B / C)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in cli_matrix.matrix %}
+                                    <tr>
+                                        <td class="text-muted small fw-bold">{{ loop.index }}</td>
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ row.cli.full_name }}</div>
+                                            <div class="text-muted small">{{ row.cli.username }} &bull; {{ row.cli.phone or 'No Mobile' }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-dark">{{ row.lobby }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary fs-6">{{ row.total_crews }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                {% for cat, cnt in row.cat_dist.items() %}
+                                                    <span class="badge bg-light text-dark border me-1 mb-1">{{ cat }}: {{ cnt }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success me-1">A: {{ row.grade_a }}</span>
+                                            <span class="badge bg-primary me-1">B: {{ row.grade_b }}</span>
+                                            <span class="badge bg-danger">C: {{ row.grade_c }}</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Lobby-wise Crew Details Tab -->
+        <div class="tab-pane fade {% if active_tab == 'lobby' %}show active{% endif %}" id="lobby" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark">
+                        <i class="fa-solid fa-house-chimney text-warning me-2"></i>Lobby Deployment Matrix (12 Division Lobbies)
+                    </h6>
+                    <span class="badge bg-light text-muted border">Unassigned: {{ lobby_matrix.unassigned_count }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 20%;">Lobby Code & Name</th>
+                                    <th style="width: 15%;">Type</th>
+                                    <th style="width: 20%;">CLI In-Charge</th>
+                                    <th style="width: 12%;">Total Crews</th>
+                                    <th style="width: 28%;">Category Distribution</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in lobby_matrix.matrix %}
+                                    <tr {% if row.is_sister %}class="table-warning bg-opacity-25"{% endif %}>
+                                        <td class="text-muted small fw-bold">{{ loop.index }}</td>
+                                        <td>
+                                            <span class="badge bg-dark fs-6 me-2">{{ row.lobby.code }}</span>
+                                            <span class="fw-bold text-dark">{{ row.lobby.name }}</span>
+                                        </td>
+                                        <td>
+                                            {% if row.is_sister %}
+                                                <span class="badge bg-warning text-dark"><i class="fa-solid fa-code-branch me-1"></i>Sister Lobby</span>
+                                            {% else %}
+                                                <span class="badge bg-primary"><i class="fa-solid fa-building me-1"></i>Main Lobby</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ row.in_charge }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary fs-6">{{ row.total_crews }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                {% for cat, cnt in row.cat_dist.items() %}
+                                                    <span class="badge bg-light text-dark border me-1 mb-1">{{ cat }}: {{ cnt }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Custom Filtered Reports & Export Tab -->
+        <div class="tab-pane fade {% if active_tab == 'filter' %}show active{% endif %}" id="filter" role="tabpanel">
+            <!-- Filter Bar Card -->
+            <div class="card shadow-sm border-0 mb-4 bg-light">
+                <div class="card-body py-3">
+                    <form method="GET" action="{{ export_base_url }}" class="row g-2 align-items-center">
+                        <input type="hidden" name="tab" value="filter">
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted mb-1">Lobby</label>
+                            <select name="lobby_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="ALL" {% if not selected_lobby or selected_lobby == 'ALL' %}selected{% endif %}>All Lobbies</option>
+                                {% for l in lobbies %}
+                                    <option value="{{ l.id }}" {% if selected_lobby == l.id|string %}selected{% endif %}>{{ l.code }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted mb-1">CLI</label>
+                            <select name="cli_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="ALL" {% if not selected_cli or selected_cli == 'ALL' %}selected{% endif %}>All CLIs</option>
+                                {% for c in clis %}
+                                    <option value="{{ c.id }}" {% if selected_cli == c.id|string %}selected{% endif %}>{{ c.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted mb-1">Category</label>
+                            <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="ALL" {% if not selected_category or selected_category == 'ALL' %}selected{% endif %}>All Categories</option>
+                                {% for cat in ['LPM', 'LPP', 'MMAN', 'LPG', 'LPS-I', 'LPS-II', 'SALP', 'ALP'] %}
+                                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted mb-1">Traction</label>
+                            <select name="traction" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="ALL" {% if not selected_traction or selected_traction == 'ALL' %}selected{% endif %}>All Traction</option>
+                                <option value="ELECTRIC" {% if selected_traction == 'ELECTRIC' %}selected{% endif %}>Electric</option>
+                                <option value="DIESEL" {% if selected_traction == 'DIESEL' %}selected{% endif %}>Diesel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label small fw-bold text-muted mb-1">Grading</label>
+                            <select name="grading" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="ALL" {% if not selected_grading or selected_grading == 'ALL' %}selected{% endif %}>All</option>
+                                <option value="A" {% if selected_grading == 'A' %}selected{% endif %}>A</option>
+                                <option value="B" {% if selected_grading == 'B' %}selected{% endif %}>B</option>
+                                <option value="C" {% if selected_grading == 'C' %}selected{% endif %}>C</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted mb-1">Search Keywords</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="search" class="form-control" placeholder="Name, Mobile, HRMS ID..." value="{{ search }}">
+                                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i></button>
+                                <a href="{{ export_base_url }}?tab=filter" class="btn btn-outline-secondary" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Export Buttons & Table Header -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                    <div>
+                        <h6 class="mb-0 fw-bold text-dark">
+                            <i class="fa-solid fa-table-list text-primary me-2"></i>Filtered Crew Records ({{ filtered_count }} Crews Matching)
+                        </h6>
+                        <small class="text-muted">Displaying top 100 records for fast browser rendering. Use Export buttons for full download.</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ export_base_url }}/export/excel?lobby_id={{ selected_lobby }}&cli_id={{ selected_cli }}&category={{ selected_category }}&traction={{ selected_traction }}&grading={{ selected_grading }}&search={{ search }}" class="btn btn-success btn-sm fw-bold shadow-sm">
+                            <i class="fa-solid fa-file-excel me-1"></i> Export Excel (.xlsx)
+                        </a>
+                        <a href="{{ export_base_url }}/export/csv?lobby_id={{ selected_lobby }}&cli_id={{ selected_cli }}&category={{ selected_category }}&traction={{ selected_traction }}&grading={{ selected_grading }}&search={{ search }}" class="btn btn-outline-secondary btn-sm fw-bold shadow-sm">
+                            <i class="fa-solid fa-file-csv me-1"></i> Export CSV
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if crews %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 5%;">#</th>
+                                        <th style="width: 20%;">Crew ID & Name</th>
+                                        <th style="width: 10%;">Category</th>
+                                        <th style="width: 10%;">Home Lobby</th>
+                                        <th style="width: 15%;">Assigned CLI</th>
+                                        <th style="width: 10%;">Traction</th>
+                                        <th style="width: 10%;">Safety Grade</th>
+                                        <th style="width: 10%;">PME Due</th>
+                                        <th style="width: 10%;" class="text-end pe-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in crews %}
+                                        <tr>
+                                            <td class="text-muted small fw-bold">{{ loop.index }}</td>
+                                            <td>
+                                                <div class="fw-bold text-dark">{{ c.full_name }}</div>
+                                                <div class="text-muted small">
+                                                    <i class="fa-solid fa-id-card me-1 text-primary"></i>{{ c.username }}
+                                                    {% if c.hrms_id %}&bull; HRMS: {{ c.hrms_id }}{% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ c.crew_category or 'N/A' }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-dark">{{ c.lobby.code if c.lobby else 'N/A' }}</span>
+                                            </td>
+                                            <td>
+                                                <div class="text-dark small fw-bold">{{ c.assigned_cli.full_name if c.assigned_cli else 'Unassigned' }}</div>
+                                            </td>
+                                            <td>
+                                                {% if c.traction_type == 'ELECTRIC' %}
+                                                    <span class="badge bg-primary">Electric</span>
+                                                {% elif c.traction_type == 'DIESEL' %}
+                                                    <span class="badge bg-warning text-dark">Diesel</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Both</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if c.safety_grading == 'A' %}
+                                                    <span class="badge bg-success">Grade A</span>
+                                                {% elif c.safety_grading == 'B' %}
+                                                    <span class="badge bg-primary">Grade B</span>
+                                                {% elif c.safety_grading == 'C' %}
+                                                    <span class="badge bg-danger">Grade C</span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-muted border">Ungraded</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="small text-muted">
+                                                    {{ c.pme_due_date.strftime('%d-%m-%Y') if c.pme_due_date else 'N/A' }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#remarkModal{{ c.id }}" title="Add Officer Observation">
+                                                    <i class="fa-solid fa-comment-dots"></i>
+                                                </button>
+
+                                                <!-- Remark Modal -->
+                                                <div class="modal fade" id="remarkModal{{ c.id }}" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header bg-primary text-white">
+                                                                <h5 class="modal-title">
+                                                                    <i class="fa-solid fa-shield-halved me-2"></i>Officer Observation: {{ c.full_name }}
+                                                                </h5>
+                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <form method="POST" action="{{ url_for('officer.add_crew_remark', crew_id=c.id) if is_officer_view else (url_for('control.add_crew_remark', crew_id=c.id) if is_control_view else url_for('admin.add_crew_remark', crew_id=c.id)) }}">
+                                                                <div class="modal-body text-start">
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-bold">Performance Observation / Directive</label>
+                                                                        <textarea name="officer_remark" class="form-control" rows="3" required placeholder="Enter observation on driving technique, safety adherence, counselling need..."></textarea>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-bold">Update Safety Grading</label>
+                                                                        <select name="safety_grading" class="form-select">
+                                                                            <option value="">-- Keep Current ({{ c.safety_grading or 'Ungraded' }}) --</option>
+                                                                            <option value="A">Grade A (Highly Safe)</option>
+                                                                            <option value="B">Grade B (Normal Safe)</option>
+                                                                            <option value="C">Grade C (Caution / Special Focus)</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button type="submit" class="btn btn-primary btn-sm fw-bold">Save Observation</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-5 text-center text-muted">
+                            <i class="fa-solid fa-users-slash fa-3x mb-3 text-secondary"></i>
+                            <h5>No Running Staff Records Found</h5>
+                            <p class="small">Try broadening your search or filter parameters.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

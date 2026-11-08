@@ -1,3 +1,7 @@
+from blueprints.reporting_helper import (
+    get_crew_overview_stats, get_cli_crew_matrix, get_lobby_crew_matrix,
+    filter_crews_query, export_crews_to_excel, export_crews_to_csv
+)
 import os
 import re
 import json
@@ -1421,3 +1425,143 @@ def update_action(incident_id):
     db.session.commit()
     flash(f'Operational action updated on [{incident.incident_number}].', 'success')
     return redirect(url_for('control.view_incident', incident_id=incident.id))
+
+
+# ---------------------------------------------------------------------------
+# PHASE 7: CONTROL (TLC / PCNL) IMPORTANT TOOLS & OPERATIONAL REPORTS
+# ---------------------------------------------------------------------------
+
+@control_bp.route('/important-tools')
+@control_login_required
+def important_tools():
+    """TLC / PCNL Control Operational Tools Suite."""
+    return render_template('control/important_tools.html')
+
+
+@control_bp.route('/reports', methods=['GET'])
+@control_login_required
+def reports():
+    """Operational Reports Desk with Full Sr. DEE(OP) Parity."""
+    active_tab = request.args.get('tab', 'overview').strip()
+    selected_lobby = request.args.get('lobby_id', '').strip()
+    selected_cli = request.args.get('cli_id', '').strip()
+    selected_category = request.args.get('category', '').strip()
+    selected_traction = request.args.get('traction', '').strip()
+    selected_grading = request.args.get('grading', '').strip()
+    search = request.args.get('search', '').strip()
+
+    overview = get_crew_overview_stats()
+    cli_matrix = get_cli_crew_matrix()
+    lobby_matrix = get_lobby_crew_matrix()
+
+    query = filter_crews_query(
+        lobby_id=selected_lobby,
+        cli_id=selected_cli,
+        category=selected_category,
+        traction=selected_traction,
+        grading=selected_grading,
+        search=search
+    )
+    filtered_count = query.count()
+    crews = query.limit(100).all()
+
+    lobbies = Lobby.query.order_by(Lobby.code.asc()).all()
+    clis = User.query.filter_by(role='supervisor').order_by(User.full_name.asc()).all()
+
+    return render_template(
+        'officer/reports.html',
+        overview=overview,
+        cli_matrix=cli_matrix,
+        lobby_matrix=lobby_matrix,
+        crews=crews,
+        filtered_count=filtered_count,
+        lobbies=lobbies,
+        clis=clis,
+        active_tab=active_tab,
+        selected_lobby=selected_lobby,
+        selected_cli=selected_cli,
+        selected_category=selected_category,
+        selected_traction=selected_traction,
+        selected_grading=selected_grading,
+        search=search,
+        export_base_url=url_for('control.reports'),
+        is_control_view=True
+    )
+
+
+@control_bp.route('/reports/export/excel', methods=['GET'])
+@control_login_required
+def export_reports_excel():
+    """Download filtered crew records as styled Excel (.xlsx) by Control."""
+    selected_lobby = request.args.get('lobby_id', '').strip()
+    selected_cli = request.args.get('cli_id', '').strip()
+    selected_category = request.args.get('category', '').strip()
+    selected_traction = request.args.get('traction', '').strip()
+    selected_grading = request.args.get('grading', '').strip()
+    search = request.args.get('search', '').strip()
+
+    crews = filter_crews_query(
+        lobby_id=selected_lobby,
+        cli_id=selected_cli,
+        category=selected_category,
+        traction=selected_traction,
+        grading=selected_grading,
+        search=search
+    ).all()
+
+    buf = export_crews_to_excel(crews)
+    ts = dt.now().strftime('%Y%m%d_%H%M%S')
+    return send_file(
+        buf,
+        as_attachment=True,
+        download_name=f"Control_Crew_Report_{ts}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+@control_bp.route('/reports/export/csv', methods=['GET'])
+@control_login_required
+def export_reports_csv():
+    """Download filtered crew records as standard CSV by Control."""
+    selected_lobby = request.args.get('lobby_id', '').strip()
+    selected_cli = request.args.get('cli_id', '').strip()
+    selected_category = request.args.get('category', '').strip()
+    selected_traction = request.args.get('traction', '').strip()
+    selected_grading = request.args.get('grading', '').strip()
+    search = request.args.get('search', '').strip()
+
+    crews = filter_crews_query(
+        lobby_id=selected_lobby,
+        cli_id=selected_cli,
+        category=selected_category,
+        traction=selected_traction,
+        grading=selected_grading,
+        search=search
+    ).all()
+
+    buf = export_crews_to_csv(crews)
+    ts = dt.now().strftime('%Y%m%d_%H%M%S')
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=Control_Crew_Report_{ts}.csv"}
+    )
+
+
+@control_bp.route('/crew/<int:crew_id>/remark', methods=['POST'])
+@control_login_required
+def add_crew_remark(crew_id):
+    """Add shift controller remark on running crew."""
+    crew = User.query.get_or_404(crew_id)
+    remark = request.form.get('officer_remark', '').strip()
+    user = User.query.get(session.get('user_id'))
+    role_str = "TLC" if user and user.is_tlc() else ("PCNL" if user and user.is_pcnl() else "Control")
+
+    if remark:
+        existing = crew.remarks or ''
+        ts_str = dt.now().strftime('%d-%m-%Y %H:%M')
+        crew.remarks = f"{existing}\n[{ts_str} - {role_str} Shift Note]: {remark}".strip()
+        db.session.commit()
+        flash(f'Shift observation logged for {crew.full_name}.', 'success')
+
+    return redirect(url_for('control.reports', tab='filter'))

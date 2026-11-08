@@ -77,6 +77,7 @@
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.training_medical') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Management</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.sheets') }}"><i class="fa-solid fa-table-cells me-2 text-success"></i>Google Sheets Hub (Phase 6)</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.incidents') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Unusual Incident Tracker (Phase 6)</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.reports') }}"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Division Reports & Analytics (Phase 7)</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.important_tools') }}"><i class="fa-solid fa-screwdriver-wrench me-2 text-warning"></i>Important Tools (Admin Only)</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin.retention_policy') }}"><i class="fa-solid fa-clock-rotate-left me-2 text-danger"></i>Retention Policy (90 Days)</a></li>
@@ -90,6 +91,7 @@
                                     <li><a class="dropdown-item" href="{{ url_for('officer.training_monitor') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Compliance</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.sheets') }}"><i class="fa-solid fa-table-cells me-2 text-success"></i>Google Sheets Hub</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.incidents') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Unusual Incident Surveillance</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('officer.reports') }}"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Division Reports & Analytics (Phase 7)</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Daily Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_performance') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i>CLI Performance Monitoring</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.crew_performance') }}"><i class="fa-solid fa-users me-2 text-info"></i>Crew Performance Monitoring</a></li>
@@ -101,6 +103,8 @@
                                     <li><a class="dropdown-item" href="{{ url_for('control.training_monitor') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Training & PME Compliance</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('control.sheets') }}"><i class="fa-solid fa-table-cells me-2 text-success"></i>Operational Google Sheets</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('control.incidents') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Shift Unusual Incidents</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('control.important_tools') }}"><i class="fa-solid fa-screwdriver-wrench me-2 text-warning"></i>Important Operational Tools</a></li>
+                                    <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('control.reports') }}"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Operational Filtered Reports</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Daily Movement Monitor</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_performance') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i>CLI Performance Monitoring</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.crew_performance') }}"><i class="fa-solid fa-users me-2 text-info"></i>Crew Performance Monitoring</a></li>

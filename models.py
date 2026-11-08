@@ -209,6 +209,63 @@ class User(db.Model):
         """Returns True if officer is Sr. DEE(OP) or DEE(OP)."""
         return self.is_officer() and self.officer_rank <= 2
 
+
+    # -----------------------------------------------------------------------
+    # PHASE 7: CREW ACCESSOR PROPERTIES
+    # -----------------------------------------------------------------------
+    @property
+    def crew_category(self):
+        return self.sub_role or ''
+
+    @crew_category.setter
+    def crew_category(self, val):
+        self.sub_role = val
+
+    @property
+    def assigned_cli_id(self):
+        return self.cli_id
+
+    @property
+    def assigned_cli(self):
+        if self.cli_id:
+            return User.query.get(self.cli_id)
+        return None
+
+    @property
+    def phone(self):
+        return self.mobile
+
+    @property
+    def emp_no(self):
+        return self.pf_number
+
+    @property
+    def dob(self):
+        return self.date_of_birth
+
+    @property
+    def traction_type(self):
+        c = self.get_custom_fields()
+        return c.get('traction_type', 'BOTH')
+
+    @property
+    def safety_grading(self):
+        c = self.get_custom_fields()
+        return c.get('safety_grading', 'UNGRADED')
+
+    @safety_grading.setter
+    def safety_grading(self, val):
+        self.set_custom_field('safety_grading', val)
+
+    @property
+    def remarks(self):
+        c = self.get_custom_fields()
+        return c.get('remarks', '')
+
+    @remarks.setter
+    def remarks(self, val):
+        self.set_custom_field('remarks', val)
+
     def can_edit_system(self):
         """Strict Rule: Only Admin can perform system edits."""
         return self.is_admin()
