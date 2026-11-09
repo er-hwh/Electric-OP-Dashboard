@@ -357,9 +357,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </button>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item text-danger fw-bold" href="{{ url_for('supervisor.export_crew_pdf', record_id=r.id) }}" target="_blank">
-                                                <i class="fa-solid fa-file-pdf me-2"></i> Download Bio-Data PDF
-                                            </a>
+                                            {% if r and r.id %}
+                                                <a class="dropdown-item text-danger fw-bold" href="{{ url_for('supervisor.export_crew_pdf', record_id=r.id) }}" target="_blank">
+                                                    <i class="fa-solid fa-file-pdf me-2"></i> Download Bio-Data PDF
+                                                </a>
+                                            {% else %}
+                                                <a class="dropdown-item text-muted disabled" href="javascript:void(0);">
+                                                    <i class="fa-solid fa-file-pdf me-2"></i> Download Bio-Data PDF
+                                                </a>
+                                            {% endif %}
                                         </li>
                                     </ul>
                                 </div>
@@ -388,61 +394,225 @@ document.addEventListener('DOMContentLoaded', function() {
         {% set u = item.user %}
 <!-- MODAL: QUICK FOOTPLATE -->
                         <div class="modal fade" id="fpModal{{ r.id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
+                            <div class="modal-dialog modal-lg">
                                 <div class="modal-content">
                                     <form action="{{ url_for('supervisor.quick_footplate') }}" method="POST">
                                         <div class="modal-header bg-success text-white">
-                                            <h6 class="modal-title fw-bold"><i class="fa-solid fa-route me-2"></i>Log Footplate: {{ r.crew_name }}</h6>
+                                            <h6 class="modal-title fw-bold">
+                                                <i class="fa-solid fa-route me-2"></i>Log Footplate Inspection: {{ r.crew_name }}
+                                            </h6>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
-                                        <div class="modal-body">
+                                        <div class="modal-body small">
                                             <input type="hidden" name="crew_id" value="{{ u.id if u else '' }}">
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-6">
-                                                    <label class="form-label small fw-bold">Date of Inspection</label>
-                                                    <input type="date" name="inspection_date" class="form-control form-control-sm" required>
+                                            
+                                            <!-- Section 1: Trip & Loco Basics -->
+                                            <div class="card bg-light border-0 p-3 mb-3">
+                                                <div class="row g-2 mb-2">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Date of Inspection <span class="text-danger">*</span></label>
+                                                        <input type="date" name="inspection_date" class="form-control form-control-sm" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Safety Grading <span class="text-danger">*</span></label>
+                                                        <select name="grading" class="form-select form-select-sm">
+                                                            <option value="A" {% if r.grade == 'A' %}selected{% endif %}>Grade A (High Safety Compliance)</option>
+                                                            <option value="B" {% if r.grade == 'B' %}selected{% endif %}>Grade B (Satisfactory with Scope)</option>
+                                                            <option value="C" {% if r.grade == 'C' %}selected{% endif %}>Grade C (Needs Dedicated Monitoring)</option>
+                                                        </select>
+                                                    </div>
                                                 </div>
-                                                <div class="col-6">
-                                                    <label class="form-label small fw-bold">Safety Grading</label>
-                                                    <select name="grading" class="form-select form-select-sm">
-                                                        <option value="A" {% if r.grade == 'A' %}selected{% endif %}>Grade A</option>
-                                                        <option value="B" {% if r.grade == 'B' %}selected{% endif %}>Grade B</option>
-                                                        <option value="C" {% if r.grade == 'C' %}selected{% endif %}>Grade C</option>
-                                                    </select>
+                                                <div class="row g-2 mb-2">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Train No. <span class="text-danger">*</span></label>
+                                                        <input type="text" name="train_no" class="form-control form-control-sm" placeholder="e.g. 12301 / BCN Special" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Loco No. <span class="text-danger">*</span></label>
+                                                        <input type="text" name="loco_no" class="form-control form-control-sm" placeholder="e.g. 30256 WAP7 / 31450 WAG9" required>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">From Station <span class="text-danger">*</span></label>
+                                                        <input type="text" name="from_station" class="form-control form-control-sm" placeholder="e.g. HWH" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">To Station <span class="text-danger">*</span></label>
+                                                        <input type="text" name="to_station" class="form-control form-control-sm" placeholder="e.g. BWN" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">Footplate KMA (km)</label>
+                                                        <input type="number" step="0.1" name="footplate_km" class="form-control form-control-sm" placeholder="e.g. 106.5">
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-6">
-                                                    <label class="form-label small fw-bold">Train No.</label>
-                                                    <input type="text" name="train_no" class="form-control form-control-sm" placeholder="e.g. 12301" required>
+
+                                            <!-- Section 2: 9 Safety Performance Checkpoints -->
+                                            <div class="card border border-success-subtle p-3 mb-3">
+                                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                                    <h6 class="fw-bold text-success mb-0">
+                                                        <i class="fa-solid fa-clipboard-check me-2"></i>9 Critical Safety Performance Checkpoints
+                                                    </h6>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Footplate Checklist</span>
                                                 </div>
-                                                <div class="col-6">
-                                                    <label class="form-label small fw-bold">Loco No.</label>
-                                                    <input type="text" name="loco_no" class="form-control form-control-sm" placeholder="e.g. 30256 WAP7" required>
+                                                
+                                                <div class="row g-2">
+                                                    <!-- 1. SIGNAL CALL OUT -->
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">1</span> Signal Call Out
+                                                        </label>
+                                                        <select name="signal_call_out" class="form-select form-select-sm">
+                                                            <option value="Satisfactory (Loud, Clear with Proper Hand Gesture)" selected>Satisfactory (Loud, Clear with Proper Hand Gesture)</option>
+                                                            <option value="Satisfactory (Loud Voice Calling)">Satisfactory (Loud Voice Calling)</option>
+                                                            <option value="Delayed / Low Voice Calling">Delayed / Low Voice Calling</option>
+                                                            <option value="Hand Gesture Omitted">Hand Gesture Omitted</option>
+                                                            <option value="Deficient / Not Calling Out">Deficient / Not Calling Out</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 2. BRAKE TECHNIQUE -->
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">2</span> Brake Technique
+                                                        </label>
+                                                        <select name="brake_technique" class="form-select form-select-sm">
+                                                            <option value="Smooth & Controlled (Proper Dynamic / Regenerative Braking)" selected>Smooth & Controlled (Proper Dynamic / Regenerative Braking)</option>
+                                                            <option value="Graduated Application Maintained">Graduated Application Maintained</option>
+                                                            <option value="Rough / Jerky Braking">Rough / Jerky Braking</option>
+                                                            <option value="Delayed Application at Signal / Halt">Delayed Application at Signal / Halt</option>
+                                                            <option value="Heavy Braking Near Red Aspect">Heavy Braking Near Red Aspect</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 3. HIGH SPEED TENDENCY -->
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">3</span> High Speed Tendency
+                                                        </label>
+                                                        <select name="high_speed_tendency" class="form-select form-select-sm">
+                                                            <option value="Nil (Strict Adherence to Sectional MPS)" selected>Nil (Strict Adherence to Sectional MPS)</option>
+                                                            <option value="Controlled Speed Maintenance Throughout">Controlled Speed Maintenance Throughout</option>
+                                                            <option value="Tendency to Accelerate on Down Gradient">Tendency to Accelerate on Down Gradient</option>
+                                                            <option value="Borderline Overspeeding Near Loop Lines">Borderline Overspeeding Near Loop Lines</option>
+                                                            <option value="Overspeeding Observed / Warning Given">Overspeeding Observed / Warning Given</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 4. PF ENTRY SPEED / YELLOW PASSING SPEED -->
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">4</span> PF Entry Speed / Yellow Passing Speed
+                                                        </label>
+                                                        <select name="pf_entry_speed" class="form-select form-select-sm">
+                                                            <option value="Controlled Entry (<15 kmph at PF / Within Limits at Yellow)" selected>Controlled Entry (<15 kmph at PF / Within Limits at Yellow)</option>
+                                                            <option value="Speed Controlled Well in Advance Before Platform">Speed Controlled Well in Advance Before Platform</option>
+                                                            <option value="High Speed Approach into Platform (>20 kmph)">High Speed Approach into Platform (>20 kmph)</option>
+                                                            <option value="Late Deceleration at Single / Double Yellow">Late Deceleration at Single / Double Yellow</option>
+                                                            <option value="Passing Yellow Signal at High Speed">Passing Yellow Signal at High Speed</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 5. PSR/TSR OBSERVATION -->
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">5</span> PSR / TSR Observation
+                                                        </label>
+                                                        <select name="psr_tsr_observation" class="form-select form-select-sm">
+                                                            <option value="100% Strict Compliance to Caution Orders & Speed Boards" selected>100% Strict Compliance to Caution Orders & Speed Boards</option>
+                                                            <option value="Coasting Adopted Early Before Restriction Zone">Coasting Adopted Early Before Restriction Zone</option>
+                                                            <option value="Delayed Deceleration at TSR Location">Delayed Deceleration at TSR Location</option>
+                                                            <option value="Speed Restriction Exceeded Temporarily">Speed Restriction Exceeded Temporarily</option>
+                                                            <option value="Caution Order Not Kept Readily Visible">Caution Order Not Kept Readily Visible</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 6. PERFORMANCE OF ALP -->
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">6</span> Performance of ALP
+                                                        </label>
+                                                        <select name="alp_performance" class="form-select form-select-sm">
+                                                            <option value="Alert, Vigilant, Loud Calling & Active Signal Exchange" selected>Alert, Vigilant, Loud Calling & Active Signal Exchange</option>
+                                                            <option value="Satisfactory Lookout & Machine Monitoring">Satisfactory Lookout & Machine Monitoring</option>
+                                                            <option value="Passive / Requires Frequent Prompts from LP">Passive / Requires Frequent Prompts from LP</option>
+                                                            <option value="Inattentive at Intermediate Signals">Inattentive at Intermediate Signals</option>
+                                                            <option value="Drowsy / Mobile Distraction Observed">Drowsy / Mobile Distraction Observed</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 7. WHISTLING AT THE L/C AND W/L BOARD -->
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">7</span> Whistling at L/C & W/L Board
+                                                        </label>
+                                                        <select name="whistling_habit" class="form-select form-select-sm">
+                                                            <option value="Continuous Intermittent Whistling Maintained at all W/L & L/C" selected>Continuous Intermittent Whistling Maintained at all W/L & L/C</option>
+                                                            <option value="Satisfactory Whistling at Boards and Gates">Satisfactory Whistling at Boards and Gates</option>
+                                                            <option value="Irregular / Short Whistling at Level Crossings">Irregular / Short Whistling at Level Crossings</option>
+                                                            <option value="Whistling Omitted at Whistle Board">Whistling Omitted at Whistle Board</option>
+                                                            <option value="Failed to Whistle at Vulnerable Gate">Failed to Whistle at Vulnerable Gate</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 8. BRAKE FEEL TEST AND BRAKE POWER TEST -->
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">8</span> Brake Feel & Power Test (BFT / BPT)
+                                                        </label>
+                                                        <select name="bft_bpt_test" class="form-select form-select-sm">
+                                                            <option value="Both BFT & BPT Successfully Conducted After Starting & on Run" selected>Both BFT & BPT Successfully Conducted After Starting & on Run</option>
+                                                            <option value="BFT Conducted at First Opportunity; Satisfactory Retardation">BFT Conducted at First Opportunity; Satisfactory Retardation</option>
+                                                            <option value="BPT Conducted Late in Section">BPT Conducted Late in Section</option>
+                                                            <option value="Incomplete Pressure Drop Check">Incomplete Pressure Drop Check</option>
+                                                            <option value="BFT / BPT Omitted After Crew Change / Stoppage">BFT / BPT Omitted After Crew Change / Stoppage</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 9. OTHER OBSERVATION -->
+                                                    <div class="col-12">
+                                                        <label class="form-label small fw-bold text-dark">
+                                                            <span class="badge bg-primary me-1">9</span> Other Observation
+                                                        </label>
+                                                        <input type="text" name="other_observations" class="form-control form-control-sm" placeholder="e.g. Cab cleanliness, RS valve check, neutral section coasting, hand gesture discipline...">
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-6">
-                                                    <label class="form-label small fw-bold">From Station</label>
-                                                    <input type="text" name="from_station" class="form-control form-control-sm" placeholder="e.g. HWH" required>
-                                                </div>
-                                                <div class="col-6">
-                                                    <label class="form-label small fw-bold">To Station</label>
-                                                    <input type="text" name="to_station" class="form-control form-control-sm" placeholder="e.g. BWN" required>
+
+                                            <!-- Section 3: Overall Safety Rating Out of 5 -->
+                                            <div class="card bg-warning-subtle border-warning p-3 mb-3">
+                                                <div class="row g-2 align-items-center">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-dark mb-1">
+                                                            <i class="fa-solid fa-star text-warning me-1"></i> Overall Safety Rating (Out of 5 Stars) <span class="text-danger">*</span>
+                                                        </label>
+                                                        <select name="safety_rating" class="form-select form-select-sm fw-bold">
+                                                            <option value="5" selected>&#9733;&#9733;&#9733;&#9733;&#9733; 5 / 5 - Exemplary (Flawless Safety & Vigilance)</option>
+                                                            <option value="4">&#9733;&#9733;&#9733;&#9733; 4 / 5 - Good (Standard Compliance Maintained)</option>
+                                                            <option value="3">&#9733;&#9733;&#9733; 3 / 5 - Satisfactory (Minor Counselling Imparted)</option>
+                                                            <option value="2">&#9733;&#9733; 2 / 5 - Needs Improvement (Close Monitoring Required)</option>
+                                                            <option value="1">&#9733; 1 / 5 - Unsatisfactory (Safety Alert / Re-training Advised)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <small class="text-muted d-block">
+                                                            <strong>Rating Benchmark:</strong> 5 = Flawless, 4 = Standard, 3 = Minor guidance, 2 = Warning, 1 = Re-training required.
+                                                        </small>
+                                                    </div>
                                                 </div>
                                             </div>
+
                                             <div class="mb-2">
-                                                <label class="form-label small fw-bold">Footplate KMA (km)</label>
-                                                <input type="number" step="0.1" name="footplate_km" class="form-control form-control-sm" placeholder="e.g. 106.5">
-                                            </div>
-                                            <div class="mb-2">
-                                                <label class="form-label small fw-bold">Counselling & Aspects Observed</label>
-                                                <textarea name="counselling_given" class="form-control form-control-sm" rows="2" placeholder="Signal calling, MPS adherence, regenerative braking..."></textarea>
+                                                <label class="form-label small fw-bold">Counselling Given & Corrective Guidance Imparted</label>
+                                                <textarea name="counselling_given" class="form-control form-control-sm" rows="2" placeholder="Specific safety rules discussed (e.g. GR 3.78, SPAD prevention, fog signal rules, calling-on aspect adherence)..."></textarea>
                                             </div>
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" class="btn btn-success btn-sm fw-bold">Save Footplate Inspection</button>
+                                            <button type="submit" class="btn btn-success btn-sm fw-bold">
+                                                <i class="fa-solid fa-check-circle me-1"></i> Save Footplate Inspection
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
@@ -698,8 +868,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td><code>{{ insp.train_no }}</code> / <code>{{ insp.loco_no }}</code></td>
                             <td>{{ insp.from_station }} &rarr; {{ insp.to_station }}</td>
                             <td><strong>{{ insp.footplate_km|round(1) if insp.footplate_km else '-' }}</strong></td>
-                            <td><span class="badge {% if insp.grading == 'A' %}bg-success{% elif insp.grading == 'B' %}bg-primary{% elif insp.grading == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6">{{ insp.grading }}</span></td>
-                            <td>{{ insp.counselling_given or insp.aspects_covered }}</td>
+                            <td>
+                                <span class="badge {% if insp.grading == 'A' %}bg-success{% elif insp.grading == 'B' %}bg-primary{% elif insp.grading == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6">{{ insp.grading }}</span>
+                                {% if insp.safety_rating %}
+                                    <div class="mt-1 small text-warning fw-bold">
+                                        {% for _ in range(insp.safety_rating) %}&#9733;{% endfor %}
+                                        <span class="text-muted">({{ insp.safety_rating }}/5)</span>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if insp.signal_call_out or insp.brake_technique or insp.pf_entry_speed or insp.bft_bpt_test %}
+                                    <div class="mb-1 small">
+                                        {% if insp.signal_call_out %}<span class="badge bg-light text-dark border me-1">Signal: {{ insp.signal_call_out[:22] }}..</span>{% endif %}
+                                        {% if insp.brake_technique %}<span class="badge bg-light text-dark border me-1">Brake: {{ insp.brake_technique[:22] }}..</span>{% endif %}
+                                        {% if insp.pf_entry_speed %}<span class="badge bg-light text-dark border me-1">PF Speed: {{ insp.pf_entry_speed[:22] }}..</span>{% endif %}
+                                    </div>
+                                {% endif %}
+                                {{ insp.counselling_given or insp.aspects_covered or 'Safety compliance reviewed' }}
+                            </td>
                         </tr>
                     {% else %}
                         <tr>

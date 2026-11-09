@@ -187,22 +187,51 @@ def dashboard():
     for c in my_crews:
         if (c.pf_number and c.pf_number in processed_pfs) or (c.username in processed_pfs):
             continue
-        # Create virtual record
-        comp = compute_overdue_status(None, None, None)
-        squad_data.append({
-            'record': CrewCounsellingRecord(
+        # Check or persist record so it has an actual database ID and complete bio-data
+        rec = CrewCounsellingRecord.query.filter(
+            (CrewCounsellingRecord.crew_user_id == c.id) |
+            (CrewCounsellingRecord.pf_no == c.pf_number) |
+            (CrewCounsellingRecord.crew_id_str == c.username)
+        ).first()
+        if not rec:
+            rec = CrewCounsellingRecord(
                 crew_user_id=c.id,
                 crew_id_str=c.username,
                 crew_name=c.full_name,
                 crew_hq=c.lobby.code if c.lobby else 'HWH',
+                cli_name=cli.full_name,
                 cug=c.mobile,
-                designation=c.sub_role,
-                pf_no=c.pf_number,
+                designation=c.sub_role or 'ALP',
+                pf_no=c.pf_number or c.username,
                 grade='A'
-            ),
+            )
+            db.session.add(rec)
+            db.session.commit()
+        comp = compute_overdue_status(rec.last_footplate, rec.safety_counselling, None)
+        
+        # Apply filters
+        if grade_filter != 'ALL' and (rec.grade or '').upper() != grade_filter:
+            continue
+        if hq_filter != 'ALL' and (rec.crew_hq or '').upper() != hq_filter:
+            continue
+        if status_filter == 'overdue' and comp['fp_status'] != 'overdue' and comp['cs_status'] != 'overdue':
+            continue
+        if status_filter == 'due_soon' and comp['fp_status'] != 'due_soon' and comp['cs_status'] != 'due_soon':
+            continue
+        if search_q:
+            q_lower = search_q.lower()
+            if q_lower not in (rec.crew_name or '').lower() and                q_lower not in (rec.crew_id_str or '').lower() and                q_lower not in (rec.cug or '').lower() and                q_lower not in (rec.pf_no or '').lower():
+                continue
+
+        squad_data.append({
+            'record': rec,
             'user': c,
             'compliance': comp
         })
+        if rec.pf_no:
+            processed_pfs.add(rec.pf_no)
+        if rec.crew_id_str:
+            processed_pfs.add(rec.crew_id_str)
 
     # 4. Calculate Division & Squad Compliance Metrics
     total_nominated = len(squad_data)
@@ -275,6 +304,22 @@ def quick_footplate():
     grading = request.form.get('grading', 'A').strip().upper()
     counselling_given = request.form.get('counselling_given', '').strip()
 
+    # 9 Critical Footplate Inspection Checkpoints & 5-Star Rating
+    signal_call_out = request.form.get('signal_call_out', '').strip()
+    brake_technique = request.form.get('brake_technique', '').strip()
+    high_speed_tendency = request.form.get('high_speed_tendency', '').strip()
+    pf_entry_speed = request.form.get('pf_entry_speed', '').strip()
+    psr_tsr_observation = request.form.get('psr_tsr_observation', '').strip()
+    alp_performance = request.form.get('alp_performance', '').strip()
+    whistling_habit = request.form.get('whistling_habit', '').strip()
+    bft_bpt_test = request.form.get('bft_bpt_test', '').strip()
+    other_observations = request.form.get('other_observations', '').strip()
+    safety_rating_val = request.form.get('safety_rating', '5').strip()
+    try:
+        safety_rating = int(safety_rating_val)
+    except ValueError:
+        safety_rating = 5
+
     try:
         kma = float(kma_str) if kma_str else 0.0
     except ValueError:
@@ -284,7 +329,7 @@ def quick_footplate():
 
     crew = User.query.get(int(crew_id_val)) if crew_id_val and crew_id_val.isdigit() else None
     
-    # Create inspection row
+    # Create inspection row with full 9 safety checkpoints & rating
     insp = FootplateInspection(
         cli_id=cli.id,
         crew_id=crew.id if crew else None,
@@ -295,9 +340,31 @@ def quick_footplate():
         to_station=to_stn,
         grading=grading,
         footplate_km=kma,
-        counselling_given=counselling_given
+        counselling_given=counselling_given,
+        signal_call_out=signal_call_out,
+        brake_technique=brake_technique,
+        high_speed_tendency=high_speed_tendency,
+        pf_entry_speed=pf_entry_speed,
+        psr_tsr_observation=psr_tsr_observation,
+        alp_performance=alp_performance,
+        whistling_habit=whistling_habit,
+        bft_bpt_test=bft_bpt_test,
+        other_observations=other_observations,
+        safety_rating=safety_rating
     )
     db.session.add(insp)
+
+    # Compile 9-point summary for CLIMovement
+    summary_obs = [f"Rating: {safety_rating}/5"]
+    if signal_call_out: summary_obs.append(f"Signal: {signal_call_out}")
+    if brake_technique: summary_obs.append(f"Brake: {brake_technique}")
+    if high_speed_tendency: summary_obs.append(f"Speed: {high_speed_tendency}")
+    if pf_entry_speed: summary_obs.append(f"PF/Yellow: {pf_entry_speed}")
+    if psr_tsr_observation: summary_obs.append(f"PSR/TSR: {psr_tsr_observation}")
+    if alp_performance: summary_obs.append(f"ALP: {alp_performance}")
+    if whistling_habit: summary_obs.append(f"Whistle: {whistling_habit}")
+    if bft_bpt_test: summary_obs.append(f"BFT/BPT: {bft_bpt_test}")
+    if other_observations: summary_obs.append(f"Other: {other_observations}")
 
     # Sync to CLIMovement (90-day retention log)
     cli_mov = CLIMovement(
@@ -316,6 +383,7 @@ def quick_footplate():
         crew_id_str=crew.pf_number or crew.username if crew else '',
         crew_category=crew.sub_role if crew else '',
         grading=grading,
+        observations_irregularities=" | ".join(summary_obs),
         corrective_action=counselling_given
     )
     db.session.add(cli_mov)

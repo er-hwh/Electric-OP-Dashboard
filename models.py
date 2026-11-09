@@ -686,6 +686,19 @@ class FootplateInspection(db.Model):
     aspects_covered = db.Column(db.Text) # Signal exchange, RS valve test, calling-on aspect, neutral section coasting
     deficiencies = db.Column(db.Text)
     counselling_given = db.Column(db.Text)
+
+    # 9 Critical Operational Safety Assessment Points & 5-Point Rating
+    signal_call_out = db.Column(db.String(255))
+    brake_technique = db.Column(db.String(255))
+    high_speed_tendency = db.Column(db.String(255))
+    pf_entry_speed = db.Column(db.String(255))
+    psr_tsr_observation = db.Column(db.String(255))
+    alp_performance = db.Column(db.String(255))
+    whistling_habit = db.Column(db.String(255))
+    bft_bpt_test = db.Column(db.String(255))
+    other_observations = db.Column(db.Text)
+    safety_rating = db.Column(db.Integer, default=5)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
