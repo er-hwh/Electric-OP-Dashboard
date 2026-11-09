@@ -42,28 +42,36 @@
     <!-- HERO CAROUSEL -->
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
-            {% if slides %}
-                        <div id="deptHeroCarousel" class="carousel slide hero-slider shadow" data-bs-ride="carousel" data-bs-interval="5000">
+            <div id="deptHeroCarousel" class="carousel slide hero-slider shadow" data-bs-ride="carousel" data-bs-interval="5000">
                 <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                    <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                    <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                    {% if slides %}
+                        {% for slide in slides %}
+                            <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="{{ loop.index0 }}" class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% else %}false{% endif %}" aria-label="Slide {{ loop.index }}"></button>
+                        {% endfor %}
+                    {% else %}
+                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                    {% endif %}
                 </div>
                 <div class="carousel-inner">
-                    <!-- Slide 1: Electric Operation Department Overview -->
-                    <div class="carousel-item active">
-                        <img src="{{ url_for('static', filename='images/carousel/slide1_hwh_division.jpg') }}" class="d-block w-100" alt="Eastern Railway Electric Operation Department - Howrah Division">
-                    </div>
-
-                    <!-- Slide 2: Zero SPAD Safety Campaign -->
-                    <div class="carousel-item">
-                        <img src="{{ url_for('static', filename='images/carousel/slide2_no_spad.jpg') }}" class="d-block w-100" alt="No SPAD, Be Alert - Safety Directives">
-                    </div>
-
-                    <!-- Slide 3: Vande Bharat Express -->
-                    <div class="carousel-item">
-                        <img src="{{ url_for('static', filename='images/carousel/slide3_vande_bharat.jpg') }}" class="d-block w-100" alt="Vande Bharat Express - Our Running Staff Driving a New India">
-                    </div>
+                    {% if slides %}
+                        {% for slide in slides %}
+                            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                <img src="{{ url_for('static', filename=slide.image_path) }}" class="d-block w-100" alt="{{ slide.title }}" onerror="this.src='{{ url_for('static', filename='images/carousel/slide1_hwh_division.jpg') }}'">
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="carousel-item active">
+                            <img src="{{ url_for('static', filename='images/carousel/slide1_hwh_division.jpg') }}" class="d-block w-100" alt="Eastern Railway Electric Operation Department - Howrah Division">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="{{ url_for('static', filename='images/carousel/slide2_no_spad.jpg') }}" class="d-block w-100" alt="No SPAD, Be Alert - Safety Directives">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="{{ url_for('static', filename='images/carousel/slide3_vande_bharat.jpg') }}" class="d-block w-100" alt="Vande Bharat Express - Our Running Staff Driving a New India">
+                        </div>
+                    {% endif %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#deptHeroCarousel" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -74,7 +82,6 @@
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
-            {% endif %}
         </div>
 
         <!-- QUICK ACCESS & STATS BOX -->

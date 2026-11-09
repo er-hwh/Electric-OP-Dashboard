@@ -153,6 +153,8 @@ def get_lobby_strength_data():
 
 @public_bp.route('/')
 def index():
+    # Fetch active carousel slides
+    slides = CarouselSlide.query.filter_by(is_active=True).order_by(CarouselSlide.display_order).all()
     # Fetch active notices
     notices = Notice.query.filter_by(is_active=True).order_by(Notice.created_at.desc()).limit(8).all()
     # Fetch active counselling topics
@@ -170,6 +172,7 @@ def index():
 
     return render_template(
         'public/index.html',
+        slides=slides,
         notices=notices,
         counselling_list=counselling_list,
         officer_says=officer_says,
