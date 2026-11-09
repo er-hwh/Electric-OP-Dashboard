@@ -286,9 +286,35 @@
         </div>
     </div>
 
+    <!-- DUAL TAB SWITCHER: GR & SR vs OFFICIAL RULE BOOKS & REGULATIONS -->
+    <ul class="nav nav-pills nav-fill bg-white p-2 rounded-3 shadow-sm mb-3 border" id="rulesTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold {% if active_tab != 'manuals' %}active{% endif %} py-2 px-3 d-flex align-items-center justify-content-center gap-2" id="grsr-tab" data-bs-toggle="tab" data-bs-target="#grsr-pane" type="button" role="tab" aria-controls="grsr-pane" aria-selected="{% if active_tab != 'manuals' %}true{% else %}false{% endif %}">
+                <i class="fa-solid fa-book-bookmark text-warning fs-5"></i>
+                <div class="text-start">
+                    <div class="lh-sm">General Rules &amp; Subsidiary Rules (GR &amp; SR)</div>
+                    <small class="text-muted fw-normal d-none d-md-inline" style="font-size: 0.75rem;">Interactive Digital Rule Book &bull; Chapters I–XVIII (343 Pages)</small>
+                </div>
+                <span class="badge bg-primary ms-auto">{{ total_rules_count }} Rules</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold {% if active_tab == 'manuals' %}active{% endif %} py-2 px-3 d-flex align-items-center justify-content-center gap-2" id="manuals-tab" data-bs-toggle="tab" data-bs-target="#manuals-pane" type="button" role="tab" aria-controls="manuals-pane" aria-selected="{% if active_tab == 'manuals' %}true{% else %}false{% endif %}">
+                <i class="fa-solid fa-book text-danger fs-5"></i>
+                <div class="text-start">
+                    <div class="lh-sm">Running Staff Rule Books, Manuals &amp; Operating Regulations</div>
+                    <small class="text-muted fw-normal d-none d-md-inline" style="font-size: 0.75rem;">Accident Manual, SWR, WTT, USR 9.12, Emergency SOPs, BPC &amp; Speed</small>
+                </div>
+                <span class="badge bg-danger ms-auto">{{ all_rule_docs_count }} Manuals</span>
+            </button>
+        </li>
+    </ul>
 
-    <!-- MAIN WORKSPACE: SIDEBAR & MAIN READING PANE -->
-    <div class="row g-3" id="mainWorkspaceRow">
+    <div class="tab-content" id="rulesTabContent">
+        <!-- TAB 1: GR & SR DIGITAL RULE BOOK -->
+        <div class="tab-pane fade {% if active_tab != 'manuals' %}show active{% endif %}" id="grsr-pane" role="tabpanel" aria-labelledby="grsr-tab">
+            <!-- MAIN WORKSPACE: SIDEBAR & MAIN READING PANE -->
+            <div class="row g-3" id="mainWorkspaceRow">
         <!-- LEFT COLUMN: CHAPTERS & RULES INDEX SIDEBAR -->
         <div class="col-lg-4 col-xl-3" id="sidebarColumn">
 
@@ -583,6 +609,146 @@
                         <p class="text-secondary">Please pick any rule from the sidebar index to read.</p>
                     </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- END TAB 1: GR & SR -->
+    </div>
+
+    <!-- TAB 2: OFFICIAL RULE BOOKS, MANUALS & OPERATING REGULATIONS -->
+    <div class="tab-pane fade {% if active_tab == 'manuals' %}show active{% endif %}" id="manuals-pane" role="tabpanel" aria-labelledby="manuals-tab">
+        <!-- SEARCH & FILTER TOOLBAR -->
+        <div class="rail-card p-3 mb-3 shadow-sm border-0">
+            <div class="row g-3 align-items-center">
+                <div class="col-lg-6 col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" class="form-control border-start-0" id="manualSearchInput" placeholder="Search manuals by title, rule reference (e.g. USR 9.12, GR 3.61, SWR-BWN)..." onkeyup="filterManuals()">
+                        <button class="btn btn-outline-secondary border-start-0 bg-white" type="button" onclick="clearManualSearch()">
+                            <i class="fa-solid fa-xmark text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-7 d-flex justify-content-md-end align-items-center gap-2">
+                    <span class="text-muted small fw-bold"><i class="fa-solid fa-layer-group me-1"></i> Showing:</span>
+                    <span class="badge bg-danger rounded-pill px-3 py-2 fw-bold" id="manualCountBadge">{{ all_rule_docs_count }} Documents</span>
+                    <button class="btn btn-outline-dark btn-sm fw-bold ms-2" onclick="setManualCategory('ALL')">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i> Reset Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- CATEGORY FILTER PILLS -->
+            <div class="d-flex flex-wrap gap-2 mt-3 pt-2 border-top" id="manualCategoryPills">
+                <button type="button" class="btn btn-sm btn-danger manual-cat-btn active" data-cat="ALL" onclick="setManualCategory('ALL')">
+                    <i class="fa-solid fa-border-all me-1"></i> All Categories ({{ all_rule_docs_count }})
+                </button>
+                {% for cat_name, docs_list in (rule_docs_by_cat or {}).items() %}
+                <button type="button" class="btn btn-sm btn-outline-secondary manual-cat-btn" data-cat="{{ cat_name }}" onclick="setManualCategory('{{ cat_name }}')">
+                    {% if 'Statutory' in cat_name %}
+                        <i class="fa-solid fa-scale-balanced text-primary me-1"></i>
+                    {% elif 'Station Working' in cat_name %}
+                        <i class="fa-solid fa-train-subway text-success me-1"></i>
+                    {% elif 'Time Table' in cat_name %}
+                        <i class="fa-solid fa-clock text-info me-1"></i>
+                    {% elif 'Authority' in cat_name or 'USR' in cat_name %}
+                        <i class="fa-solid fa-file-contract text-warning me-1"></i>
+                    {% elif 'Abnormal' in cat_name or 'Emergency' in cat_name %}
+                        <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i>
+                    {% elif 'Brake' in cat_name or 'Speed' in cat_name %}
+                        <i class="fa-solid fa-gauge-high text-danger me-1"></i>
+                    {% else %}
+                        <i class="fa-solid fa-clipboard-check text-secondary me-1"></i>
+                    {% endif %}
+                    {{ cat_name }} ({{ docs_list|length }})
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- DOCUMENTS GRID -->
+        <div class="row g-3" id="manualCardsContainer">
+            {% for doc in rule_documents %}
+            <div class="col-xl-4 col-md-6 col-12 manual-card-item" data-category="{{ doc.category }}" data-search="{{ doc.title|lower }} {{ (doc.rule_reference or '')|lower }} {{ (doc.description or '')|lower }} {{ doc.category|lower }}">
+                <div class="card h-100 shadow-sm border-0 rounded-3 transition-hover rule-doc-box">
+                    <div class="card-header bg-white border-0 pt-3 px-3 pb-0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge {% if 'Statutory' in doc.category %}bg-primary{% elif 'Emergency' in doc.category or 'Abnormal' in doc.category %}bg-danger{% elif 'Authority' in doc.category %}bg-warning text-dark{% elif 'Time Table' in doc.category %}bg-info text-dark{% elif 'Station Working' in doc.category %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10 text-dark border px-2 py-1 small">
+                                {{ doc.category }}
+                            </span>
+                            {% if doc.rule_reference %}
+                            <span class="badge bg-dark bg-opacity-75 font-monospace px-2 py-1 small">
+                                {{ doc.rule_reference }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body px-3 py-2 d-flex flex-column">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; flex-shrink: 0;">
+                                <i class="fa-solid fa-file-pdf fs-4"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-0 lh-sm doc-card-title" style="font-size: 0.95rem;">
+                                {{ doc.title }}
+                            </h6>
+                        </div>
+                        <p class="text-muted small mb-3 flex-grow-1 doc-card-desc" style="font-size: 0.83rem; line-height: 1.5;">
+                            {{ doc.description or 'Official Eastern Railway rule document and operating directive.' }}
+                        </p>
+                        <div class="d-flex align-items-center gap-2 pt-2 border-top">
+                            <button type="button" class="btn btn-primary btn-sm fw-bold flex-grow-1" onclick="openPdfModal('{{ url_for('static', filename=doc.pdf_path) }}', '{{ doc.title|e }}', '{{ doc.rule_reference|e }}')">
+                                <i class="fa-solid fa-book-open-reader me-1"></i> Read PDF
+                            </button>
+                            <a href="{{ url_for('static', filename=doc.pdf_path) }}" target="_blank" class="btn btn-outline-secondary btn-sm" title="Open PDF in new tab">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
+                            <a href="{{ url_for('static', filename=doc.pdf_path) }}" download class="btn btn-outline-success btn-sm" title="Download official PDF">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- NO RESULTS STATE -->
+        <div id="noManualsAlert" class="text-center py-5 d-none">
+            <i class="fa-solid fa-file-circle-xmark fa-4x text-muted mb-3 opacity-50"></i>
+            <h5 class="fw-bold text-dark">No Matching Rule Manuals Found</h5>
+            <p class="text-secondary small">Try adjusting your keyword or reset category filter to see all {{ all_rule_docs_count }} documents.</p>
+            <button class="btn btn-outline-primary btn-sm fw-bold" onclick="setManualCategory('ALL'); clearManualSearch();">
+                Reset All Filters
+            </button>
+        </div>
+    </div>
+    <!-- END TAB 2 -->
+    </div>
+    <!-- END TAB CONTENT -->
+</div>
+
+<!-- EMBEDDED PDF VIEWER MODAL -->
+<div class="modal fade" id="pdfReaderModal" tabindex="-1" aria-labelledby="pdfReaderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 92vw;">
+        <div class="modal-content border-0 shadow-lg" style="height: 90vh;">
+            <div class="modal-header bg-dark text-white py-2 px-3 border-0 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <i class="fa-solid fa-file-pdf text-danger fs-5"></i>
+                    <h6 class="modal-title fw-bold text-truncate mb-0" id="pdfReaderModalLabel">Document Viewer</h6>
+                    <span class="badge bg-secondary font-monospace" id="pdfModalRefBadge"></span>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <a href="#" id="pdfModalOpenTabBtn" target="_blank" class="btn btn-outline-light btn-sm py-1 px-2" title="Open in new window">
+                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Open Tab
+                    </a>
+                    <a href="#" id="pdfModalDownloadBtn" download class="btn btn-success btn-sm py-1 px-2 fw-bold" title="Download PDF file">
+                        <i class="fa-solid fa-download me-1"></i> Download
+                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="closePdfModal()"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0 bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center">
+                <iframe id="pdfReaderIframe" src="" style="width: 100%; height: 100%; border: none;" title="PDF Viewer"></iframe>
             </div>
         </div>
     </div>
@@ -1494,6 +1660,108 @@ function generateSchematicHtml(schematicType, ruleNo) {
     `;
 }
 
+// PDF Modal Functions for Official Rule Books & Manuals
+let activeManualCategory = 'ALL';
+
+function filterManuals() {
+    const searchVal = (document.getElementById('manualSearchInput')?.value || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.manual-card-item');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const cardCat = card.getAttribute('data-category');
+        const cardSearch = card.getAttribute('data-search') || '';
+
+        const matchesCat = (activeManualCategory === 'ALL' || cardCat === activeManualCategory);
+        const matchesSearch = (!searchVal || cardSearch.includes(searchVal));
+
+        if (matchesCat && matchesSearch) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    const badge = document.getElementById('manualCountBadge');
+    if (badge) badge.textContent = `${visibleCount} Documents`;
+
+    const noResults = document.getElementById('noManualsAlert');
+    if (noResults) {
+        if (visibleCount === 0) {
+            noResults.classList.remove('d-none');
+        } else {
+            noResults.classList.add('d-none');
+        }
+    }
+}
+
+function clearManualSearch() {
+    const input = document.getElementById('manualSearchInput');
+    if (input) {
+        input.value = '';
+        filterManuals();
+    }
+}
+
+function setManualCategory(category) {
+    activeManualCategory = category;
+    
+    // Update button states
+    document.querySelectorAll('.manual-cat-btn').forEach(btn => {
+        if (btn.getAttribute('data-cat') === category) {
+            btn.classList.add('btn-danger', 'active');
+            btn.classList.remove('btn-outline-secondary');
+        } else {
+            btn.classList.remove('btn-danger', 'active');
+            btn.classList.add('btn-outline-secondary');
+        }
+    });
+
+    filterManuals();
+}
+
+function openPdfModal(pdfUrl, title, ruleRef) {
+    const modalEl = document.getElementById('pdfReaderModal');
+    if (!modalEl) return;
+
+    document.getElementById('pdfReaderModalLabel').textContent = title || 'Rule Document Viewer';
+    const refBadge = document.getElementById('pdfModalRefBadge');
+    if (refBadge) {
+        if (ruleRef) {
+            refBadge.textContent = ruleRef;
+            refBadge.classList.remove('d-none');
+        } else {
+            refBadge.classList.add('d-none');
+        }
+    }
+
+    const iframe = document.getElementById('pdfReaderIframe');
+    if (iframe) iframe.src = pdfUrl;
+
+    const openTabBtn = document.getElementById('pdfModalOpenTabBtn');
+    if (openTabBtn) openTabBtn.href = pdfUrl;
+
+    const downloadBtn = document.getElementById('pdfModalDownloadBtn');
+    if (downloadBtn) {
+        downloadBtn.href = pdfUrl;
+        downloadBtn.setAttribute('download', title ? `${title}.pdf` : 'document.pdf');
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function closePdfModal() {
+    const iframe = document.getElementById('pdfReaderIframe');
+    if (iframe) iframe.src = '';
+}
+
+// Clean up iframe on modal close
+document.getElementById('pdfReaderModal')?.addEventListener('hidden.bs.modal', function () {
+    closePdfModal();
+});
+
 // Format initial rule text on DOM ready
 document.addEventListener('DOMContentLoaded', function() {
     {% if active_rule %}
@@ -1502,6 +1770,15 @@ document.addEventListener('DOMContentLoaded', function() {
         renderRuleData(initialRule);
     }
     {% endif %}
+
+    // Check URL hash for tab selection
+    if (window.location.hash === '#manuals' || '{{ active_tab }}' === 'manuals') {
+        const manualTab = document.getElementById('manuals-tab');
+        if (manualTab) {
+            const trigger = new bootstrap.Tab(manualTab);
+            trigger.show();
+        }
+    }
 });
 </script>
 {% endblock %}

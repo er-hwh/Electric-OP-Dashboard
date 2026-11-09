@@ -240,6 +240,11 @@ def loco_info():
     """Public portal: Loco Information for Electric & Diesel Locomotives."""
     return render_template('public/loco_info.html')
 
+@public_bp.route('/troubleshooting')
+def troubleshooting_alias():
+    from flask import redirect, url_for
+    return redirect(url_for('elearning.troubleshooting'))
+
 @public_bp.route('/haulage-capacity', methods=['GET'])
 def haulage_capacity():
     """Interactive Electric Locomotive Hauling Capacity & Load Table System."""
@@ -324,13 +329,7 @@ def learning_materials():
 
 @public_bp.route('/elearning')
 def elearning():
-    rules = ELearningRule.query.all()
-    categories = db.session.query(ELearningRule.category).distinct().all()
-    categories = [c[0] for c in categories if c[0]]
-    selected_cat = request.args.get('category', 'ALL')
-    if selected_cat != 'ALL':
-        rules = ELearningRule.query.filter_by(category=selected_cat).all()
-    return render_template('public/elearning.html', rules=rules, categories=categories, selected_cat=selected_cat)
+    return redirect(url_for('elearning.index', **request.args))
 
 @public_bp.route('/gallery')
 def gallery():

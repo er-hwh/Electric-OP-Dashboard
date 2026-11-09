@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
 from database import db
-from models import ELearningRule, ELearningQuiz
+from models import ELearningRule, ELearningQuiz, RuleDocument
 
 elearning_bp = Blueprint('elearning', __name__)
 
@@ -100,6 +100,31 @@ def index():
 
     categories = [c[0] for c in db.session.query(ELearningRule.category).distinct().all() if c[0]]
 
+    # Official Rule Books, Manuals & Operating Regulations (Non-GR&SR)
+    active_tab = request.args.get('tab', 'grsr')
+    doc_search = request.args.get('doc_search', '').strip()
+    doc_cat = request.args.get('doc_cat', 'ALL').strip()
+
+    doc_query = RuleDocument.query.filter_by(is_active=True)
+    if doc_cat and doc_cat != 'ALL':
+        doc_query = doc_query.filter_by(category=doc_cat)
+    if doc_search:
+        doc_query = doc_query.filter(
+            (RuleDocument.title.ilike(f'%{doc_search}%')) |
+            (RuleDocument.rule_reference.ilike(f'%{doc_search}%')) |
+            (RuleDocument.description.ilike(f'%{doc_search}%')) |
+            (RuleDocument.category.ilike(f'%{doc_search}%'))
+        )
+    rule_documents = doc_query.order_by(RuleDocument.display_order.asc(), RuleDocument.id.asc()).all()
+
+    rule_docs_by_cat = OrderedDict()
+    all_active_docs = RuleDocument.query.filter_by(is_active=True).order_by(RuleDocument.display_order.asc(), RuleDocument.id.asc()).all()
+    for doc in all_active_docs:
+        c = doc.category or 'General Manuals'
+        if c not in rule_docs_by_cat:
+            rule_docs_by_cat[c] = []
+        rule_docs_by_cat[c].append(doc)
+
     return render_template(
         'public/elearning.html',
         chapters=sorted_chapters,
@@ -110,7 +135,13 @@ def index():
         categories=categories,
         selected_cat=category,
         query_str=query_str,
-        total_rules_count=len(full_library)
+        total_rules_count=len(full_library),
+        rule_documents=rule_documents,
+        rule_docs_by_cat=rule_docs_by_cat,
+        all_rule_docs_count=len(all_active_docs),
+        active_tab=active_tab,
+        doc_search=doc_search,
+        doc_cat=doc_cat
     )
 
 @elearning_bp.route('/api/rule/<int:rule_id>')
