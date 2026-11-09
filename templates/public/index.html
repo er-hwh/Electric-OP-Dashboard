@@ -43,82 +43,26 @@
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
             {% if slides %}
-            <div id="deptHeroCarousel" class="carousel slide hero-slider shadow-sm" data-bs-ride="carousel">
-                <div class="carousel-indicators">
-                    {% for s in slides %}
-                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="{{ loop.index0 }}" class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% else %}false{% endif %}" aria-label="Slide {{ loop.index }}"></button>
-                    {% endfor %}
-                </div>
-                <div class="carousel-inner" style="border-radius: 8px; overflow: hidden; height: 380px;">
-                    {% for s in slides %}
-                        <div class="carousel-item {% if loop.first %}active{% endif %} h-100 position-relative">
-                            <img src="{{ url_for('static', filename=s.image_path) }}" class="d-block w-100 h-100 object-fit-cover" alt="{{ s.title }}">
-                            <div class="carousel-caption-custom" style="background: linear-gradient(0deg, rgba(0, 18, 51, 0.85) 0%, rgba(0, 18, 51, 0.4) 70%, transparent 100%); bottom: 0; left: 0; right: 0; padding: 25px;">
-                                <h3 class="text-warning fw-bold mb-1">{{ s.title }}</h3>
-                                {% if s.subtitle %}
-                                    <p class="text-white small mb-2" style="max-width: 680px;">{{ s.subtitle }}</p>
-                                {% endif %}
-                                {% if s.button_text and s.button_url %}
-                                    <a href="{{ s.button_url }}" class="btn btn-warning btn-sm text-dark fw-bold px-3">
-                                        {{ s.button_text }} &rarr;
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#deptHeroCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#deptHeroCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
-            </div>
-            {% else %}
-            <div id="deptHeroCarousel" class="carousel slide hero-slider" data-bs-ride="carousel">
+                        <div id="deptHeroCarousel" class="carousel slide hero-slider shadow" data-bs-ride="carousel" data-bs-interval="5000">
                 <div class="carousel-indicators">
                     <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
                     <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
                     <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
                 </div>
                 <div class="carousel-inner">
+                    <!-- Slide 1: Electric Operation Department Overview -->
                     <div class="carousel-item active">
-                        <svg class="bd-placeholder-img w-100 h-100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false">
-                            <rect width="100%" height="100%" fill="#002244"></rect>
-                            <circle cx="50%" cy="40%" r="90" fill="#003366"></circle>
-                            <text x="50%" y="42%" fill="#ffde59" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="28" text-anchor="middle">⚡ ELECTRIC OPERATION DEPARTMENT ⚡</text>
-                            <text x="50%" y="54%" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="18" text-anchor="middle">Howrah Division &bull; Eastern Railway</text>
-                        </svg>
-                        <div class="carousel-caption-custom">
-                            <h4 class="text-warning fw-bold mb-1">Committed to Zero SPAD & Maximum Safety</h4>
-                            <p class="text-white small mb-0">Empowering Running Crews, Chief Loco Inspectors, and Lobbies across Howrah Division with real-time safety directives and digital records.</p>
-                        </div>
+                        <img src="{{ url_for('static', filename='images/carousel/slide1_hwh_division.jpg') }}" class="d-block w-100" alt="Eastern Railway Electric Operation Department - Howrah Division">
                     </div>
+
+                    <!-- Slide 2: Zero SPAD Safety Campaign -->
                     <div class="carousel-item">
-                        <svg class="bd-placeholder-img w-100 h-100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false">
-                            <rect width="100%" height="100%" fill="#082c4d"></rect>
-                            <circle cx="50%" cy="40%" r="90" fill="#0b487e"></circle>
-                            <text x="50%" y="42%" fill="#58d68d" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="28" text-anchor="middle">🚆 12 RUNNING LOBBIES & OUTPOSTS 🚆</text>
-                            <text x="50%" y="54%" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="16" text-anchor="middle">HWH &bull; BWN &bull; RPH &bull; PKR &bull; AZ &bull; KWAE &bull; NHT &bull; BHP &bull; TAK &bull; KURV &bull; DKAE &bull; SNT</text>
-                        </svg>
-                        <div class="carousel-caption-custom">
-                            <h4 class="text-warning fw-bold mb-1">Seamless Crew Management & Footplate Inspection</h4>
-                            <p class="text-white small mb-0">Direct CLI to Running Staff monitoring, daily safety counselling, and automated competency tracking.</p>
-                        </div>
+                        <img src="{{ url_for('static', filename='images/carousel/slide2_no_spad.jpg') }}" class="d-block w-100" alt="No SPAD, Be Alert - Safety Directives">
                     </div>
+
+                    <!-- Slide 3: Vande Bharat Express -->
                     <div class="carousel-item">
-                        <svg class="bd-placeholder-img w-100 h-100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false">
-                            <rect width="100%" height="100%" fill="#1a1c23"></rect>
-                            <circle cx="50%" cy="40%" r="90" fill="#2d3748"></circle>
-                            <text x="50%" y="42%" fill="#f39c12" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="28" text-anchor="middle">📖 DIGITAL GR & SR REPOSITORY 📖</text>
-                            <text x="50%" y="54%" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="18" text-anchor="middle">General & Subsidiary Rules &bull; Eastern Railway Book of Rules</text>
-                        </svg>
-                        <div class="carousel-caption-custom">
-                            <h4 class="text-warning fw-bold mb-1">Knowledge, Competency & Continuous E-Learning</h4>
-                            <p class="text-white small mb-0">Complete reference on caution order forms (T/409, T/A 409, T/B 409), whistle codes, OHE safety, and train protection.</p>
-                        </div>
+                        <img src="{{ url_for('static', filename='images/carousel/slide3_vande_bharat.jpg') }}" class="d-block w-100" alt="Vande Bharat Express - Our Running Staff Driving a New India">
                     </div>
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#deptHeroCarousel" data-bs-slide="prev">

@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from database import db
-from models import User, Lobby
+from models import User, Lobby, CrewCounsellingRecord
 
 auth_bp = Blueprint('auth', __name__)
 

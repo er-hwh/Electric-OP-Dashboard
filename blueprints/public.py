@@ -6,8 +6,9 @@ from blueprints.haulage_helper import (
 from sqlalchemy import func
 from database import db
 from models import (
-    Lobby, Notice, CounsellingTopic, CounsellingAcknowledgement, 
-    OfficerSay, ELearningRule, PhotoGallery, User
+    Lobby, Notice, CounsellingTopic, CounsellingAcknowledgement,
+    OfficerSay, ELearningRule, PhotoGallery, User,
+    SafetyBulletin, RuleDocument, LearningMaterial, PageContent, CarouselSlide
 )
 
 public_bp = Blueprint('public', __name__)
@@ -286,6 +287,32 @@ def api_haulage_calculate():
 def rules():
     """Public portal: Important Rules & Regulations."""
     return redirect(url_for('elearning.index'))
+
+@public_bp.route('/bulletins')
+def bulletins():
+    """Public portal: Latest Safety Bulletins, circulars and directives."""
+    category = request.args.get('category', 'ALL')
+    search = request.args.get('search', '').strip()
+    
+    query = SafetyBulletin.query.filter_by(is_active=True)
+    if category and category != 'ALL':
+        query = query.filter_by(category=category)
+    if search:
+        query = query.filter(SafetyBulletin.title.ilike(f'%{search}%') | SafetyBulletin.bulletin_no.ilike(f'%{search}%'))
+        
+    bulletins_list = query.order_by(SafetyBulletin.bulletin_date.desc(), SafetyBulletin.id.desc()).all()
+    
+    all_cats = [c[0] for c in db.session.query(SafetyBulletin.category).filter(SafetyBulletin.is_active == True).distinct().all() if c[0]]
+    if not all_cats:
+        all_cats = ['Safety Bulletin', 'Technical Circular', 'Caution Notice', 'General Order']
+        
+    return render_template(
+        'public/bulletins.html',
+        bulletins=bulletins_list,
+        categories=all_cats,
+        current_category=category,
+        search_query=search
+    )
 
 @public_bp.route('/learning-materials')
 def learning_materials():

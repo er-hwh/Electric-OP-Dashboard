@@ -12,52 +12,14 @@
             </h2>
             <p class="text-muted mb-0">Unified Knowledge Base for Electric Traction, Diesel Traction, GR &amp; SR Rules, and Safety Instructions &bull; Howrah Division</p>
         </div>
-        <div class="mt-2 mt-md-0 d-flex gap-2">
-            {% if current_user and current_user.is_admin() %}
-                <a href="{{ url_for('admin.cms_learning') }}" class="btn btn-danger btn-sm fw-bold shadow-sm">
-                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Admin Upload Content / PDF
-                </a>
-            {% endif %}
-            <a href="{{ url_for('elearning.quiz') }}" class="btn btn-warning btn-sm fw-bold shadow-sm text-dark">
-                <i class="fa-solid fa-award me-1"></i> Safety Quiz &amp; Assessment
+        <div class="mt-2 mt-md-0">
+            <a href="{{ url_for('elearning.quiz') }}" class="btn btn-warning btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-award me-1"></i> Take Safety Quiz &amp; Assessment
             </a>
         </div>
     </div>
 
-    <!-- E-LEARNING HOWRAH DIVISION HERO BANNER -->
-    <div class="card border-0 shadow-sm mb-4 text-white overflow-hidden" style="background: linear-gradient(135deg, #0b2545 0%, #134074 50%, #001233 100%); border-radius: 12px;">
-        <div class="card-body p-4 position-relative">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <span class="badge bg-warning text-dark fw-bold px-3 py-1">
-                            <i class="fa-solid fa-star me-1"></i> OFFICIAL DIVISIONAL PLATFORM
-                        </span>
-                        <span class="badge bg-info text-dark fw-bold">Live E-Learning Portal</span>
-                    </div>
-                    <h3 class="fw-bold text-warning mb-2">
-                        <i class="fa-solid fa-graduation-cap me-2"></i> Eastern Railway E-Learning Portal (Howrah)
-                    </h3>
-                    <p class="text-light mb-3" style="max-width: 720px; font-size: 0.98rem;">
-                        Access the interactive digital learning repository hosted at <strong class="text-white">elearninghwh.in</strong>. Explore interactive WAP-7 / WAG-9 and Diesel loco circuit simulators, animated signal aspect tests, caution order exercises, and loco troubleshooting modules.
-                    </p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="https://elearninghwh.in/home_page.html" target="_blank" class="btn btn-warning text-dark fw-bold px-4 py-2 shadow">
-                            <i class="fa-solid fa-arrow-up-right-from-square me-2"></i> Launch elearninghwh.in Portal
-                        </a>
-                        <a href="{{ url_for('public.rules') }}" class="btn btn-outline-light px-3 py-2 fw-bold">
-                            <i class="fa-solid fa-book-bookmark me-1"></i> Rules &amp; Regulations Repository
-                        </a>
-                    </div>
-                </div>
-                <div class="col-lg-4 text-center d-none d-lg-block">
-                    <i class="fa-solid fa-laptop-code fa-7x text-white opacity-25"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Category Foundation Cards -->
+    <!-- Category Cards -->
     <div class="row g-4 mb-4">
         <!-- 1. Electric Traction -->
         <div class="col-lg-4 col-md-6" id="electric">
@@ -90,6 +52,9 @@
                             <span class="badge bg-light text-dark border">Troubleshoot</span>
                         </li>
                     </ul>
+                    <a href="{{ url_for('public.haulage_capacity') }}" class="btn btn-primary w-100 fw-bold btn-sm mb-2 shadow-sm">
+                        <i class="fa-solid fa-calculator me-1"></i> Hauling Capacity &amp; Load Calculator (RDSO)
+                    </a>
                     <a href="{{ url_for('elearning.troubleshooting') }}" class="btn btn-outline-warning text-dark w-100 fw-bold btn-sm">
                         <i class="fa-solid fa-screwdriver-wrench me-1"></i> Electric Loco Troubleshooting
                     </a>
@@ -166,168 +131,126 @@
                             <span class="badge bg-light text-dark border">GR 6.01-6.11</span>
                         </li>
                     </ul>
-                    <a href="{{ url_for('public.rules') }}" class="btn btn-outline-success w-100 fw-bold btn-sm">
-                        <i class="fa-solid fa-book-bookmark me-1"></i> Full Rules &amp; Regulations Repository
+                    <a href="{{ url_for('elearning.index') }}" class="btn btn-outline-success w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-book-open me-1"></i> Interactive GR &amp; SR Explorer
                     </a>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- DYNAMIC UPLOADED LEARNING REPOSITORY -->
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-        <div>
-            <h4 class="fw-bold text-dark mb-0">
-                <i class="fa-solid fa-folder-open text-primary me-2"></i> Technical Notes, Guides &amp; Study Materials
-            </h4>
-            <small class="text-muted">Divisional instructional materials, circuit diagrams, and troubleshooting guidelines uploaded by Department Admin.</small>
-        </div>
-    </div>
-
-    <!-- Filters & Search -->
-    <div class="rail-card p-3 shadow-sm mb-4">
-        <form method="GET" action="{{ url_for('public.learning_materials') }}" class="row g-2 align-items-center">
-            <div class="col-md-4">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" name="q" class="form-control" placeholder="Search guides by title or keyword..." value="{{ search }}">
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light"><i class="fa-solid fa-train"></i> Traction:</span>
-                    <select name="traction" class="form-select" onchange="this.form.submit()">
-                        <option value="ALL" {% if current_traction == 'ALL' %}selected{% endif %}>All Tractions</option>
-                        <option value="ELECTRIC" {% if current_traction == 'ELECTRIC' %}selected{% endif %}>Electric Only</option>
-                        <option value="DIESEL" {% if current_traction == 'DIESEL' %}selected{% endif %}>Diesel Only</option>
-                        <option value="COMMON" {% if current_traction == 'COMMON' %}selected{% endif %}>Common</option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light"><i class="fa-solid fa-filter"></i> Category:</span>
-                    <select name="category" class="form-select" onchange="this.form.submit()">
-                        <option value="ALL" {% if current_category == 'ALL' %}selected{% endif %}>All Categories</option>
-                        {% for cat in categories %}
-                            <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-2 d-flex gap-1">
-                <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">
-                    <i class="fa-solid fa-search me-1"></i> Filter
-                </button>
-                <a href="{{ url_for('public.learning_materials') }}" class="btn btn-outline-secondary btn-sm" title="Reset">
-                    <i class="fa-solid fa-rotate"></i>
-                </a>
-            </div>
-        </form>
-    </div>
-
-    <!-- Materials Cards Grid -->
-    <div class="row g-4 mb-4">
-        {% if materials %}
-            {% for m in materials %}
-                <div class="col-lg-4 col-md-6">
-                    <div class="card h-100 shadow-sm border-0 border-top border-4 {% if m.traction_type == 'ELECTRIC' %}border-warning{% elif m.traction_type == 'DIESEL' %}border-danger{% else %}border-primary{% endif %}">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    {% if m.traction_type == 'ELECTRIC' %}
-                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-bolt me-1"></i>Electric</span>
-                                    {% elif m.traction_type == 'DIESEL' %}
-                                        <span class="badge bg-danger"><i class="fa-solid fa-gas-pump me-1"></i>Diesel</span>
-                                    {% else %}
-                                        <span class="badge bg-primary"><i class="fa-solid fa-train me-1"></i>Common</span>
-                                    {% endif %}
-                                    <span class="badge bg-light text-dark border ms-1">{{ m.category }}</span>
-                                </div>
-                                <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>{{ m.created_at.strftime('%d-%b-%Y') }}</small>
-                            </div>
-
-                            <h5 class="fw-bold text-dark mb-2">{{ m.title }}</h5>
-
-                            {% if m.description %}
-                                <p class="small text-muted mb-3">{{ m.description }}</p>
-                            {% endif %}
-
-                            {% if m.content %}
-                                <div class="bg-light p-2 rounded small text-dark mb-3 flex-grow-1 border" style="max-height: 120px; overflow-y: auto;">
-                                    {{ m.content|safe }}
-                                </div>
-                            {% else %}
-                                <div class="flex-grow-1"></div>
-                            {% endif %}
-
-                            <div class="border-top pt-2 mt-auto d-flex justify-content-between align-items-center gap-1 flex-wrap">
-                                {% if m.content %}
-                                    <!-- Read full modal button -->
-                                    <button type="button" class="btn btn-outline-primary btn-sm py-1 fw-bold" data-bs-toggle="modal" data-bs-target="#readModal{{ m.id }}">
-                                        <i class="fa-solid fa-book-open me-1"></i> Read Notes
-                                    </button>
-                                {% endif %}
-
-                                {% if m.attachment_path %}
-                                    <a href="{{ url_for('static', filename=m.attachment_path) }}" target="_blank" class="btn btn-danger btn-sm py-1 fw-bold">
-                                        <i class="fa-solid fa-file-pdf me-1"></i> PDF
-                                    </a>
-                                {% endif %}
-
-                                {% if m.external_url %}
-                                    <a href="{{ m.external_url }}" target="_blank" class="btn btn-warning text-dark btn-sm py-1 fw-bold">
-                                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Link
-                                    </a>
-                                {% endif %}
-                            </div>
+        <!-- 4. Safety Instructions & Circulars -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Safety Instructions</h5>
+                            <small class="text-muted">Headquarters &amp; Divisional Directives</small>
                         </div>
                     </div>
-
-                    <!-- Modal for Full Content -->
-                    {% if m.content %}
-                        <div class="modal fade" id="readModal{{ m.id }}" tabindex="-1" aria-labelledby="readModalLabel{{ m.id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                                <div class="modal-content">
-                                    <div class="modal-header bg-light">
-                                        <div>
-                                            <h5 class="modal-title fw-bold text-dark" id="readModalLabel{{ m.id }}">{{ m.title }}</h5>
-                                            <small class="text-muted">{{ m.category }} &bull; {{ m.traction_type }} Traction</small>
-                                        </div>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body p-4">
-                                        {% if m.description %}
-                                            <div class="alert alert-info py-2 px-3 small mb-3">
-                                                <strong>Overview:</strong> {{ m.description }}
-                                            </div>
-                                        {% endif %}
-                                        <div class="learning-rich-content">
-                                            {{ m.content|safe }}
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer bg-light">
-                                        {% if m.attachment_path %}
-                                            <a href="{{ url_for('static', filename=m.attachment_path) }}" target="_blank" class="btn btn-danger btn-sm fw-bold">
-                                                <i class="fa-solid fa-file-pdf me-1"></i> Download PDF Attachment
-                                            </a>
-                                        {% endif %}
-                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class="col-12">
-                <div class="rail-card p-4 text-center text-muted shadow-sm">
-                    <i class="fa-solid fa-book fa-2x mb-2 text-secondary opacity-50"></i>
-                    <p class="small text-muted mb-0">No technical notes found matching your filters. You can explore the foundational modules above or launch the E-Learning Portal.</p>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-primary me-2"></i>Joint Safety Circulars &amp; Directives</span>
+                            <span class="badge bg-light text-dark border">Circulars</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-primary me-2"></i>Foggy Weather / Winter Precautions</span>
+                            <span class="badge bg-light text-dark border">Seasonal</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-primary me-2"></i>Caution Order Compliance (T/409)</span>
+                            <span class="badge bg-light text-dark border">TSR/PSR</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-primary me-2"></i>SPAD Avoidance Golden Rules</span>
+                            <span class="badge bg-light text-dark border">Priority</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('public.instructions') }}" class="btn btn-outline-primary w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-bullhorn me-1"></i> View Sr. DEE(OP) Instructions
+                    </a>
                 </div>
             </div>
-        {% endif %}
+        </div>
+
+        <!-- 5. Technical Manuals & Operating Forms -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-info">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Technical Manuals &amp; Forms</h5>
+                            <small class="text-muted">Standard Operating Forms &amp; Authority</small>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-info me-2"></i>T/409 (Caution Order Form)</span>
+                            <span class="badge bg-light text-dark border">Form</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-info me-2"></i>T/A 912 (Passing Signal at On in Auto)</span>
+                            <span class="badge bg-light text-dark border">Authority</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-info me-2"></i>T/369(3b) (Passing Fixed Stop Signal)</span>
+                            <span class="badge bg-light text-dark border">Authority</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-info me-2"></i>Brake Power Certificate (BPC) Rules</span>
+                            <span class="badge bg-light text-dark border">Mechanical</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('elearning.forms_manual') }}" class="btn btn-outline-info w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-file-contract me-1"></i> Forms Manual &amp; Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Online Assessment & Mock Tests -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-secondary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-secondary text-white rounded p-3 me-3 fs-3">
+                            <i class="fa-solid fa-clipboard-question"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Quiz &amp; Self-Assessment</h5>
+                            <small class="text-muted">Online Safety &amp; Rules Examination</small>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-secondary me-2"></i>Topic-wise Objective Questions</span>
+                            <span class="badge bg-light text-dark border">MCQ</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-secondary me-2"></i>Random Question Mock Test</span>
+                            <span class="badge bg-light text-dark border">Timed</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-secondary me-2"></i>Signal Aspects &amp; Detonator Quiz</span>
+                            <span class="badge bg-light text-dark border">Visual</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fa-solid fa-circle-dot text-secondary me-2"></i>Performance Analysis &amp; Explanations</span>
+                            <span class="badge bg-light text-dark border">Instant</span>
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('elearning.quiz') }}" class="btn btn-outline-secondary w-100 fw-bold btn-sm">
+                        <i class="fa-solid fa-pen-nib me-1"></i> Start Interactive Assessment
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
