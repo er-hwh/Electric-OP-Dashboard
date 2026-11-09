@@ -8,12 +8,12 @@
     "severity": "High",
     "symptoms": [
       "ZPT operated to position 1 or 2, but Pantograph remains down on roof.",
-      "Auxiliary reservoir gauge (RS) shows low pressure (< 6.0 kg/cm²).",
+      "Auxiliary reservoir gauge (RS) shows low pressure (< 6.0 kg/cm\u00b2).",
       "Diagnostic display message: 'Pantograph not raised' or 'Panto interlock failed'.",
       "Cab indicator lamp LS-PT remains dark or does not extinguish."
     ],
     "probable_causes": [
-      "Auxiliary reservoir (RS) pressure less than 6.0 kg/cm².",
+      "Auxiliary reservoir (RS) pressure less than 6.0 kg/cm\u00b2.",
       "Control electronics / battery voltage < 90V (UBA voltmeter).",
       "Earthing switch HOM handle not locked in vertical 'Working' position.",
       "High Tension (HT) compartment doors or roof hatch not fully locked (IG38 key interlock open).",
@@ -22,12 +22,12 @@
     ],
     "preliminary_checks": [
       "Check Battery Voltmeter (UBA) &ge; 90V.",
-      "Check RS gauge in machine room: must be &ge; 6.5 kg/cm². If low, start Baby Compressor (MCPA) switch 172.2.",
+      "Check RS gauge in machine room: must be &ge; 6.5 kg/cm\u00b2. If low, start Baby Compressor (MCPA) switch 172.2.",
       "Inspect both Machine Room HT compartment doors and ensure mechanical key interlocks are firmly locked.",
       "Verify BL key is inserted and turned to position '1'."
     ],
     "remedial_steps": [
-      "1. Check RS pressure on gauge in Machine Room-2. If pressure is below 6.0 kg/cm², run Auxiliary Compressor (MCPA) using switch BLCP or manual MCPA toggle until RS pressure reaches 7.0 kg/cm².",
+      "1. Check RS pressure on gauge in Machine Room-2. If pressure is below 6.0 kg/cm\u00b2, run Auxiliary Compressor (MCPA) using switch BLCP or manual MCPA toggle until RS pressure reaches 7.0 kg/cm\u00b2.",
       "2. Check battery voltage on voltmeter UBA in Cab-1/Cab-2. If below 90V, recharge via external charger or check battery circuit breaker 110.",
       "3. Inspect Earthing Switch (HOM) handle in Machine Room. Ensure the handle is vertical and key IG-38 is in 'Operating' position, with yellow safety latch engaged.",
       "4. Check Panto selector switch (ZPT): Change selection from 'Rear' to 'Front' or 'Both' (Position 1 -> 2).",
@@ -80,16 +80,16 @@
           "step_num": 2,
           "type": "decision",
           "title": "Check Auxiliary Reservoir (RS) Pressure",
-          "desc": "Examine the RS pressure gauge in Machine Room No. 2. Is RS pressure equal to or greater than 5.2 kg/cm²?",
+          "desc": "Examine the RS pressure gauge in Machine Room No. 2. Is RS pressure equal to or greater than 5.2 kg/cm\u00b2?",
           "location": "Pneumatic Panel / Machine Room 2",
           "options": [
             {
-              "label": "YES (Pressure >= 5.2 kg/cm²)",
+              "label": "YES (Pressure >= 5.2 kg/cm\u00b2)",
               "next_step": 4,
               "color": "success"
             },
             {
-              "label": "NO (Pressure Low < 5.2 kg/cm²)",
+              "label": "NO (Pressure Low < 5.2 kg/cm\u00b2)",
               "next_step": 3,
               "color": "danger"
             }
@@ -99,7 +99,7 @@
           "step_num": 3,
           "type": "action",
           "title": "Start Baby Compressor (MCPA)",
-          "desc": "Switch ON Auxiliary Compressor (MCPA) toggle switch on panel SB-2. Run MCPA until RS pressure builds up to at least 6.0 kg/cm².",
+          "desc": "Switch ON Auxiliary Compressor (MCPA) toggle switch on panel SB-2. Run MCPA until RS pressure builds up to at least 6.0 kg/cm\u00b2.",
           "location": "Auxiliary Cubicle SB-2",
           "next_step": 4
         },
@@ -173,7 +173,7 @@
     "probable_causes": [
       "OHE catenary voltage abnormal (< 17.5 kV or > 30.0 kV) or neutral section encountered.",
       "Emergency Stop push button (BPEMS) pressed in either Cab-1 or Cab-2.",
-      "Control reservoir (RS) air pressure below 6.5 kg/cm² for VCB operation.",
+      "Control reservoir (RS) air pressure below 6.5 kg/cm\u00b2 for VCB operation.",
       "Transformer oil pressure / temperature protection relay (MPH / TF Oil) tripped.",
       "Primary over-current or earth fault relay (78 / 86) tripped.",
       "Circuit breaker 127.1 (VCB control) tripped on SB1 panel."
@@ -181,7 +181,7 @@
     "preliminary_checks": [
       "Look at catenary voltmeter (U): verify OHE voltage is between 19 kV and 27.5 kV.",
       "Ensure Emergency Stop Button (BPEMS in Cab-1 & Cab-2, BVEB in rear cab) is fully released.",
-      "Check Control Reservoir (RS) pressure &ge; 6.5 kg/cm².",
+      "Check Control Reservoir (RS) pressure &ge; 6.5 kg/cm\u00b2.",
       "Check if any Subsystem (SS01, SS02) shows permanent isolation on DDU screen."
     ],
     "remedial_steps": [
@@ -295,7 +295,7 @@
           "step_num": 7,
           "type": "action",
           "title": "Check MCBs 127.1 / 127.2 & Soft Reset CE",
-          "desc": "Check and reset MCB 127.1 (HB-1) & MCB 127.2 (HB-2). Ensure MR pressure >= 6.4 kg/cm² on switch 269.6. Perform soft restart of CE (Key D OFF for 5 min).",
+          "desc": "Check and reset MCB 127.1 (HB-1) & MCB 127.2 (HB-2). Ensure MR pressure >= 6.4 kg/cm\u00b2 on switch 269.6. Perform soft restart of CE (Key D OFF for 5 min).",
           "location": "HB-1 / HB-2 Cubicles",
           "next_step": 8
         },
@@ -365,7 +365,7 @@
         "function": "Converter Cooling Pumps"
       }
     ],
-    "safety_precautions": "Operating with one isolated cooling blower requires monitoring traction motor and oil temperatures continuously. If oil temperature exceeds 84°C, stop the train in a safe block section.",
+    "safety_precautions": "Operating with one isolated cooling blower requires monitoring traction motor and oil temperatures continuously. If oil temperature exceeds 84\u00b0C, stop the train in a safe block section.",
     "contact_instruction": "Advise TLC (22328) immediately regarding isolated BUR and reduced traction capability.",
     "flowchart": {
       "title": "3-Phase Auxiliary Converter (BUR 1/2/3) Tripping Flowchart",
@@ -574,7 +574,7 @@
     "symptoms": [
       "VCD visual warning lamp flashes on desk for 8 seconds, followed by audio buzzer for 8 seconds.",
       "If unacknowledged, Emergency / Penalty brake applies automatically.",
-      "Brake Pipe (BP) pressure drops from 5.0 kg/cm² to 2.8 - 3.0 kg/cm².",
+      "Brake Pipe (BP) pressure drops from 5.0 kg/cm\u00b2 to 2.8 - 3.0 kg/cm\u00b2.",
       "Throttle cuts to zero and traction power is cut off automatically.",
       "DDU screen displays: 'VCD Penalty Brake Applied'."
     ],
@@ -595,7 +595,7 @@
       "3. Wait for the train to come to a complete stop. Wait for minimum 160 seconds (mandatory internal penalty lock duration on standard VCD systems).",
       "4. Ensure VCD foot pedal is fully released and not jammed with footwear or dirt.",
       "5. Press the illuminated VCD Reset Push Button on the loco pilot's desk or assistant desk for 2-3 seconds.",
-      "6. Observe Brake Pipe (BP) pressure gauge: BP will begin charging back to 5.0 kg/cm².",
+      "6. Observe Brake Pipe (BP) pressure gauge: BP will begin charging back to 5.0 kg/cm\u00b2.",
       "7. Return A-9 handle to 'RUN' position.",
       "8. Verify DDU screen shows 'VCD Normal' and tractive effort interlock is released.",
       "9. If VCD resets successfully, continue journey. Be vigilant to operate foot pedal or horn every 50 seconds.",
@@ -633,7 +633,7 @@
           "step_num": 1,
           "type": "start",
           "title": "VCD Penalty Brake Applied",
-          "desc": "Flashing VCD indicator and buzzer unacknowledged for 76 seconds. BP exhausts automatically to 2.8 - 3.0 kg/cm².",
+          "desc": "Flashing VCD indicator and buzzer unacknowledged for 76 seconds. BP exhausts automatically to 2.8 - 3.0 kg/cm\u00b2.",
           "location": "Driver Cab Console",
           "next_step": 2
         },
@@ -672,12 +672,12 @@
         {
           "step_num": 6,
           "type": "decision",
-          "title": "Does Brake Pipe (BP) Recharge to 5.0 kg/cm²?",
-          "desc": "Watch duplex air pressure gauge on cab desk. Does BP pressure build up smoothly to 5.0 kg/cm²?",
+          "title": "Does Brake Pipe (BP) Recharge to 5.0 kg/cm\u00b2?",
+          "desc": "Watch duplex air pressure gauge on cab desk. Does BP pressure build up smoothly to 5.0 kg/cm\u00b2?",
           "location": "Cab Air Brake Gauge",
           "options": [
             {
-              "label": "YES (BP at 5.0 kg/cm²)",
+              "label": "YES (BP at 5.0 kg/cm\u00b2)",
               "next_step": 7,
               "color": "success"
             },
@@ -715,7 +715,7 @@
     "fault_code": "PNEU-BP-06 / E70-CCB",
     "severity": "Critical",
     "symptoms": [
-      "BP pressure cannot be charged to 5.0 kg/cm²; hovers around 3.5 - 4.2 kg/cm².",
+      "BP pressure cannot be charged to 5.0 kg/cm\u00b2; hovers around 3.5 - 4.2 kg/cm\u00b2.",
       "Continuous hiss or air exhaust sound from relay valve or emergency flap.",
       "Air Flow Indicator (AFI) needle shows very high air leakage (> 5 units).",
       "Main Reservoir (MR) pressure dropping rapidly despite both compressors running."
@@ -728,7 +728,7 @@
       "E-70 / CCB brake controller solenoid valve failure."
     ],
     "preliminary_checks": [
-      "Check MR pressure &ge; 8.5 kg/cm². Both main compressors (MCP1 & MCP2) must be in AUTO mode.",
+      "Check MR pressure &ge; 8.5 kg/cm\u00b2. Both main compressors (MCP1 & MCP2) must be in AUTO mode.",
       "Verify A-9 handle in rear cab is locked in NEUTRAL position and lead/trail selector is set to TRAIL in rear cab.",
       "Observe AFI (Air Flow Indicator) gauge."
     ],
@@ -740,10 +740,10 @@
       "   - Confirm Cut-out Cock 70 (BP Charging Cock) is open (parallel to pipe).",
       "   - Confirm Cut-out Cock 74 (Emergency Exhaust) is closed.",
       "   - On CCB locos, check Lead/Trail switch on display unit is set to 'LEAD'.",
-      "5. If BP is still not charging, close Cock 70 on loco front buffer and observe if loco BP charges to 5.0 kg/cm²:",
-      "   - If loco charges to 5.0 kg/cm², the leakage is in the train rake (ACP, broken pipe, or open drain cock). Send ALP with Guard to walk the rake.",
-      "   - If loco itself does not charge to 5.0 kg/cm², problem is inside loco brake panel. Cycle CCB circuit breaker 127.19.",
-      "6. After rectifying train leak, reopen angle cock slowly, ensure BP reaches 5.0 kg/cm² and FP reaches 6.0 kg/cm²."
+      "5. If BP is still not charging, close Cock 70 on loco front buffer and observe if loco BP charges to 5.0 kg/cm\u00b2:",
+      "   - If loco charges to 5.0 kg/cm\u00b2, the leakage is in the train rake (ACP, broken pipe, or open drain cock). Send ALP with Guard to walk the rake.",
+      "   - If loco itself does not charge to 5.0 kg/cm\u00b2, problem is inside loco brake panel. Cycle CCB circuit breaker 127.19.",
+      "6. After rectifying train leak, reopen angle cock slowly, ensure BP reaches 5.0 kg/cm\u00b2 and FP reaches 6.0 kg/cm\u00b2."
     ],
     "breakers_relays": [
       {
@@ -767,7 +767,7 @@
         "function": "Main Compressors Control (Off / Auto / Man)"
       }
     ],
-    "safety_precautions": "Never move the train if BP pressure is below 4.8 kg/cm² or FP below 5.8 kg/cm². Mandatory brake continuity test must be performed before restarting.",
+    "safety_precautions": "Never move the train if BP pressure is below 4.8 kg/cm\u00b2 or FP below 5.8 kg/cm\u00b2. Mandatory brake continuity test must be performed before restarting.",
     "contact_instruction": "Advise TLC (22328) and Section Controller if train detention exceeds scheduled halt.",
     "flowchart": {
       "title": "Brake Pipe (BP) Deficit & Exhaust Troubleshooting Flowchart",
@@ -777,7 +777,7 @@
           "step_num": 1,
           "type": "start",
           "title": "Brake Pipe Pressure Deficit Detected",
-          "desc": "BP pressure drops below 5.0 kg/cm² or continuous heavy hiss of air exhaust heard from cab or train rake.",
+          "desc": "BP pressure drops below 5.0 kg/cm\u00b2 or continuous heavy hiss of air exhaust heard from cab or train rake.",
           "location": "Cab Duplex Pressure Gauge",
           "next_step": 2
         },
@@ -820,16 +820,16 @@
           "step_num": 5,
           "type": "decision",
           "title": "Check MR Main Reservoir Pressure",
-          "desc": "Is Main Reservoir (MR) pressure between 8.5 and 10.0 kg/cm²? Are main compressors charging normally?",
+          "desc": "Is Main Reservoir (MR) pressure between 8.5 and 10.0 kg/cm\u00b2? Are main compressors charging normally?",
           "location": "Cab MR Gauge",
           "options": [
             {
-              "label": "YES (MR Pressure >= 8.5 kg/cm²)",
+              "label": "YES (MR Pressure >= 8.5 kg/cm\u00b2)",
               "next_step": 6,
               "color": "success"
             },
             {
-              "label": "NO (MR Low < 8.5 kg/cm²)",
+              "label": "NO (MR Low < 8.5 kg/cm\u00b2)",
               "next_step": 7,
               "color": "danger"
             }
@@ -839,7 +839,7 @@
           "step_num": 6,
           "type": "decision",
           "title": "Train Rake vs Locomotive Leakage Check",
-          "desc": "Close BP angle cock at rear of locomotive. Does loco BP charge to 5.0 kg/cm²?",
+          "desc": "Close BP angle cock at rear of locomotive. Does loco BP charge to 5.0 kg/cm\u00b2?",
           "location": "Rear Buffer Beam Angle Cock",
           "options": [
             {
@@ -881,8 +881,8 @@
         {
           "step_num": 10,
           "type": "success",
-          "title": "Brake Pipe Pressure Restored to 5.0 kg/cm²",
-          "desc": "Leak sealed. BP holds steady at 5.0 kg/cm², FP at 6.0 kg/cm². Perform brake feel test and proceed.",
+          "title": "Brake Pipe Pressure Restored to 5.0 kg/cm\u00b2",
+          "desc": "Leak sealed. BP holds steady at 5.0 kg/cm\u00b2, FP at 6.0 kg/cm\u00b2. Perform brake feel test and proceed.",
           "location": "Loco Cab & Train",
           "next_step": null
         }
@@ -1079,7 +1079,7 @@
       "Relay Q44 and Q118 target status not engaging."
     ],
     "probable_causes": [
-      "Control Reservoir (RS) pressure below 6.5 kg/cm².",
+      "Control Reservoir (RS) pressure below 6.5 kg/cm\u00b2.",
       "Emergency push button BVEB pressed in either cab.",
       "BL key not properly engaged in position '1' or BLDJ switch contact carbonized.",
       "Relay Q44 not energizing due to open interlock.",
@@ -1088,12 +1088,12 @@
     ],
     "preliminary_checks": [
       "Verify battery voltage UBA &ge; 90V.",
-      "Verify RS pressure &ge; 6.5 kg/cm² on auxiliary air gauge.",
+      "Verify RS pressure &ge; 6.5 kg/cm\u00b2 on auxiliary air gauge.",
       "Check that tap changer (GR) is at notch '0' (Lamp LSCG must be lit).",
       "Check position of protective relays: QLM, QRSI1/2, QOP1/2, QOA."
     ],
     "remedial_steps": [
-      "1. Check if RS pressure is low: If below 6.5 kg/cm², start baby compressor (MCPA) using switch ZCPA until RS pressure is &ge; 7.0 kg/cm².",
+      "1. Check if RS pressure is low: If below 6.5 kg/cm\u00b2, start baby compressor (MCPA) using switch ZCPA until RS pressure is &ge; 7.0 kg/cm\u00b2.",
       "2. Check pilot lamp LSCG: Tap changer must be at zero notch. If LSCG is not glowing, manually check GR drum position or tap GR air motor.",
       "3. Inspect Relay Board in corridor:",
       "   - Check target of Relay QLM (Transformer Primary Overcurrent): If dropped, reset manually by twisting target knob.",
@@ -1164,16 +1164,16 @@
           "step_num": 3,
           "type": "decision",
           "title": "Check Auxiliary Reservoir (RS) Pressure",
-          "desc": "Check RS pressure gauge on Pneumatic Panel. Is RS pressure >= 6.5 kg/cm²?",
+          "desc": "Check RS pressure gauge on Pneumatic Panel. Is RS pressure >= 6.5 kg/cm\u00b2?",
           "location": "Pneumatic Panel Gauge",
           "options": [
             {
-              "label": "YES (RS Pressure >= 6.5 kg/cm²)",
+              "label": "YES (RS Pressure >= 6.5 kg/cm\u00b2)",
               "next_step": 5,
               "color": "success"
             },
             {
-              "label": "NO (RS Pressure Low < 6.5 kg/cm²)",
+              "label": "NO (RS Pressure Low < 6.5 kg/cm\u00b2)",
               "next_step": 6,
               "color": "danger"
             }
@@ -1199,7 +1199,7 @@
           "step_num": 6,
           "type": "action",
           "title": "Start Baby Compressor (MCPA)",
-          "desc": "Start Baby Compressor (MCPA) using ZCPA switch. Build RS pressure up to at least 7.5 kg/cm².",
+          "desc": "Start Baby Compressor (MCPA) using ZCPA switch. Build RS pressure up to at least 7.5 kg/cm\u00b2.",
           "location": "Pneumatic Panel",
           "next_step": 3
         },
@@ -1363,7 +1363,7 @@
           "step_num": 7,
           "type": "action",
           "title": "Check Control Air & Tap Changer GR",
-          "desc": "Ensure Control Air Pressure >= 5.0 kg/cm². Ensure tap changer GR returns freely to '0' without sticking.",
+          "desc": "Ensure Control Air Pressure >= 5.0 kg/cm\u00b2. Ensure tap changer GR returns freely to '0' without sticking.",
           "location": "Tap Changer GR Cubicle",
           "next_step": 8
         },
@@ -1896,5 +1896,591 @@
         }
       ]
     }
+  },
+  {
+    "id": "TSG-DSL-01",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Engine Not Cranking ('Engine Can't Crank' / 'Engine Won't Start')",
+    "fault_code": "DSL-CRANK-01",
+    "severity": "Critical",
+    "symptoms": [
+      "Engine does not crank when 'Engine Start' pushbutton is pressed.",
+      "TCD screen displays status message: 'Engine can't crank' or 'Engine won't start'.",
+      "Crank warning bell does not sound or cuts off immediately."
+    ],
+    "probable_causes": [
+      "Battery voltage less than 55 Volts.",
+      "Auxiliary cab doors (CA2, CA3, CA4, CA5) are open.",
+      "Engine starting circuit breakers tripped (LCCB, BCCB, MTB, ABCB1, ABCB2, FPB, COB).",
+      "Engine Control (EC) switch is not in 'Isolate' position in the working cab, or not 'Off' in non-working cab."
+    ],
+    "preliminary_checks": [
+      "Check Battery knife switch (BS) below EC panel in Cab #1.",
+      "Inspect TCD screen for system battery voltage readout (&ge; 55V required).",
+      "Verify all cab doors CA2, CA3, CA4, CA5 are securely latched."
+    ],
+    "steps": [
+      "1. Check the Battery knife switch (BS) below EC panel in Cab #1. Open the BS switch and close it firmly again.",
+      "2. Check battery voltage on TCD screen. If voltage is less than 55V, do not attempt repeated cranking. Contact GEDL Helpline: 1800 120 66 88.",
+      "3. Physically inspect Auxiliary cab doors (CA2, CA3, CA4, CA5). Ensure all doors are completely closed and interlocks engaged.",
+      "4. Check the Breaker Panel (EC panel & ALP front panel). Ensure all circuit breakers in the 3rd and 4th rows along with COB are switched 'ON' (LCCB, BCCB, MTB, ABCB1, ABCB2, FPB, etc.).",
+      "5. On the ALP panel, ensure all 3 breakers are ON and the 'MU Shut Down' switch is in RELEASED condition.",
+      "6. Ensure the EC switch in the working cab is in 'Isolate' position and in 'Off' position in the non-working cab.",
+      "7. Ensure Throttle is at 'Idle' and Reverser handle is in 'Center' position.",
+      "8. Push and hold the 'Engine Start' push button on the EC panel until 'Engine start in progress' appears on the TCD display.",
+      "9. Observe engine speed picking up to idle RPM (approx. 1050 max). Monitor lube oil pressure and MR charging."
+    ],
+    "equipment_locations": [
+      "Battery Switch (BS): Below EC Panel in Cab #1",
+      "Breaker Panel: 3rd & 4th row breakers (LCCB, BCCB, MTB, ABCB1/2, FPB)",
+      "Aux Cab Doors: CA2, CA3, CA4, CA5",
+      "EC Switch: Operator Control Stand in Working Cab"
+    ],
+    "cautions": [
+      "Never crank continuously if battery voltage is below 55V.",
+      "Ensure all breakers and EC switch in Cab #2 are in OFF condition before starting from Cab #1."
+    ]
+  },
+  {
+    "id": "TSG-DSL-02",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Engine Cranking But Not Starting / Won't Run Continuously",
+    "fault_code": "DSL-START-02",
+    "severity": "Critical",
+    "symptoms": [
+      "Engine cranks on starter motor but fails to fire, pick up speed, or run continuously.",
+      "Engine stalls immediately after releasing the start pushbutton."
+    ],
+    "probable_causes": [
+      "Battery voltage dropping below 55V under cranking load.",
+      "Engine starting circuit breakers or contactors defective/tripped.",
+      "EC switch misplaced or Reverser handle not properly seated in Master Controller.",
+      "Insufficient fuel in tank or fuel line air lock."
+    ],
+    "preliminary_checks": [
+      "Check fuel level on sight glass on platform (both A & B sides). Must have usable fuel.",
+      "Check that Reverser handle is firmly pushed into the Master Controller slot."
+    ],
+    "steps": [
+      "1. Check fuel sight glass on platform (A-side & B-side). Minimum usable capacity must be present (WDG4G: 6000L, WDG6G: 8000L).",
+      "2. Verify the Reverser handle: Ensure it is inserted properly and pushed fully into the Master Controller slot in the active cab.",
+      "3. Verify Fuel Pump Breaker (FPB) on EC panel is ON and fuel pump is running (humming sound in engine cab).",
+      "4. Check battery voltage drop during cranking. If dropping below 55V, contact GEDL helpline.",
+      "5. Ensure EC switch is set to 'Isolate' in active cab, and 'Off' in inactive cab.",
+      "6. Re-attempt cranking: Hold 'Engine Start' button until 'Engine start in progress' appears. Allow engine to stabilize at idle for 5 minutes before moving EC switch to 'Run'."
+    ],
+    "equipment_locations": [
+      "Fuel Sight Glass: Locomotive platform on both A-Side & B-Side",
+      "FPB Circuit Breaker: EC Panel (3rd row)",
+      "Master Controller: Operator Desk"
+    ],
+    "cautions": [
+      "Do not crank more than 3 consecutive times without allowing starter motor to cool.",
+      "Check for any fuel leaks near fuel filters and piping."
+    ]
+  },
+  {
+    "id": "TSG-DSL-03",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Engine Started But Unable to Load / Loss of Tractive Effort",
+    "fault_code": "DSL-LOAD-03",
+    "severity": "High",
+    "symptoms": [
+      "Engine runs at idle but does not develop tractive effort (kN) when throttle is notched up (N1, N2...).",
+      "TCD display shows 0 kN tractive effort.",
+      "Warning messages: 'Engine warming in progress' or 'AESS is active'."
+    ],
+    "probable_causes": [
+      "Parking Brake (PB) not released on one or more bogies.",
+      "Generator Field Breaker (GFB) tripped on EC panel / ALP panel.",
+      "EC switch not moved to 'Run' position in active cab, or 'Off' in inactive cab.",
+      "Engine coolant/oil temperature below minimum operating threshold ('Engine warming in progress').",
+      "AESS (Automatic Engine Stop Start) is active."
+    ],
+    "preliminary_checks": [
+      "Check TCD screen for '(P)' Parking Brake icon.",
+      "Check GFB circuit breaker on EC panel.",
+      "Check EC switch position in working cab."
+    ],
+    "steps": [
+      "1. Inspect TCD screen: If 'Engine warming in progress' is displayed, engine is not yet at operating temperature. Wait at idle until message clears and 'Ready' is displayed.",
+      "2. If 'AESS is active' appears on TCD, wait for about 4 minutes after moving Reverser handle forward or reverse before advancing Throttle.",
+      "3. Check Parking Brake: Release parking brake. Verify that '(P)' marker on TCD screen disappears. In MU consist, physically verify release on all units (wheels 1, 5, 8, 12).",
+      "4. Check Generator Field Breaker (GFB) & Dynamic Breaker on ALP panel / EC panel in Cab #2. Ensure both are ON.",
+      "5. Ensure EC switch is set to 'Run' in the active cab and 'Off' in the inactive cab.",
+      "6. Move SA9 to Release, A9 to Run (BC = 0 kg/cm\u00b2, BP = 5.0 kg/cm\u00b2).",
+      "7. Put Reverser in Forward / Reverse and notch up Throttle: Pause 2 to 3 seconds between notches. Watch tractive effort (kN) build up on TCD screen."
+    ],
+    "equipment_locations": [
+      "GFB & Dynamic Breakers: ALP Panel / EC Panel in Cab #2",
+      "Parking Brake Pushbutton & Manual Pulls: EC panel & Underframe wheels 1, 5, 8, 12",
+      "TCD (Train Control Display): Cab Operator Desk"
+    ],
+    "cautions": [
+      "Always pause 2 to 3 seconds between throttle notches to prevent power surging.",
+      "Never attempt to notch up if BP is below 4.8 kg/cm\u00b2."
+    ]
+  },
+  {
+    "id": "TSG-DSL-04",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Trail Units Not Loading in Multiple Units (MU) Operation",
+    "fault_code": "DSL-MU-04",
+    "severity": "High",
+    "symptoms": [
+      "Lead locomotive loads normally, but trailing locomotive(s) fail to deliver tractive effort.",
+      "Trainline fault alarms on TCD display."
+    ],
+    "probable_causes": [
+      "EC switch on trailing unit not in 'Run' position.",
+      "MU jumper cable loose, damaged, or uncoupled between units.",
+      "EAB air brake system on trailing unit not configured properly (L&T switch not in 'Trail').",
+      "Circuit breakers tripped on trailing locomotive.",
+      "Rear locomotive engine has shut down."
+    ],
+    "preliminary_checks": [
+      "Check TCD for 'Trainline Alarm from Trail Unit'.",
+      "Inspect physical MU jumper cables and air hoses between locomotives."
+    ],
+    "steps": [
+      "1. Stop the train in section as per safe operating rules and apply SA9.",
+      "2. Check 'MU Shutdown' switch on Lead loco ALP desk: Ensure it is in RELEASED condition.",
+      "3. Inspect inter-loco connections: Verify 27-pin MU electrical jumper cables are firmly locked in sockets and air hoses (BP, FP, MR, BC EQ) are coupled with angle cocks open.",
+      "4. On the Trailing Locomotive: Check that Engine is running. If shut down, inspect fuel, breakers, and restart from trailing cab.",
+      "5. Ensure trailing unit EC switch is in 'Run' in working cab and 'Off' in non-working cab.",
+      "6. Check EAB system on Trailing unit: L&T switch MUST be in 'Trail' position (confirm from TCD display). A9 in Full Service (FS), SA9 in Release.",
+      "7. Check Breaker panel on trailing unit: Ensure Control, GFB, and Dynamic breakers are ON. Reset any tripped breakers.",
+      "8. Return to Lead loco, test notch 1-2, and verify trailing unit ammeter/kN indication on Lead TCD screen."
+    ],
+    "equipment_locations": [
+      "MU Jumpers: End platform between locomotives",
+      "L&T Switch: EAB Brake Controller Panel in cab",
+      "MU Shutdown Switch: Front desk opposite ALP seat"
+    ],
+    "cautions": [
+      "If lead locomotive fails completely, train may be cleared by pushing from trailing loco using G&SR rules.",
+      "Troubleshooting of trainline faults must be performed from the trailing locomotive."
+    ]
+  },
+  {
+    "id": "TSG-DSL-05",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Engine Derated or 'Tractive Power Restricted' / Overheating",
+    "fault_code": "DSL-DERATE-05",
+    "severity": "Critical",
+    "symptoms": [
+      "TCD displays 'Tractive power restricted' or 'Engine Derated'.",
+      "Engine automatically drops RPM or limits maximum throttle notch output.",
+      "Locomotive travels through tunnel or long gradients with rising temperatures."
+    ],
+    "probable_causes": [
+      "Engine high water/coolant temperature (At 90.5\u00b0C engine derates; at 115.5\u00b0C engine shuts down).",
+      "Low engine lubricating oil pressure.",
+      "Low cooling water pressure or water level below minimum in sight glass.",
+      "More than one Traction Motor cut out automatically by CIO computer."
+    ],
+    "preliminary_checks": [
+      "Check TCD coolant temperature reading (Derate begins at 90.5\u00b0C).",
+      "Check lube oil pressure and coolant pressure readings on screen."
+    ],
+    "steps": [
+      "1. If traveling in a tunnel: High ambient air causes thermal derating. Clear the tunnel/section with available power without shutting down.",
+      "2. If Low Lube Oil Pressure message appears: Ensure oil drain valves are closed. Inspect engine cab for active oil leaks. Check engine oil level on dipstick with engine at idle \u2014 level must be above 'ADD' mark.",
+      "3. If Low Coolant Pressure appears: Check sight/spy glass at Radiator Cab & Engine Cab junction. Water level MUST be above 'Minimum' mark with engine at idle. Inspect for coolant leakage.",
+      "4. If Traction Motor is cut out: Verify how many TMs are isolated on TCD screen. If >1 TM cut out, tractive effort is automatically restricted. Reduce load or request banking assistance.",
+      "5. Contact GEDL Helpline Center (1800 120 66 88) with exact fault codes and temperature readings."
+    ],
+    "equipment_locations": [
+      "Coolant Spy Glass: Rad Cab & Engine Cab junction (right side)",
+      "Engine Dipstick: Engine cab on both sides of engine block",
+      "TCD Diagnostics: Cab console display"
+    ],
+    "cautions": [
+      "New Dipstick Rule: At 'ADD' mark, locos are NOT allowed to run and lube oil must be topped up before further movement.",
+      "At 115.5\u00b0C coolant temperature, engine will shut down automatically to protect power pack."
+    ]
+  },
+  {
+    "id": "TSG-DSL-06",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Engine Not Cranking After AESS Recovery (4-Minute Lockout)",
+    "fault_code": "DSL-AESS-06",
+    "severity": "Medium",
+    "symptoms": [
+      "Locomotive was shut down by AESS (Automatic Engine Stop Start).",
+      "When Reverser handle is moved to Forward, engine does not auto-crank after 4 minutes."
+    ],
+    "probable_causes": [
+      "Operational changes made during AESS shutdown (breakers moved, cocks closed).",
+      "AESS cycle limit exceeded (> 8 auto stop-start cycles in a 24-hr period).",
+      "Air brake penalty active (A9/SA9 not released).",
+      "AESS system lockup."
+    ],
+    "preliminary_checks": [
+      "Check if AESS count has reached 8 cycles.",
+      "Verify Reverser handle is firmly placed in Forward."
+    ],
+    "steps": [
+      "1. If AESS has operated 8 times in the day or settings were changed during shutdown, engine will not auto-crank. Start engine manually using the 'Engine Start' pushbutton on the EC panel.",
+      "2. Release A9 and SA9 brake handles to clear any low brake pipe / pneumatic interlock.",
+      "3. If AESS repeatedly prevents cranking, bypass the AESS facility by switching OFF the AESS toggle switch located at panel CA1 near CIO of Cab #1.",
+      "4. After bypassing AESS, crank manually using the EC panel start button.",
+      "5. Log the AESS bypass and report the fault to GEDL helpline (1800 120 66 88) and TLC."
+    ],
+    "equipment_locations": [
+      "AESS Bypass Toggle Switch: CA1 Panel near CIO computer in Cab #1",
+      "Engine Start Pushbutton: EC Panel in Cab #1"
+    ],
+    "cautions": [
+      "Always inform TLC and shed before isolating AESS.",
+      "Allow engine to run for at least 5 minutes at idle after manual start."
+    ]
+  },
+  {
+    "id": "TSG-DSL-07",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "EAB Communication Lost / Air Brake Fault / Automatic BP Drop",
+    "fault_code": "DSL-EAB-07",
+    "severity": "Critical",
+    "symptoms": [
+      "TCD displays 'EAB Communication Lost' or 'Air Brake Fault'.",
+      "Brake Pipe (BP) pressure drops automatically on run.",
+      "Electronic Air Brake (EAB) console in cab becomes inactive/unresponsive."
+    ],
+    "probable_causes": [
+      "EAB microcomputer communication failure or power loss.",
+      "Air Brake Circuit Breakers (ABCB1, ABCB2) tripped on EC panel.",
+      "Pneumatic Operating Unit (POU) manifold communication loss."
+    ],
+    "preliminary_checks": [
+      "Observe BP and BC pressures on analog gauges in cab.",
+      "Check ABCB1 and ABCB2 circuit breakers on 3rd row of EC panel."
+    ],
+    "steps": [
+      "1. Stop the train immediately using available braking and apply SA9/parking brake.",
+      "2. Recycle Air Brake circuit breakers: Turn OFF ABCB1 and ABCB2 on the 3rd row of the EC panel, wait 30 seconds, and turn them back ON.",
+      "3. If EAB console remains inactive, switch to 'BACKUP BRAKE' operation to clear section:",
+      "   a. Keep Throttle at 'Idle' and Reverser handle in 'Center'.",
+      "   b. Go to Radiator Cab pneumatic panel: Set toggle switch matching working cab (Cab #1 or Cab #2).",
+      "   c. Change Mode Switch to 'Back up' on the pneumatic panel.",
+      "   d. Return to working cab: Move backup brake handle BACKWARDS to charge BP (5.0 kg/cm\u00b2).",
+      "   e. Move backup brake handle FORWARD to destroy BP (apply brakes).",
+      "   f. Monitor pressures on Analog Gauges: 1st Gauge = BP (white) & BC (red); 2nd Gauge = ER (white) & MR (red).",
+      "4. Clear the block section using Backup Brake at maximum restricted speed of 10 kmph.",
+      "5. Contact GEDL Helpline (1800 120 66 88) immediately."
+    ],
+    "equipment_locations": [
+      "ABCB1 & ABCB2 Breakers: EC Panel (3rd row)",
+      "Pneumatic Panel & Backup Mode Switch: Radiator Cab",
+      "Backup Brake Handle & Analog Pressure Gauges: Cab Operator Desk"
+    ],
+    "cautions": [
+      "Speed under Backup Brake operation MUST NEVER EXCEED 10 kmph.",
+      "Carefully watch MR pressure and analog gauge needles."
+    ]
+  },
+  {
+    "id": "TSG-DSL-08",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Parking Brake (PB) Not Released / Mechanical Jam",
+    "fault_code": "DSL-PB-08",
+    "severity": "High",
+    "symptoms": [
+      "Red '(P)' indicator remains lit on TCD screen or red indicator light in operator cab stays ON.",
+      "Loco does not move or wheels drag when throttle is applied."
+    ],
+    "probable_causes": [
+      "Electrical malfunction in parking brake control circuit.",
+      "Mechanical binding/jamming of parking brake actuator with wheel brake rigging.",
+      "Insufficient Main Reservoir (MR) pressure to release spring-applied brakes."
+    ],
+    "preliminary_checks": [
+      "Check MR pressure &ge; 7.0 kg/cm\u00b2.",
+      "Note: Illumination of cab indicator does not guarantee full application or release \u2014 physical verification is mandatory."
+    ],
+    "steps": [
+      "1. Press the 'PB Release' pushbutton on the EC panel 2 to 3 times firmly. Watch for disappearance of the '(((P)))' symbol on the TCD display.",
+      "2. Try releasing from the other cab's PB controls if available.",
+      "3. If electrical release fails, perform MANUAL RELEASE at bogie level:",
+      "   a. Locate parking brake cylinders on wheels 1, 5, 8, and 12.",
+      "   b. Pull the manual release pull-handle firmly on all 4 cylinders until the entire spring pressure is released.",
+      "   c. Visually verify that brake blocks on all wheels have physically moved away from wheel treads.",
+      "4. Do NOT close the PB cutout cock with MR pressure present.",
+      "5. Contact GEDL helpline (1800 120 66 88) if manual release fails to disengage."
+    ],
+    "equipment_locations": [
+      "PB Release Button: EC Panel in Cab #1",
+      "Manual PB Release Pull Handles: Wheels 1, 5 (Bogie 1) & Wheels 8, 12 (Bogie 2)"
+    ],
+    "cautions": [
+      "Never move locomotive with parking brake dragging \u2014 severe wheel flats will occur within meters.",
+      "Release or disable parking brakes prior to any undergear maintenance."
+    ]
+  },
+  {
+    "id": "TSG-DSL-09",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Brake Pipe (BP) / Equalizing Reservoir (ER) Not Charging",
+    "fault_code": "DSL-BP-09",
+    "severity": "Critical",
+    "symptoms": [
+      "A9 moved to Run, but BP pressure stays at 0 or does not reach 5.0 kg/cm\u00b2.",
+      "ER gauge stays at 0 kg/cm\u00b2.",
+      "BP pressure drops below 3.2 kg/cm\u00b2."
+    ],
+    "probable_causes": [
+      "L&T (Lead & Trail) switch is in wrong position (e.g. 'Trail' or 'Test' instead of 'Lead').",
+      "Pneumatic Operating Unit (POU) cutout cocks in incorrect position (Dead engine cock open).",
+      "ALP emergency brake valve operated or cock open.",
+      "Air compressor not loading or unloader valve stuck open.",
+      "BP angle cock open at front/rear buffer beam."
+    ],
+    "preliminary_checks": [
+      "Verify L&T switch position on TCD display.",
+      "Check MR pressure (must be 8.0 - 10.0 kg/cm\u00b2)."
+    ],
+    "steps": [
+      "1. Check L&T Switch position on EAB panel: Switch MUST be in 'Lead' position on the active driving locomotive.",
+      "2. If L&T switch is in other than 'Lead' (e.g. after cab change or test):",
+      "   a. First ensure EC switch is set to 'Isolate'.",
+      "   b. Move A9 handle to 'Full Service' (FS).",
+      "   c. Move L&T switch to 'Lead' position.",
+      "   d. Move A9 handle to 'Run' position and check for BP charging to 5.0 kg/cm\u00b2.",
+      "3. If loco arrived as 'Dead' loco: Go to POU panel in Rad Cab. Ensure 'Dead Engine' cock is closed and mode is set to Live/Lead.",
+      "4. Check ALP Emergency Brake Valve: Ensure handle is fully closed and locked with safety wire/pin.",
+      "5. Walk down both ends of locomotive: Ensure front and rear BP angle cocks are closed (or coupled to train pipe with open cock).",
+      "6. WARNING: If BP pressure is below 3.2 kg/cm\u00b2 (45 PSI), the train MUST NOT be operated. Stop immediately and recharge BP to 5.0 kg/cm\u00b2."
+    ],
+    "equipment_locations": [
+      "L&T Switch: EAB Brake Controller Panel in cab",
+      "POU Pneumatic Operating Unit: Radiator Cab",
+      "ALP Emergency Valve: Front desk ALP side"
+    ],
+    "cautions": [
+      "If BP is below 3.2 kg/cm\u00b2, train cannot be safely controlled or stopped.",
+      "Do not notch up engine RPM to hasten MR charging \u2014 CIO computer automatically manages compressor loading."
+    ]
+  },
+  {
+    "id": "TSG-DSL-10",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Locked Axle Alarm / Traction Motor Cut Out & Isolation",
+    "fault_code": "DSL-AXLE-10",
+    "severity": "Critical",
+    "symptoms": [
+      "Locked Axle audio-visual alarm triggers in cab.",
+      "TCD display indicates locked wheel or axle speed sensor discrepancy.",
+      "Traction motor overheating or high winding temperature fault."
+    ],
+    "probable_causes": [
+      "Physical mechanical lockup of axle, bearing, or gear box.",
+      "Defective speed sensor or pulse generator.",
+      "Traction motor winding temperature beyond permissible limit."
+    ],
+    "preliminary_checks": [
+      "Stop locomotive immediately on level tangent track.",
+      "Physically inspect wheel tread, brake blocks, and axle boxes of the indicated axle."
+    ],
+    "steps": [
+      "1. Bring locomotive to an immediate halt with SA9 and secure with hand/parking brakes.",
+      "2. Get down and physically inspect the indicated wheel/axle: Check for skidding flat spots, hot axle box, jammed brake block, or locked gear case.",
+      "3. If wheels are free and rolling normally (sensor defect suspected):",
+      "   a. Ensure wheels are rolling before operating the locked axle cutout switch.",
+      "   b. Contact GEDL helpline (1800 120 66 88) for authorization.",
+      "4. To Isolate a Traction Motor (TM Cutout Procedure):",
+      "   a. Throttle handle MUST be in 'IDLE' position.",
+      "   b. Select 'Switches' option on TCD screen.",
+      "   c. Select 'Motor Cutout' option to open the Motor Cutout screen.",
+      "   d. Use function keys and number keys to isolate the defective TM and its corresponding speed sensor.",
+      "   e. IMPORTANT: Whenever cutting out a Traction Motor, its speed sensor MUST also be cut out simultaneously.",
+      "5. Re-check TCD screen: Confirm TM isolated status. Adjust train load/speed accordingly."
+    ],
+    "equipment_locations": [
+      "TCD Motor Cutout Screen: Cab Display Console",
+      "Locked Axle Cutout Switch: Panel in Cab #1",
+      "Traction Motors (TM1-TM6): Co-Co Bogies underframe"
+    ],
+    "cautions": [
+      "Traction motors must ONLY be manually cut out when Throttle is in IDLE.",
+      "Always report TM isolation to TLC and GEDL helpline."
+    ]
+  },
+  {
+    "id": "TSG-DSL-11",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "TCD Screens / Keyboard Not Responding or Monitors Blank",
+    "fault_code": "DSL-TCD-11",
+    "severity": "Medium",
+    "symptoms": [
+      "All 4 TCD screens in the active cab are frozen, unresponsive, or blank.",
+      "Keyboard input does not work.",
+      "Screen saver does not clear."
+    ],
+    "probable_causes": [
+      "BCCB (Battery Charger Circuit Breaker) or TCD display circuit breaker tripped.",
+      "Screen saver mode active.",
+      "TCD display computer crash."
+    ],
+    "preliminary_checks": [
+      "Press any key on the keyboard to exit screen saver mode.",
+      "Check BCCB on EC panel."
+    ],
+    "steps": [
+      "1. Press any key on the physical keyboard to check if display was in screen saver mode.",
+      "2. If screens remain blank, stop the locomotive safely in section.",
+      "3. Recycle the BCCB (Battery Charger Circuit Breaker) on the EC panel.",
+      "4. Open the EC panel: Locate the individual circuit breakers for each TCD screen (Display 1, 2, 3, 4). Recycle them (turn OFF for 20 seconds, then turn back ON).",
+      "5. If screens recover, acknowledge all pending alarms.",
+      "6. If all screens remain blank, contact GEDL Helpline: 1800 120 66 88."
+    ],
+    "equipment_locations": [
+      "TCD Individual Breakers & BCCB: EC Panel in Cab #1",
+      "Keyboard: Cab Operator Desk"
+    ],
+    "cautions": [
+      "Do not recycle breakers while train is running under power.",
+      "Check operating cab breakers only."
+    ]
+  },
+  {
+    "id": "TSG-DSL-12",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Alerter (VCD) Acting / BP Dropping on Run While Crew is Alert",
+    "fault_code": "DSL-ALERTER-12",
+    "severity": "High",
+    "symptoms": [
+      "Alerter alarm sounds and fails to reset upon pedal/pushbutton press.",
+      "Brake Pipe drops on run due to Alerter penalty brake application."
+    ],
+    "probable_causes": [
+      "Defective Alerter foot pedal or acknowledge pushbutton switch.",
+      "Attempting to reset Alerter from inactive cab.",
+      "Alerter sensing module malfunction."
+    ],
+    "preliminary_checks": [
+      "Confirm driving from active cab (Alerter CANNOT be reset from inactive cab)."
+    ],
+    "steps": [
+      "1. When Alerter audio-visual warning starts, acknowledge immediately using the foot pedal or console pushbutton in the ACTIVE CAB only.",
+      "2. If penalty application occurs (BP drops): Bring Throttle to IDLE, wait for train to stop completely.",
+      "3. Move A9 to Full Service / Handle Off, wait 60 seconds until Alerter timer resets.",
+      "4. Press the Alerter reset button in the active cab to recharge BP to 5.0 kg/cm\u00b2.",
+      "5. If Alerter repeatedly trips while crew is alert (defective sensing): Contact GEDL helpline (1800 120 66 88) and TLC for authorization to bypass the Alerter."
+    ],
+    "equipment_locations": [
+      "Alerter Foot Pedal: Below LP footrest in cab",
+      "Alerter Reset Button: Operator console in active cab"
+    ],
+    "cautions": [
+      "Reset can ONLY be done from the active working cab.",
+      "Never tape or weigh down the Alerter foot pedal."
+    ]
+  },
+  {
+    "id": "TSG-DSL-13",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Dead Loco Movement / Preparation for Towing in Train",
+    "fault_code": "DSL-DEAD-13",
+    "severity": "High",
+    "symptoms": [
+      "Locomotive failed and needs to be hauled dead by another locomotive.",
+      "Need to ensure brake application and avoid wheel flat risk."
+    ],
+    "probable_causes": [
+      "Engine failure, major electrical defect, or transit in consist."
+    ],
+    "preliminary_checks": [
+      "Ensure live hauling loco is coupled and BP continuity is established."
+    ],
+    "steps": [
+      "1. Apply Parking Brake (red button on EC panel).",
+      "2. Move SA9 to Release (REL) position on EAB panel.",
+      "3. Move A9 handle to FULL position. Confirm brake cylinder (BC) is 1.8 &plusmn; 0.1 kg/cm\u00b2 on TCD.",
+      "4. Couple dead locomotive to live hauling locomotive (or rail cars).",
+      "5. In working cab: Keep Reverser in 'Center', move L&T switch to 'Trail' position. Confirm ER pressure drops to 0.",
+      "6. Turn OFF Air Brake circuit breakers (ABCB1 and ABCB2 on 3rd row of EC panel).",
+      "7. Move EC switch to 'Off' in both cabs.",
+      "8. Switch OFF all circuit breakers on EC panel and OPEN the Battery Knife Switch (BS) below EC panel.",
+      "9. Go to Pneumatic Operating Unit (POU) in Radiator Cab: Move 'Dead switch' to 'DEAD' position (BCE part of POU).",
+      "10. Press pushbutton on MC 30 valve for 30 seconds to release any trapped air pressure.",
+      "11. Open drain valves at MR1 and MR2 underframe tanks. Drain completely, then CLOSE drain valves. (MR must be < 1.78 kg/cm\u00b2 / 25 PSI).",
+      "12. Open one BCE pipe angle cock briefly on underframe to verify NO air exhaust.",
+      "13. Connect Brake Pipe (BP) between live and dead locomotives and open both angle cocks.",
+      "14. Charge BP from live loco to 5.0 kg/cm\u00b2 (this charges MR2 up to dead engine setting of 1.8 - 2.0 kg/cm\u00b2).",
+      "15. Ensure both bogie BC-1 & BC-2 cutout cocks on underframe are in CUT-IN position.",
+      "16. Manually release parking brakes of Bogie-1 and Bogie-2 (pull handles on wheels 1, 5, 8, 12). Visually verify all brake blocks released.",
+      "17. Conduct Brake Test: Apply and release A9 from live locomotive and verify brake shoes apply and release on all wheels of the dead locomotive."
+    ],
+    "equipment_locations": [
+      "Dead Switch & MC 30 Valve: POU in Radiator Cab",
+      "MR1 & MR2 Drain Valves: Locomotive Underframe",
+      "Bogie BC-1 & BC-2 Cocks: Underframe side frames"
+    ],
+    "cautions": [
+      "CRITICAL: Drain MR below 1.78 kg/cm\u00b2 (25 PSI) to avoid wheel skidding/flats.",
+      "Battery Knife Switch MUST be opened to prevent battery discharge during transit."
+    ]
+  },
+  {
+    "id": "TSG-DSL-14",
+    "category": "Diesel Locomotives (WDG4G 4500 HP / WDG6G 6000 HP)",
+    "loco_type": "WDG4G / WDG6G",
+    "title": "Cab Changing Procedure (Single Loco & Multiple Units)",
+    "fault_code": "DSL-CAB-14",
+    "severity": "Medium",
+    "symptoms": [
+      "Direction reversal at terminal or changing driving cab from Cab #1 to Cab #2."
+    ],
+    "probable_causes": [
+      "Operational cab changeover requirement."
+    ],
+    "preliminary_checks": [
+      "Locomotive must be completely stopped and secured."
+    ],
+    "steps": [
+      "SINGLE LOCO CAB CHANGEOVER (Cab #1 to Cab #2):",
+      "Step 1 (In Cab #1 - Vacating Cab):",
+      "  1. Move Throttle handle to 'Idle'.",
+      "  2. Apply SA9 independent brake fully.",
+      "  3. Move Reverser handle to 'Center' and REMOVE it.",
+      "  4. Apply Parking Brake (optional but recommended on gradient).",
+      "  5. Move EC Switch to 'Off'.",
+      "  6. Leave L&T Switch in 'Lead' position as it is.",
+      "Step 2 (In Cab #2 - Entering Cab):",
+      "  7. Insert Reverser handle and set to Forward/Reverse.",
+      "  8. Move EC Switch to 'Isolate' (or 'Run' when ready to move).",
+      "  9. Move A9 to Full Service (FS) for 34 seconds, then move to Free/Run.",
+      "  10. Move SA9 from Apply to Release.",
+      "  11. Release Parking Brake (if applied).",
+      "  12. Ensure L&T Switch is set to 'Lead' position.",
+      "",
+      "MULTIPLE UNITS (MU) CAB CHANGEOVER (Converting Loco #2 to Lead & Loco #1 to Trail):",
+      "  1. On Loco #1: Apply SA9, apply Parking Brake, remove Reverser.",
+      "  2. On Loco #2: Move L&T Switch to 'Lead', A9 to 'Run', SA9 to 'Apply'.",
+      "  3. Back on Loco #1: Move A9 to 'FS', SA9 to 'Release', L&T Switch to 'Trail', release PB.",
+      "  4. On Loco #2 (New Lead): Move SA9 to 'Release', insert Reverser, advance Throttle to move train."
+    ],
+    "equipment_locations": [
+      "Master Controller & Reverser: Cab Desk",
+      "L&T Switch: EAB Brake Controller Panel in both cabs",
+      "EC Switch: Operating Console"
+    ],
+    "cautions": [
+      "Always wait for 34 seconds with A9 in FS when initializing EAB in the new cab.",
+      "Never leave both cabs with L&T switch in Lead in an MU consist."
+    ]
   }
 ]

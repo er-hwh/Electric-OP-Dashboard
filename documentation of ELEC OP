@@ -84,3 +84,1004 @@ Also we will develop a option in which lots of google sheet links will be linked
 under imporantant tools add two more options - Bulk analysis and PF entry speed checking tools.
 
 also make a directory for unusual incident tracker which generally we kept in google dirves we will link those to there which will available to officers and CNL's and admin can do all.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+# ELECTRIC OPERATION DEPARTMENT, HWH DIVISION
+## Website Restructuring & Functional Redesign – Master Requirement Draft
+
+### 1. PROJECT OVERVIEW
+
+The existing web application is developed for the Electric Operation Department, Howrah Division, Eastern Railway.
+
+Previously, the department had two separate operational wings:
+- Diesel (DSL) Loco Operation
+- Electric Loco Operation
+
+However, due to the reduced utilization of Diesel locomotives, Diesel Loco Operation has now also come under the administrative and operational framework of Electric Operation Department.
+
+Therefore, the existing application needs to be restructured into a centralized departmental management platform that integrates both Electric and Diesel operations.
+
+**Primary Objective:**
+
+To develop a single-window digital platform for all operational activities, crew management, CLI supervision, officer monitoring, training management, safety counselling, reporting, learning resources and departmental information.
+
+The existing application should be revised wherever necessary. Already implemented features that comply with these requirements need not be redeveloped.
+
+---
+
+### 2. ORGANIZATIONAL HIERARCHY
+
+The application must follow the actual organizational hierarchy of Electric Operation Department, HWH Division.
+
+**Administrative Hierarchy:**
+
+Sr. DEE(OP)/HWH  
+↓  
+AEE(OP)/HWH & AME(P)/HWH  
+↓  
+Chief Loco Inspectors (CLIs)  
+↓  
+Running Staff / Crews
+
+**Crew Categories:**
+- LPM
+- LPP
+- MMAN
+- LPG
+- LPS-I
+- LPS-II
+- SALP
+- ALP
+
+**Operational Control Structure:**
+
+Under Sr. DEE(OP)/HWH, two major operational control units function:
+
+1. TLC – Traction Loco Control (Electric)
+2. PCNL – Power Control (Diesel)
+
+Both controls operate under Sr. DEE(OP)/HWH.
+
+TLC and PCNL should have the same operational access authority as Sr. DEE(OP), along with additional access to certain important operational tools.
+
+---
+
+### 3. LOBBY STRUCTURE
+
+The application must maintain a centralized lobby management system.
+
+**Main Lobbies under HWH Division:**
+- RPH
+- BWN
+- HWH
+- DKAE
+- BHP
+- TAK
+- AZ
+- KWAE
+- PKR
+
+**Sister Lobbies:**
+- NHT
+- SNT
+- KURV
+
+Each lobby will have an assigned in-charge, generally a CLI.
+
+The application must maintain the relationship between:
+- Lobby
+- CLI
+- Assigned Crews
+- Crew Category
+- Operational Jurisdiction
+
+An administrator should be able to change the lobby assignment and CLI in-charge whenever required.
+
+---
+
+### 4. APPLICATION STRUCTURE – TWO MAJOR SECTIONS
+
+The entire application should be divided into two major sections.
+
+#### A. GLOBAL INFORMATION PORTAL
+
+This section will be accessible without login.
+
+It will contain departmental information and learning resources available to all users.
+
+Proposed modules:
+
+1. Learning Materials
+   - Electric Traction
+   - Diesel Traction
+   - Railway Transportation Rules
+   - General Rules (GR)
+   - Subsidiary Rules (SR)
+   - Safety Instructions
+   - Technical Manuals
+
+2. Online Quiz & Assessment
+   - Topic-wise quizzes
+   - Random question tests
+   - Practice examinations
+   - Performance analysis
+   - Results and assessment history, where applicable
+
+3. Photo Gallery
+   - Divisional achievements
+   - Safety campaigns
+   - Training activities
+   - Special events
+   - Operational achievements
+
+4. Loco Information
+   - Various Electric Locomotives
+   - Diesel Locomotives
+   - Technical specifications
+   - Important operating instructions
+
+5. Notices & Circulars
+   - Important departmental notices
+   - General instructions
+   - Safety circulars
+   - Results and announcements
+
+6. Important Rules & Regulations
+   - GR & SR
+   - Operating rules
+   - Safety instructions
+   - Relevant railway manuals
+
+7. Trouble Shooting Guide
+   - Electric locomotive troubleshooting
+   - Diesel locomotive troubleshooting
+   - Common failures
+   - Emergency procedures
+   - Technical guidance
+
+8. Other Relevant Departmental Information
+
+The administrator should be able to manage and update the contents of these sections.
+
+#### B. LOGIN-BASED MANAGEMENT PORTAL
+
+All operational, administrative and crew-related functions will be available through role-based login.
+
+The proposed login hierarchy is:
+
+**Admin → Officers → CLI/Supervisors → Crew**
+
+TLC and PCNL will have a separate Control Login with the authority specified in this document.
+
+The system must implement Role-Based Access Control (RBAC), ensuring that users can access only the modules and operations permitted for their roles.
+
+---
+
+### 5. LOGIN STRUCTURE & AUTHENTICATION
+
+The following login credentials will be used during the initial implementation.
+
+| User Type | Username | Initial Password |
+|---|---|---|
+| Admin | admin | 12345 |
+| Officer – Sr. DEE(OP) | SR_DEEOP_HWH | 12345 |
+| Officer – AEE(OP) | AEEOP_HWH | 12345 |
+| Officer – AME(P) | AMEP_HWH | 12345 |
+| CLI | Individual CLI ID | 12345 |
+| Crew | Registered 10-digit mobile number | 12345 |
+| TLC | TLC | 12345 |
+| PCNL | PCNL | 12345 |
+
+**Important authentication requirements:**
+
+- Passwords must be changeable after initial login.
+- Crew mobile numbers must contain exactly 10 digits.
+- Country code 91 must not be included.
+- Login credentials must be stored securely using password hashing.
+- Admin must be able to reset user passwords.
+- Duplicate mobile numbers and duplicate CLI IDs must not be permitted.
+- Account activation, deactivation and password reset facilities must be available.
+
+---
+
+### 6. ROLE-WISE ACCESS & FUNCTIONALITY
+
+#### 6.1 ADMIN LOGIN
+
+Admin will have complete control over the entire application.
+
+Admin permissions:
+
+- Create, modify, deactivate and manage all user accounts.
+- Manage officers, CLIs, crews and lobby assignments.
+- Upload crew master data through Excel.
+- View uploaded Excel data in an editable table.
+- Add, modify and remove crew information.
+- Add custom fields to the crew database whenever required.
+- Manage global information and learning resources.
+- Upload notices, circulars and counselling instructions.
+- Manage monthly and special counselling.
+- Manage training records and medical examination records.
+- Manage Google Sheets links.
+- Manage Unusual Incident Tracker directory.
+- Access all reports and operational dashboards.
+- Access all Important Tools.
+- Configure application settings and permissions.
+- View all historical records.
+
+Admin will have unrestricted access to the application.
+
+#### 6.2 OFFICER LOGIN
+
+Officers include:
+
+- Sr. DEE(OP)/HWH
+- AEE(OP)/HWH
+- AME(P)/HWH
+
+Officers will primarily have monitoring, reviewing and reporting authority.
+
+**Officer Dashboard:**
+
+1. Overall Crew Overview
+2. CLI-wise Crew Details
+3. Lobby-wise Crew Details
+4. Daily CLI Movement
+5. CLI Performance Monitoring
+6. Crew Performance Monitoring
+7. Crew Counselling Status
+8. Training Due Reports
+9. Medical Examination Due Reports
+10. Notice Acknowledgement Status
+11. Various Filtered Reports
+12. Unusual Incident Tracker
+
+Officers must be able to filter data by:
+
+- Date
+- CLI
+- Lobby
+- Crew Name
+- Crew ID
+- Crew Category
+- Training Category
+- Performance Parameters
+- Other available crew information
+
+**Officer Permissions:**
+
+- View all crew and CLI information.
+- View CLI-wise and lobby-wise reports.
+- Monitor daily CLI activities and movements.
+- Generate filtered reports.
+- Add remarks to CLI performance.
+- Add remarks to crew performance.
+- Review counselling and acknowledgement status.
+- Review training and medical examination compliance.
+- Access Unusual Incident Tracker.
+
+Officers must not be permitted to directly edit master crew information or CLI-entered operational records.
+
+They can only add remarks and observations in designated fields.
+
+#### 6.3 TLC / PCNL CONTROL LOGIN
+
+TLC and PCNL will have the same operational viewing and monitoring authority as Sr. DEE(OP).
+
+However, they will have additional access to important operational tools.
+
+Control-specific facilities:
+
+- View all crews and CLIs.
+- View CLI-wise and lobby-wise crew information.
+- Monitor operational performance.
+- Access relevant operational reports.
+- Access Unusual Incident Tracker.
+- Access Important Tools.
+- Monitor relevant crew-related activities.
+
+The distinction between Officer and Control permissions must be maintained through RBAC.
+
+#### 6.4 CLI LOGIN
+
+CLI is the primary supervisory authority responsible for the crews assigned to them.
+
+Each CLI will have an individual dashboard.
+
+**CLI Dashboard:**
+
+On login, the CLI should immediately see:
+
+- Assigned lobby/lobbies.
+- Total assigned crews.
+- Category-wise crew count.
+- Crew-wise personal information.
+- Official information.
+- Training and medical details.
+- Counselling records.
+- Current problems and observations.
+- Crew performance records.
+- Previous counselling history.
+
+**CLI Functionalities:**
+
+1. View all crews assigned to the CLI.
+2. Add and update crew-related information.
+3. Record crew counselling.
+4. Record monthly counselling.
+5. Record special counselling.
+6. Record footplate inspection and observations.
+7. Record CVVRS inspection.
+8. Record SPM analysis and observations.
+9. Record crew performance.
+10. Record operational deficiencies and irregularities.
+11. Record current crew-related problems.
+12. Record follow-up observations.
+13. Record unusual operational incidents.
+14. View acknowledgement status of notices and counselling.
+
+CLI-entered records must be available to officers for monitoring and report generation.
+
+**CLI Assignment Restriction:**
+
+A CLI should normally be permitted to edit only the crew records assigned to them.
+
+Admin may reassign crews or change CLI responsibilities.
+
+#### 6.5 CREW LOGIN
+
+Every crew member will have an individual dashboard.
+
+The dashboard should contain:
+
+**Personal Information**
+- Name
+- Employee ID
+- Mobile Number
+- Designation
+- Crew Category
+- Lobby
+- Assigned CLI
+- Other personal information
+
+**Official Information**
+- Official designation
+- Posting information
+- Relevant operational details
+- Other service-related information
+
+**Training Information**
+- Training history
+- Completed training
+- Upcoming training
+- Due dates
+
+**Medical Information**
+- PME details
+- Last medical examination
+- Next due date
+
+**Counselling Section**
+- Monthly counselling
+- Special counselling
+- Other applicable instructions
+
+Crew members must be able to read and acknowledge notices and counselling issued to them.
+
+Crew members must not be permitted to modify their official master records.
+
+---
+
+### 7. CLI MOVEMENT MONITORING
+
+A dedicated module should be developed for monitoring daily CLI movement and activities.
+
+CLIs perform various supervisory activities throughout the division, including:
+
+- Footplate inspections with crews.
+- CVVRS checking.
+- SPM analysis.
+- Crew counselling.
+- Loco-related failure attendance.
+- Crew-related problem attendance.
+- Safety inspections.
+- Other supervisory duties.
+
+The system should allow CLIs to enter their daily activities and movement details.
+
+Officers should be able to monitor:
+
+- Daily CLI movement.
+- Date-wise activities.
+- Location-wise movement.
+- Crew attended.
+- Activity performed.
+- Remarks and observations.
+- CLI-wise performance.
+
+**Data Retention Policy:**
+
+CLI movement and daily activity records should be retained for three months only.
+
+A scheduled daily CRON job should automatically remove records older than the permitted retention period.
+
+Important: This three-month retention policy applies only to CLI movement/activity records. Crew master data, counselling history, training records, medical records and other permanent departmental records must not be deleted under this policy.
+
+---
+
+### 8. CREW MASTER DATABASE & EXCEL MANAGEMENT
+
+Admin will maintain the master crew database through Excel uploads.
+
+**Initial Upload:**
+
+Admin will upload an Excel file containing:
+
+- CLI ID
+- CLI Name
+- CLI Mobile Number
+- Crew Name
+- Crew Employee ID
+- Crew Mobile Number
+- Crew Designation
+- Crew Category
+- Lobby
+- Other available crew information
+
+The exact columns will be finalized after receiving the Excel master file.
+
+**Excel Upload Workflow:**
+
+1. Admin uploads an Excel file.
+2. System reads and processes the Excel data.
+3. Uploaded information is displayed in a table view.
+4. Admin can inspect the uploaded data before saving.
+5. Admin can edit any field directly in the table.
+6. Admin can add or remove records.
+7. System validates duplicate IDs and mobile numbers.
+8. Admin confirms and saves the data.
+9. The updated information becomes available in the respective dashboards.
+
+**Dynamic Field Management:**
+
+Admin should be able to add new custom fields to the crew database whenever the department requires additional information.
+
+For example, if a new reporting requirement arises, Admin should be able to create a new field without requiring major redevelopment of the application.
+
+The system should support Excel export and future Excel-based updates.
+
+---
+
+### 9. TRAINING & MEDICAL MANAGEMENT MODULE
+
+A dedicated Training and Medical Management System must be developed.
+
+Every crew member undergoes various types of training during their service.
+
+**A. Training Categories**
+
+1. DSL Traction Training
+2. Electric Traction Training
+3. Railway Transportation Rules Training (GR & SR)
+
+**B. Training Lifecycle**
+
+At the time of initial appointment/joining, the crew must undergo the prescribed initial training.
+
+After completion of initial training, refresher training is required at prescribed intervals, generally every three years, until the next applicable promotion or training event.
+
+**C. Promotional Training**
+
+The system must maintain promotional training records.
+
+Examples:
+
+- SALP to LPS: Promotional Training.
+- SALP to LPG: Promotional Training.
+- LPG to LPP: Promotional Training.
+- LPG to MMAN: Promotional Training.
+
+The actual applicable training requirement will be configurable as per departmental rules.
+
+After promotion, the system must maintain the subsequent training cycle according to the applicable training rules.
+
+**D. Training Data Fields**
+
+For each crew member, maintain:
+
+- Training Category
+- Training Type
+- Last Training Completed Date
+- Next Training Due Date
+- Training Status
+- Training History
+- Remarks
+
+**E. Weekly Excel Update**
+
+Admin will upload an Excel file every week containing updated training information.
+
+The application should:
+
+1. Import the Excel data.
+2. Match records using Employee ID.
+3. Display the imported records in table format.
+4. Allow Admin to inspect and edit the records.
+5. Update the corresponding training information.
+6. Maintain the historical record of completed training.
+7. Recalculate the next due date wherever applicable.
+
+Admin should also be able to manually update completed and due dates.
+
+**F. PME / Medical Examination**
+
+Medical examination requirements:
+
+- Up to 45 years of age: Every three years.
+- Above 45 years of age: Every year.
+
+The system should calculate the next medical due date based on the last completed medical examination and the applicable age-based requirement.
+
+**G. Officer Training Dashboard**
+
+Officers should have access to training compliance reports.
+
+Reports should include:
+
+- Training completed.
+- Training due.
+- Overdue training.
+- Category-wise training status.
+- Lobby-wise training status.
+- CLI-wise training status.
+- Crew-wise training history.
+- Medical examination due.
+- Medical examination overdue.
+
+Detailed training rules and exceptions will be incorporated in a later phase after the relevant departmental instructions are provided.
+
+---
+
+### 10. NOTICE & COUNSELLING MANAGEMENT
+
+The existing Daily Safety Counselling option should be removed as a separate dashboard/module.
+
+Counselling will instead be available within the respective user login dashboards.
+
+**A. Notice Management**
+
+Officers and authorized Admin users should be able to issue notices.
+
+Notice recipients may be:
+
+- All Crews.
+- All CLIs.
+- Both Crews and CLIs.
+- Selected Lobbies.
+- Selected individual users.
+
+Every recipient must read and acknowledge the notice.
+
+**B. Monthly Counselling**
+
+Officers should be able to issue monthly counselling.
+
+The system should maintain:
+
+- Counselling title.
+- Counselling content.
+- Issue date.
+- Target recipients.
+- Acknowledgement status.
+- Pending acknowledgement list.
+
+**C. Special Counselling**
+
+Officers should be able to issue special counselling whenever necessary.
+
+It should support selected crews, selected CLIs, individual lobbies or the entire division.
+
+**D. Acknowledgement System**
+
+Every notice and counselling record should have:
+
+- Read status.
+- Acknowledged status.
+- Acknowledgement date and time.
+- Pending list.
+- User-wise acknowledgement history.
+
+Acknowledgement records must be retained for future verification.
+
+---
+
+### 11. GOOGLE SHEETS CENTRALIZED DIRECTORY
+
+Develop a dedicated module to bring different departmental Google Sheets under one roof.
+
+Different lobbies and departmental units maintain multiple Google Sheets for their respective operational requirements.
+
+Instead of accessing these sheets separately, users should be able to access them from this application.
+
+**Proposed Features:**
+
+- Admin can add Google Sheets URLs.
+- Admin can edit or remove existing links.
+- Links can be categorized lobby-wise.
+- Links can be categorized department-wise.
+- Links can have custom titles and descriptions.
+- Access permissions can be assigned according to user roles.
+- Users can open the corresponding Google Sheet directly.
+
+Proposed categories:
+
+- HWH Division.
+- RPH Lobby.
+- BWN Lobby.
+- HWH Lobby.
+- DKAE Lobby.
+- BHP Lobby.
+- TAK Lobby.
+- AZ Lobby.
+- KWAE Lobby.
+- PKR Lobby.
+- Sister Lobbies.
+- Other Departmental Sheets.
+
+This module will function as a centralized Google Sheets Directory.
+
+---
+
+### 12. UNUSUAL INCIDENT TRACKER DIRECTORY
+
+A dedicated Unusual Incident Tracker Directory should be developed.
+
+Currently, unusual incident records and related documents are maintained in Google Drive.
+
+The new module should centralize access to these records.
+
+**Features:**
+
+- Admin can add Google Drive folder/document links.
+- Admin can edit or remove links.
+- Records can be categorized date-wise.
+- Records can be categorized incident-wise.
+- Records can be categorized lobby-wise.
+- Incident title and brief description can be maintained.
+- Relevant documents and reports can be linked.
+
+**Access Permissions:**
+
+| User | Permission |
+|---|---|
+| Admin | Full access – Add/Edit/Delete |
+| Officers | View |
+| TLC | View |
+| PCNL | View |
+| CLI | As authorized |
+| Crew | No access by default |
+
+The module should function as a searchable directory of unusual incidents.
+
+---
+
+### 13. IMPORTANT TOOLS – ADMIN ONLY
+
+The existing "Control Dashboard" option must be renamed to:
+
+**IMPORTANT TOOLS**
+
+However, this section must be accessible exclusively through Admin Login.
+
+The Important Tools option must not be visible in the normal public navigation, Officer Dashboard, CLI Dashboard or Crew Dashboard.
+
+It should appear inside the Admin Dashboard only.
+
+**Important Tools will initially contain:**
+
+1. Bulk Analysis
+2. PF Entry Speed Checking Tool
+
+Additional tools may be added in the future.
+
+TLC and PCNL will have authorized access to the relevant operational tools through their separate Control Login, as specified in the permission matrix.
+
+The Important Tools menu itself remains an Admin-only management section.
+
+---
+
+### 14. REPORTING & PERFORMANCE ANALYSIS
+
+The application should provide comprehensive filtered reports.
+
+Officers should be able to generate reports based on information entered by CLIs and other authorized sources.
+
+Examples:
+
+- CLI-wise crew performance.
+- Lobby-wise crew performance.
+- Crew counselling reports.
+- Footplate inspection reports.
+- CVVRS inspection reports.
+- SPM analysis reports.
+- Crew problem reports.
+- Training compliance reports.
+- Medical due reports.
+- Notice acknowledgement reports.
+- CLI movement reports.
+- Other supervisory activity reports.
+
+Reports should support multiple filters and downloadable formats wherever applicable.
+
+---
+
+### 15. REVISED NAVIGATION STRUCTURE
+
+**GLOBAL PORTAL (No Login)**
+
+- Home
+- Learning Materials
+- Quiz & Assessment
+- Loco Information
+- Rules & Regulations
+- Trouble Shooting Guide
+- Photo Gallery
+- Notices & Results
+- Login
+
+**ADMIN DASHBOARD**
+
+- Dashboard
+- User Management
+- Officer Management
+- CLI Management
+- Crew Master Database
+- Lobby Management
+- Excel Import & Export
+- Training Management
+- Medical Management
+- Notice Management
+- Counselling Management
+- Google Sheets Directory
+- Unusual Incident Tracker
+- Important Tools
+  - Bulk Analysis
+  - PF Entry Speed Checking
+- Global Content Management
+- System Settings
+- Audit Logs
+
+**OFFICER DASHBOARD**
+
+- Dashboard
+- All Crews
+- All CLIs
+- Lobby-wise Overview
+- CLI Movement
+- Crew Performance
+- CLI Performance
+- Counselling Reports
+- Training & Medical Reports
+- Notice Acknowledgement
+- Unusual Incident Tracker
+- Google Sheets Directory
+- Remarks & Observations
+
+**TLC / PCNL DASHBOARD**
+
+- Dashboard
+- Crew & CLI Overview
+- Lobby-wise Information
+- Operational Reports
+- Crew Performance
+- CLI Movement
+- Unusual Incident Tracker
+- Google Sheets Directory
+- Authorized Important Operational Tools
+
+**CLI DASHBOARD**
+
+- My Dashboard
+- My Assigned Crews
+- Crew Details
+- Footplate Inspection
+- CVVRS Inspection
+- SPM Analysis
+- Crew Counselling
+- Monthly Counselling
+- Special Counselling
+- Crew Performance
+- Current Crew Problems
+- Daily Movement & Activities
+- Notices
+- Google Sheets Directory
+
+**CREW DASHBOARD**
+
+- My Profile
+- Official Information
+- My Training
+- My Medical Details
+- My Counselling
+- My Notices
+- Learning Materials
+- Quiz & Assessment
+
+---
+
+### 16. IMPORTANT DEVELOPMENT & DATA MANAGEMENT REQUIREMENTS
+
+1. The existing website and database structure should be reviewed before implementing changes.
+2. Existing working features should be retained wherever possible.
+3. Implement proper Role-Based Access Control.
+4. Maintain data relationships between lobby, CLI and crew.
+5. Avoid duplicate crew and CLI records.
+6. Maintain historical records wherever required.
+7. Provide Excel import and export facilities.
+8. Support dynamic custom fields for crew information.
+9. Implement scheduled CRON jobs for the three-month CLI movement retention policy.
+10. Maintain an audit log of important administrative and operational changes.
+11. Provide responsive dashboards for desktop, tablet and mobile.
+12. Ensure that unauthorized users cannot access restricted modules through direct URLs or API requests.
+13. Maintain proper database backups and recovery facilities.
+14. Use secure authentication and session management.
+15. Keep the system scalable so that additional modules can be introduced later.
+
+---
+
+### 17. IMPLEMENTATION APPROACH
+
+The redevelopment should be carried out in phases.
+
+**Phase 1 – Structural Revision**
+- Review existing application.
+- Redesign organizational hierarchy.
+- Implement login and RBAC.
+- Revise dashboard structures.
+- Remove Daily Safety Counselling as a separate module.
+- Move Important Tools under Admin.
+
+**Phase 2 – Master Database**
+- Excel upload and editable table.
+- CLI and crew mapping.
+- Lobby management.
+- Dynamic custom fields.
+- Crew profile dashboards.
+
+**Phase 3 – Operational Management**
+- CLI movement.
+- Footplate inspections.
+- CVVRS and SPM records.
+- Crew performance.
+- Officer monitoring and remarks.
+
+**Phase 4 – Training & Medical**
+- Training management.
+- Promotional training.
+- Refresher training.
+- PME management.
+- Weekly Excel update.
+
+**Phase 5 – Notice & Counselling**
+- Notice distribution.
+- Monthly counselling.
+- Special counselling.
+- Acknowledgement tracking.
+
+**Phase 6 – Centralized Directories**
+- Google Sheets Directory.
+- Unusual Incident Tracker.
+
+**Phase 7 – Important Tools & Reporting**
+- Bulk Analysis.
+- PF Entry Speed Checking.
+- Advanced reporting and analytics.
+
+---
+
+### 18. DATA & DOCUMENTS TO BE PROVIDED
+
+The following information will be provided progressively:
+
+1. Excel file containing CLI IDs, names and mobile numbers.
+2. Crew master Excel containing employee information and CLI assignments.
+3. Existing website source code and database structure, where required.
+4. Weekly training update Excel format.
+5. Detailed training rules and promotional training requirements.
+6. Existing Google Sheets links.
+7. Google Drive unusual incident directory links.
+8. Additional departmental reporting formats and requirements.
+
+The application should be designed to accommodate these inputs without requiring major structural changes.
+
+---
+
+### 19. FINAL OBJECTIVE
+
+The final application should function as a comprehensive departmental digital management platform for Electric Operation Department, HWH Division, Eastern Railway.
+
+It should bring all major activities under a single platform:
+
+- Crew Management
+- CLI Supervision
+- Officer Monitoring
+- Operational Control
+- Training & Medical Management
+- Counselling & Notice Management
+- Performance Analysis
+- Learning & Assessment
+- Departmental Information
+- Operational Tools
+- Centralized Document Directories
+
+**The fundamental principle is to establish a centralized, hierarchical and permission-controlled system where every user gets the information and functionality relevant to their official responsibility.**
+
+
+
+Second Stage of Upgradation - 
+
+here i will tell you some upgradation and after that i will upload excel formats one by one
+
+Link - elearning - https://elearninghwh.in/home_page.html under learning materials
+
+imp link - FOIS, COIS, RTIS, SSTS
+
+Admin Options For  - Latest bulletin Upload, carosual photo upload, page content management like cms
+
+Also Rules & Regulation should have pdf upload options and learning should have content upload options along with title.
+
+
+CLI ID ARE AVAIALABLE LIKE - HWH0095 use those for login user id 
+
+
+
+Troubleshooting guide videos
+GR & SR every topic videos
+
+WRM PPT register
+Unusual Register
+
+
+
+Photo Galary - Family Safety Seminar, Running Room Photos, Award Photos.
+
+Running Room - Informations & Handout
+
+Lobbies - Informations & Handout on officer visits
+
+
+15963
+
+Overall System Upgradation - 
+However in the overall system tables are generally shown all data at a glance but i want to show 10 datas default and use pagination like data tables or else use data tables. After all filter use small button with icon at least.
+
+
+CLI Dashboard Upgradation - 
+
+At CLI Dashboard - Each Crew under him is visibile on list on a table - now we should have option to view the crew details and footplate remarks on him by his cli or other cli or counselling remarks or other parameters 
+
+log of all footplates and counsellings should be there and overall profile should judge the as per latest crew ratings.
+
+And based on params cli should identify those crew like who are weak in like signal call out or braking or anything else. actually after identifying officer would instruct particular CLI to improve check particular things of particular crew..one overall report of crew performance should be generated to after anlysis.
+
+ based on these points cli will in earch point in the scale of 5 - 1. SIGNAL CALL OUT   2. BRAKE TECHNIQUE   3. HIGH SPEED TENDENCY  4. PF ENTRY SPEED / YELLOW PASSING SPEED  5. PSR/TSR OBSERVATION  6. PERFORMANCE OF ALP   7. WHISTLING AT THE L/C AND W/L BIARD  8. BRAKE FEEL TEST AND BRAKE POWER TEST   9. OTHER OBSERVATION
+
+whatever cli can see at his dashboard officer should see all those 
