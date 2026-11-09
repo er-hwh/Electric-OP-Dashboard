@@ -1070,6 +1070,7 @@ Lobbies - Informations & Handout on officer visits
 
 15963
 
+
 Overall System Upgradation - 
 However in the overall system tables are generally shown all data at a glance but i want to show 10 datas default and use pagination like data tables or else use data tables. After all filter use small button with icon at least.
 
@@ -1084,4 +1085,6 @@ And based on params cli should identify those crew like who are weak in like sig
 
  based on these points cli will in earch point in the scale of 5 - 1. SIGNAL CALL OUT   2. BRAKE TECHNIQUE   3. HIGH SPEED TENDENCY  4. PF ENTRY SPEED / YELLOW PASSING SPEED  5. PSR/TSR OBSERVATION  6. PERFORMANCE OF ALP   7. WHISTLING AT THE L/C AND W/L BIARD  8. BRAKE FEEL TEST AND BRAKE POWER TEST   9. OTHER OBSERVATION
 
-whatever cli can see at his dashboard officer should see all those 
+whatever cli can see at his dashboard officer should see all those in his dashboard in broader scope..
+
+Main motto is to identify those weak crew and guide them better.

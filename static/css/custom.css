@@ -125,16 +125,18 @@ body {
 .hero-slider {
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  background: #001a33;
 }
 
-.carousel-item {
-  height: 420px;
-  background-color: #001f3f;
+.hero-slider .carousel-item {
+  height: 440px;
+  background: linear-gradient(135deg, #001f3f 0%, #001122 100%);
+  text-align: center;
 }
 
-.carousel-item img {
-  object-fit: cover;
+.hero-slider .carousel-item img {
+  object-fit: contain;
   object-position: center;
   height: 100%;
   width: 100%;

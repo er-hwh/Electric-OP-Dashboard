@@ -699,7 +699,80 @@ class FootplateInspection(db.Model):
     other_observations = db.Column(db.Text)
     safety_rating = db.Column(db.Integer, default=5)
 
+    # 1-to-5 Scale Quantitative Scoring for Each Safety Checkpoint
+    score_signal_call_out = db.Column(db.Integer, default=5)
+    score_brake_technique = db.Column(db.Integer, default=5)
+    score_high_speed_tendency = db.Column(db.Integer, default=5)
+    score_pf_entry_speed = db.Column(db.Integer, default=5)
+    score_psr_tsr_observation = db.Column(db.Integer, default=5)
+    score_alp_performance = db.Column(db.Integer, default=5)
+    score_whistling_habit = db.Column(db.Integer, default=5)
+    score_bft_bpt_test = db.Column(db.Integer, default=5)
+    score_other_observations = db.Column(db.Integer, default=5)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def get_parameter_scores(self):
+        """Returns dict of 9 parameter scores."""
+        return {
+            'signal_call_out': self.score_signal_call_out or 5,
+            'brake_technique': self.score_brake_technique or 5,
+            'high_speed_tendency': self.score_high_speed_tendency or 5,
+            'pf_entry_speed': self.score_pf_entry_speed or 5,
+            'psr_tsr_observation': self.score_psr_tsr_observation or 5,
+            'alp_performance': self.score_alp_performance or 5,
+            'whistling_habit': self.score_whistling_habit or 5,
+            'bft_bpt_test': self.score_bft_bpt_test or 5,
+            'other_observations': self.score_other_observations or 5,
+        }
+
+    def get_weak_parameters(self, threshold=3):
+        """Returns list of parameters where score <= threshold."""
+        labels = {
+            'signal_call_out': 'Signal Call Out',
+            'brake_technique': 'Brake Technique',
+            'high_speed_tendency': 'Speed Control / High Speed Tendency',
+            'pf_entry_speed': 'PF Entry / Yellow Passing Speed',
+            'psr_tsr_observation': 'PSR / TSR Adherence',
+            'alp_performance': 'Performance of ALP',
+            'whistling_habit': 'Whistling at L/C & W/L Board',
+            'bft_bpt_test': 'Brake Feel & Brake Power Test',
+            'other_observations': 'Other Operational Observation'
+        }
+        weak = []
+        scores = self.get_parameter_scores()
+        for k, val in scores.items():
+            if val <= threshold:
+                weak.append({
+                    'param': k,
+                    'label': labels.get(k, k),
+                    'score': val,
+                    'remark': getattr(self, k, '') or ''
+                })
+        return weak
+
+
+class OfficerDirective(db.Model):
+    """Directives issued by Officers to CLIs for targeted monitoring/counselling of weak crews."""
+    __tablename__ = 'officer_directives'
+
+    id = db.Column(db.Integer, primary_key=True)
+    officer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    cli_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    crew_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    crew_id_str = db.Column(db.String(50), nullable=True)
+    crew_name = db.Column(db.String(150), nullable=True)
+    parameter_focus = db.Column(db.String(255), nullable=False)
+    instruction_text = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(50), default='PENDING')  # PENDING, IN_PROGRESS, COMPLIED
+    deadline_date = db.Column(db.Date, nullable=True)
+    compliance_remarks = db.Column(db.Text, nullable=True)
+    complied_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    officer = db.relationship('User', foreign_keys=[officer_id], backref='directives_issued')
+    cli = db.relationship('User', foreign_keys=[cli_id], backref='directives_received')
+    crew_user = db.relationship('User', foreign_keys=[crew_user_id])
 
 
 class Message(db.Model):

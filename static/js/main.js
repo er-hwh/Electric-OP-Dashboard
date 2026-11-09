@@ -42,4 +42,33 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.appendChild(e.target);
         }
     });
+
+    // Initialize DataTables with 10 records default and clean pagination
+    function initDataTables() {
+        if (typeof $ !== 'undefined' && $.fn.DataTable) {
+            $('.datatable, .table-paginated').each(function() {
+                if (!$.fn.DataTable.isDataTable(this)) {
+                    $(this).DataTable({
+                        pageLength: 10,
+                        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                        language: {
+                            search: "_INPUT_",
+                            searchPlaceholder: "Search table records...",
+                            lengthMenu: "Show _MENU_ records",
+                            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                            paginate: {
+                                previous: '<i class="fa-solid fa-chevron-left"></i>',
+                                next: '<i class="fa-solid fa-chevron-right"></i>'
+                            }
+                        },
+                        responsive: false,
+                        autoWidth: false,
+                        order: []
+                    });
+                }
+            });
+        }
+    }
+    initDataTables();
+
 });

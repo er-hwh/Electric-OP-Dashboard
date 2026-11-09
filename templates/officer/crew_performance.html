@@ -1,119 +1,179 @@
 {% extends "base.html" %}
 
-{% block title %}Crew Performance Monitoring | Electric Operation HWH{% endblock %}
+{% block title %}Divisional Crew Safety & Performance Monitoring | Electric OP Howrah{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-4">
-    <!-- PAGE TITLE -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+<div class="container-fluid px-3 px-md-4 py-3">
+    <!-- PAGE TITLE & REPORT BUTTON -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="badge bg-info text-dark px-3 py-2 fs-6">
-                    <i class="fa-solid fa-users me-1"></i> Running Staff Supervision
+                <span class="badge bg-danger text-white px-2.5 py-1.5 fs-6">
+                    <i class="fa-solid fa-shield-halved me-1"></i> Running Staff Safety &amp; Performance
                 </span>
-                <span class="badge bg-secondary">Cadre Performance & Compliance</span>
+                <span class="badge bg-secondary">Howrah Division &bull; Electric &amp; Diesel Traction</span>
             </div>
-            <h3 class="fw-bold text-dark mb-0">Crew Performance & Compliance Monitoring</h3>
+            <h3 class="fw-bold text-dark mb-0">Divisional Crew Performance &amp; Safety Monitoring</h3>
             <p class="text-muted small mb-0">
-                Divisional monitoring of running staff grades, footplate compliance, counselling status, SPM analysis & officer remarks.
+                Centralized supervisory monitoring of running crew performance scores, footplate compliance, weak parameters &amp; CLI directives.
             </p>
         </div>
-        <div class="d-flex gap-2 mt-3 mt-md-0">
-            <a href="{{ url_for('officer.cli_movements') }}" class="btn btn-outline-primary fw-bold">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <a href="{{ url_for('officer.crew_performance_report') }}" class="btn btn-danger btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-file-contract me-1"></i> Performance Audit Report
+            </a>
+            <a href="{{ url_for('officer.cli_movements') }}" class="btn btn-outline-primary btn-sm fw-bold">
                 <i class="fa-solid fa-person-walking me-1"></i> CLI Movement Monitor
             </a>
-            <a href="{{ url_for('officer.cli_performance') }}" class="btn btn-outline-success fw-bold">
+            <a href="{{ url_for('officer.cli_performance') }}" class="btn btn-outline-success btn-sm fw-bold">
                 <i class="fa-solid fa-chart-line me-1"></i> CLI Performance
             </a>
-            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-secondary">
+            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-shield-halved me-1"></i> Officer Desk
             </a>
         </div>
     </div>
 
-    <!-- FILTER BAR -->
-    <div class="card border-0 shadow-sm mb-4">
+    <!-- DIVISIONAL WEAK CREW VULNERABILITY MATRIX -->
+    <div class="card border-0 shadow-sm mb-3 rounded-3 border-start border-4 border-danger">
         <div class="card-body p-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                <div>
+                    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                        <span>Divisional Weak Crew Safety Matrix</span>
+                        <span class="badge bg-danger px-2.5 py-1 fs-6">{{ weak_division_crews_cnt }} Crews Needing Focus</span>
+                    </h5>
+                    <small class="text-muted">Running staff with rating &le; 3 in any of the 9 safety parameters or Grade C classification</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-light text-dark border px-3 py-1.5 font-monospace">
+                        Monitoring {{ total_division_crews }} Crews across {{ lobbies|length }} Lobbies
+                    </span>
+                </div>
+            </div>
+
+            <!-- 9 CHECKPOINTS QUICK FILTER PILLS -->
+            <div class="d-flex flex-wrap gap-1.5 mt-2 pt-2 border-top">
+                <a href="{{ url_for('officer.crew_performance', weak_in='ALL') }}" class="btn btn-sm {% if current_weak_in == 'ALL' or not current_weak_in %}btn-secondary{% else %}btn-outline-secondary{% endif %} py-1 px-2 small">
+                    All Cadre ({{ total_division_crews }})
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='any_weak') }}" class="btn btn-sm {% if current_weak_in == 'any_weak' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small fw-bold">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> All Vulnerable ({{ weak_division_crews_cnt }})
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='signal_call_out') }}" class="btn btn-sm {% if current_weak_in == 'signal_call_out' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-traffic-light me-1"></i> Signal Call Out: <strong>{{ weak_param_counts.signal_call_out }}</strong>
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='brake_technique') }}" class="btn btn-sm {% if current_weak_in == 'brake_technique' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-dharmachakra me-1"></i> Brake Technique: <strong>{{ weak_param_counts.brake_technique }}</strong>
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='high_speed_tendency') }}" class="btn btn-sm {% if current_weak_in == 'high_speed_tendency' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-gauge-simple-high me-1"></i> Speed Control: <strong>{{ weak_param_counts.high_speed_tendency }}</strong>
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='pf_entry_speed') }}" class="btn btn-sm {% if current_weak_in == 'pf_entry_speed' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-train-subway me-1"></i> PF/Yellow Speed: <strong>{{ weak_param_counts.pf_entry_speed }}</strong>
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='psr_tsr_observation') }}" class="btn btn-sm {% if current_weak_in == 'psr_tsr_observation' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> PSR/TSR: <strong>{{ weak_param_counts.psr_tsr_observation }}</strong>
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='alp_performance') }}" class="btn btn-sm {% if current_weak_in == 'alp_performance' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-user-check me-1"></i> ALP: <strong>{{ weak_param_counts.alp_performance }}</strong>
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='whistling_habit') }}" class="btn btn-sm {% if current_weak_in == 'whistling_habit' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-bullhorn me-1"></i> Whistling: <strong>{{ weak_param_counts.whistling_habit }}</strong>
+                </a>
+                <a href="{{ url_for('officer.crew_performance', weak_in='bft_bpt_test') }}" class="btn btn-sm {% if current_weak_in == 'bft_bpt_test' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-stopwatch me-1"></i> BFT/BPT: <strong>{{ weak_param_counts.bft_bpt_test }}</strong>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER FORM (SMALL BUTTONS WITH ICONS) -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-2.5">
             <form method="GET" action="{{ url_for('officer.crew_performance') }}" class="row g-2 align-items-center">
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted mb-1">Lobby</label>
+                <input type="hidden" name="weak_in" value="{{ current_weak_in or 'ALL' }}">
+                <div class="col-md-2 col-6">
                     <select name="lobby" class="form-select form-select-sm">
-                        <option value="ALL" {% if current_lobby == 'ALL' %}selected{% endif %}>-- All Lobbies --</option>
+                        <option value="ALL" {% if current_lobby == 'ALL' %}selected{% endif %}>All Lobbies</option>
                         {% for l in lobbies %}
-                            <option value="{{ l.code }}" {% if current_lobby == l.code %}selected{% endif %}>{{ l.code }}</option>
+                            <option value="{{ l.code }}" {% if current_lobby == l.code %}selected{% endif %}>{{ l.code }} - {{ l.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted mb-1">CLI In-Charge</label>
+                <div class="col-md-2 col-6">
                     <select name="cli" class="form-select form-select-sm">
-                        <option value="ALL" {% if current_cli == 'ALL' %}selected{% endif %}>-- All CLIs --</option>
+                        <option value="ALL" {% if current_cli == 'ALL' %}selected{% endif %}>All Nominated CLIs</option>
                         {% for c in all_clis %}
                             <option value="{{ c.id }}" {% if current_cli == c.id|string %}selected{% endif %}>{{ c.full_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted mb-1">Grade</label>
+                <div class="col-md-2 col-6">
                     <select name="grade" class="form-select form-select-sm">
-                        <option value="ALL" {% if current_grade == 'ALL' %}selected{% endif %}>-- All Grades --</option>
+                        <option value="ALL" {% if current_grade == 'ALL' %}selected{% endif %}>All Grades</option>
                         <option value="A" {% if current_grade == 'A' %}selected{% endif %}>Grade A</option>
                         <option value="B" {% if current_grade == 'B' %}selected{% endif %}>Grade B</option>
                         <option value="C" {% if current_grade == 'C' %}selected{% endif %}>Grade C</option>
                         <option value="D" {% if current_grade == 'D' %}selected{% endif %}>Grade D</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted mb-1">Cadre Category</label>
+                <div class="col-md-2 col-6">
                     <select name="category" class="form-select form-select-sm">
-                        <option value="ALL" {% if current_category == 'ALL' %}selected{% endif %}>-- All Categories --</option>
+                        <option value="ALL" {% if current_category == 'ALL' %}selected{% endif %}>All Categories</option>
                         {% for cat in ['LPM', 'LPP', 'MMAN', 'LPG', 'LPS-I', 'LPS-II', 'SALP', 'ALP'] %}
                             <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted mb-1">Search Keywords</label>
+                <div class="col-md-2 col-8">
                     <input type="text" name="q" class="form-control form-control-sm" placeholder="Crew Name, PF, CUG..." value="{{ current_q }}">
                 </div>
-                <div class="col-md-1 d-flex align-items-end pt-3">
-                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold" title="Filter"><i class="fa-solid fa-filter"></i></button>
+                <div class="col-md-2 col-4 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm fw-bold flex-fill" title="Filter Records">
+                        <i class="fa-solid fa-filter me-1"></i> Filter
+                    </button>
+                    <a href="{{ url_for('officer.crew_performance') }}" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- CREW CADRE TABLE -->
-    <div class="card border-0 shadow-sm">
+    <!-- CREW CADRE TABLE (PAGINATED DATATABLE) -->
+    <div class="card border-0 shadow-sm rounded-3">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
             <h5 class="fw-bold mb-0 text-dark">
-                <i class="fa-solid fa-clipboard-user me-2 text-primary"></i>Crew Performance Cadre ({{ records|length }})
+                <i class="fa-solid fa-clipboard-user me-2 text-primary"></i>Running Crew Performance &amp; Safety Cadre ({{ records|length }} Crews)
             </h5>
-            <small class="text-muted"><i class="fa-solid fa-circle-check me-1 text-success"></i>Showing full performance and supervisory attributes</small>
+            <small class="text-muted"><i class="fa-solid fa-circle-check me-1 text-success"></i>Showing 10 records per page by default with live search &amp; pagination</small>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-nowrap">
+        <div class="table-responsive p-2">
+            <table class="table table-hover align-middle mb-0 datatable text-nowrap" id="officerCrewTable">
                 <thead class="table-light text-uppercase small">
                     <tr>
-                        <th class="ps-3">Crew Name</th>
+                        <th class="ps-3">#</th>
+                        <th>Crew Name &amp; Bio</th>
                         <th>HQ</th>
                         <th>Category</th>
                         <th>Grade</th>
                         <th>Nominated CLI</th>
+                        <th>Safety Vulnerability Status</th>
+                        <th>Latest Rating</th>
                         <th>Last Footplate</th>
-                        <th>Safety Counselling</th>
-                        <th>SPM Check</th>
-                        <th>CVVRS Check</th>
-                        <th>Officer Remarks & Notes</th>
-                        <th class="text-end pe-3">Action</th>
+                        <th>Officer Remarks</th>
+                        <th class="text-end pe-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="small">
                     {% for r in records %}
                         <tr>
-                            <td class="ps-3">
+                            <td class="ps-3 fw-bold text-muted">{{ loop.index }}</td>
+                            <td>
                                 <div class="fw-bold text-dark">{{ r.crew_name or '--' }}</div>
-                                <small class="text-muted">CMS: {{ r.crew_id_str or '--' }} | PF: {{ r.pf_no or '--' }}</small>
+                                <small class="text-muted">CMS: {{ r.crew_id_str or '--' }} | PF: {{ r.pf_no or '--' }} | CUG: {{ r.cug or '--' }}</small>
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border">{{ r.crew_hq or '--' }}</span>
@@ -122,56 +182,60 @@
                                 <span class="badge bg-secondary text-white">{{ r.designation or '--' }}</span>
                             </td>
                             <td>
-                                {% if r.grade %}
-                                    <span class="badge {% if r.grade == 'A' %}bg-success{% elif r.grade == 'B' %}bg-primary{% elif r.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %} fw-bold">
-                                        Grade {{ r.grade }}
+                                <span class="badge {% if r.grade == 'A' %}bg-success{% elif r.grade == 'B' %}bg-primary{% elif r.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %} fw-bold">
+                                    Grade {{ r.grade or 'A' }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-primary">{{ r.cli_name or 'CLI/HWH' }}</div>
+                            </td>
+                            <td>
+                                {% if r.weak_params %}
+                                    <div class="d-flex flex-wrap gap-1" style="max-width: 280px;">
+                                        {% for wp in r.weak_params %}
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger small py-1 px-1.5" title="{{ wp.remark or wp.label }}">
+                                                <i class="fa-solid fa-triangle-exclamation me-0.5"></i>{{ wp.label }}: {{ wp.score }}/5
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success small py-1 px-2">
+                                        <i class="fa-solid fa-shield-check me-1"></i>Compliant (&gt;3/5)
                                     </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.latest_fp and r.latest_fp.safety_rating %}
+                                    <span class="text-warning fw-bold">{% for _ in range(r.latest_fp.safety_rating) %}&#9733;{% endfor %}</span>
+                                    <span class="text-muted">({{ r.latest_fp.safety_rating }}/5)</span>
                                 {% else %}
                                     <span class="text-muted">--</span>
                                 {% endif %}
                             </td>
+                            <td>{{ r.last_footplate or '--' }}</td>
                             <td>
-                                <small class="fw-bold text-primary">{{ r.cli_name or '--' }}</small>
-                            </td>
-                            <td>
-                                <small>{{ r.last_footplate or '--' }}</small>
-                            </td>
-                            <td>
-                                <small>{{ r.safety_counselling or '--' }}</small>
-                            </td>
-                            <td>
-                                <small>{{ r.last_spm_check or '--' }}</small>
-                            </td>
-                            <td>
-                                <small>{{ r.last_cvvrs_check or '--' }}</small>
-                            </td>
-                            <td style="max-width: 250px; white-space: normal;">
                                 {% if r.officer_remarks %}
-                                    <div class="p-2 rounded bg-light border border-info border-opacity-25 small">
-                                        <div class="fw-bold text-primary mb-1">
-                                            <i class="fa-solid fa-signature me-1"></i>{{ r.officer_reviewer.full_name if r.officer_reviewer else 'Officer' }}
-                                        </div>
-                                        <div class="text-dark">{{ r.officer_remarks }}</div>
-                                        {% if r.officer_remarked_at %}
-                                            <small class="text-muted d-block mt-1">{{ r.officer_remarked_at.strftime('%d-%b %H:%M') }}</small>
-                                        {% endif %}
-                                    </div>
+                                    <span class="badge bg-info bg-opacity-10 text-dark border text-truncate d-inline-block" style="max-width: 160px;" title="{{ r.officer_remarks }}">
+                                        {{ r.officer_remarks }}
+                                    </span>
                                 {% else %}
-                                    <span class="text-muted small">No officer observation</span>
+                                    <span class="text-muted small">None</span>
                                 {% endif %}
                             </td>
                             <td class="text-end pe-3">
-                                <button type="button" class="btn btn-outline-info btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#crewRemarkModal{{ r.id }}">
-                                    <i class="fa-solid fa-comment-pen me-1"></i> Remark
-                                </button>
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="11" class="text-center py-5 text-muted">
-                                <i class="fa-solid fa-users-slash fa-3x mb-3 text-secondary opacity-50"></i>
-                                <h6>No Crew Records Found</h6>
-                                <p class="small mb-0">No running staff match the selected criteria.</p>
+                                <div class="btn-group btn-group-sm">
+                                    {% if r.crew_user_id %}
+                                    <a href="{{ url_for('officer.crew_dossier', crew_user_id=r.crew_user_id) }}" class="btn btn-outline-info btn-sm fw-bold" target="_blank" title="View 360° Safety Dossier">
+                                        <i class="fa-solid fa-id-card-clip"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#instructCliModal{{ r.id }}" title="Instruct CLI to Monitor/Counsel">
+                                        <i class="fa-solid fa-bullhorn"></i> Instruct CLI
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#officerRemarkModal{{ r.id }}" title="Add Officer Observation">
+                                        <i class="fa-solid fa-comment-dots"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}
@@ -179,43 +243,108 @@
             </table>
         </div>
     </div>
-
-    <!-- CREW REMARK MODALS (OUTSIDE TABLE) -->
-    {% for r in records %}
-<!-- CREW REMARK MODAL -->
-                        <div class="modal fade" id="crewRemarkModal{{ r.id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <form method="POST" action="{{ url_for('officer.crew_performance') }}">
-                                        <input type="hidden" name="record_id" value="{{ r.id }}">
-                                        <div class="modal-header bg-light">
-                                            <h5 class="modal-title fw-bold text-dark">
-                                                <i class="fa-solid fa-user-pen me-1 text-info"></i> Officer Remark on Crew
-                                            </h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="mb-3 p-3 bg-light rounded small">
-                                                <div><strong>Crew:</strong> {{ r.crew_name }} ({{ r.designation }})</div>
-                                                <div><strong>Lobby:</strong> {{ r.crew_hq }} | <strong>CLI:</strong> {{ r.cli_name }}</div>
-                                                <div><strong>Current Grade:</strong> {{ r.grade or 'A' }}</div>
-                                                <div class="mt-2 text-muted"><strong>Last Footplate:</strong> {{ r.last_footplate or 'N/A' }}</div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold text-dark small">Officer Observation / Evaluation Remarks:</label>
-                                                <textarea name="officer_remarks" class="form-control" rows="4" placeholder="Enter officer remarks regarding crew vigilance, safety habits, or monitoring instructions..." required>{{ r.officer_remarks or '' }}</textarea>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" class="btn btn-info btn-sm fw-bold text-dark">
-                                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Remark
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-    {% endfor %}
 </div>
+
+<!-- MODALS CONTAINER (PLACED DIRECTLY OUTSIDE TABLE TO PREVENT BLINKING/FOCUS OSCILLATION) -->
+{% for r in records %}
+    {% if r.crew_user_id %}
+    <!-- 1. INSTRUCT CLI MODAL -->
+    <div class="modal fade" id="instructCliModal{{ r.id }}" tabindex="-1" aria-labelledby="instructCliLabel{{ r.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <form method="POST" action="{{ url_for('officer.instruct_cli', crew_user_id=r.crew_user_id) }}">
+                    <div class="modal-header bg-danger text-white py-2 px-3">
+                        <h6 class="modal-title fw-bold" id="instructCliLabel{{ r.id }}">
+                            <i class="fa-solid fa-bullhorn me-1"></i> Instruct CLI to Monitor / Counsel Crew
+                        </h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-3">
+                        <div class="alert alert-light border small mb-3">
+                            <div><strong>Crew Name:</strong> {{ r.crew_name }} (CMS: {{ r.crew_id_str }})</div>
+                            <div><strong>Designation &amp; Grade:</strong> {{ r.designation }} &bull; Grade {{ r.grade }}</div>
+                            <div><strong>Nominated CLI:</strong> {{ r.cli_name or 'CLI/HWH' }}</div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-dark mb-1">Target CLI:</label>
+                            <select name="cli_id" class="form-select form-select-sm" required>
+                                {% for c in all_clis %}
+                                    <option value="{{ c.id }}" {% if c.full_name|lower in (r.cli_name or '')|lower %}selected{% endif %}>
+                                        {{ c.full_name }} ({{ c.lobby.code if c.lobby else 'HQ' }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-dark mb-1">Specific Parameter Focus Needing Improvement:</label>
+                            <select name="parameter_focus" class="form-select form-select-sm" required>
+                                <option value="Signal Call Out &amp; Vigilance">Signal Call Out &amp; Vigilance</option>
+                                <option value="Brake Technique &amp; Stopping Distance">Brake Technique &amp; Stopping Distance</option>
+                                <option value="Speed Adherence &amp; MPS Control">Speed Adherence &amp; MPS Control</option>
+                                <option value="Platform Entry Speed &amp; Passing Yellow Signals">Platform Entry Speed &amp; Passing Yellow Signals</option>
+                                <option value="PSR / TSR Caution Order Adherence">PSR / TSR Caution Order Adherence</option>
+                                <option value="Vigilance &amp; Teamwork with ALP">Vigilance &amp; Teamwork with ALP</option>
+                                <option value="Whistling at L/C &amp; W/L Board">Whistling at L/C &amp; W/L Board</option>
+                                <option value="Brake Feel Test (BFT) &amp; Brake Power Test (BPT)">Brake Feel Test (BFT) &amp; Brake Power Test (BPT)</option>
+                                <option value="Comprehensive Footplate &amp; Counselling">Comprehensive Footplate &amp; Counselling</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-dark mb-1">Officer Instructions &amp; Directive Details:</label>
+                            <textarea name="instruction_text" class="form-control form-control-sm" rows="3" required placeholder="Instruct CLI to conduct targeted footplate on this crew, specifically checking brake technique and signal callout adherence..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark mb-1">Target Completion Deadline:</label>
+                            <select name="deadline_days" class="form-select form-select-sm">
+                                <option value="7" selected>Within 7 Days (Urgent Focus)</option>
+                                <option value="14">Within 14 Days (Standard)</option>
+                                <option value="30">Within 30 Days (Routine Cycle)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-2 px-3 bg-light">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger btn-sm fw-bold px-3">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Dispatch Directive to CLI
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 2. OFFICER REMARK MODAL -->
+    <div class="modal fade" id="officerRemarkModal{{ r.id }}" tabindex="-1" aria-labelledby="remarkModalLabel{{ r.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <form method="POST" action="{{ url_for('officer.crew_performance') }}">
+                    <input type="hidden" name="record_id" value="{{ r.id }}">
+                    <div class="modal-header bg-dark text-white py-2 px-3">
+                        <h6 class="modal-title fw-bold" id="remarkModalLabel{{ r.id }}">
+                            <i class="fa-solid fa-comment-dots me-1 text-warning"></i> Add Officer Observation for {{ r.crew_name }}
+                        </h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-3">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark mb-1">Officer Observation / Guidance:</label>
+                            <textarea name="officer_remarks" class="form-control form-control-sm" rows="3" placeholder="Enter observation, directive, or performance note for running staff cadre records..." required>{{ r.officer_remarks or '' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-2 px-3 bg-light">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm fw-bold">
+                            <i class="fa-solid fa-save me-1"></i> Save Remark
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endfor %}
 {% endblock %}

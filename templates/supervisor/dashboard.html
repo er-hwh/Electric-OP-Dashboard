@@ -180,6 +180,118 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     {% endif %}
 
+    <!-- OFFICER SAFETY DIRECTIVES FOR THIS CLI -->
+    {% if officer_directives %}
+    <div class="card border-0 shadow-sm mb-4 rounded-3 border-start border-4 border-danger">
+        <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-danger mb-0 small text-uppercase">
+                <i class="fa-solid fa-bullhorn me-1"></i> Directives from Officers ({{ pending_directives_cnt }} Pending Focus Actions)
+            </h6>
+            <span class="badge bg-danger">{{ officer_directives|length }} Total Directives</span>
+        </div>
+        <div class="card-body p-3">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Date</th>
+                            <th>Issued By Officer</th>
+                            <th>Target Crew</th>
+                            <th>Parameter Focus</th>
+                            <th>Directive Details</th>
+                            <th>Deadline</th>
+                            <th>Status &amp; Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="small">
+                        {% for d in officer_directives %}
+                        <tr>
+                            <td>{{ d.created_at.strftime('%d-%b-%Y') }}</td>
+                            <td class="fw-bold">{{ d.officer.full_name }} ({{ d.officer.sub_role }})</td>
+                            <td>
+                                <strong>{{ d.crew_name or '--' }}</strong>
+                                <small class="text-muted font-monospace">({{ d.crew_id_str }})</small>
+                            </td>
+                            <td><span class="badge bg-danger">{{ d.parameter_focus }}</span></td>
+                            <td>{{ d.instruction_text }}</td>
+                            <td>
+                                <span class="fw-bold {% if d.deadline_date and d.deadline_date < date.today() and d.status == 'PENDING' %}text-danger{% else %}text-dark{% endif %}">
+                                    {{ d.deadline_date.strftime('%d-%b-%Y') if d.deadline_date else '--' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if d.status == 'COMPLIED' %}
+                                <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> Complied</span>
+                                {% else %}
+                                <button type="button" class="btn btn-outline-success btn-sm py-0 px-2 fw-bold" data-bs-toggle="modal" data-bs-target="#complyDirModal{{ d.id }}">
+                                    <i class="fa-solid fa-check me-1"></i> Mark Complied
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SQUAD WEAK CREW VULNERABILITY MATRIX -->
+    <div class="card border-0 shadow-sm mb-3 rounded-3 border-start border-4 border-warning bg-white">
+        <div class="card-body p-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                <div>
+                    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                        <span>CLI Squad Weak Crew Vulnerability Matrix</span>
+                        <span class="badge bg-danger px-2.5 py-1 fs-6">{{ weak_crews_cnt }} Crews Needing Focus</span>
+                    </h5>
+                    <small class="text-muted">Crews in your squad with rating &le; 3 in any safety parameter or Grade C classification</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-light text-dark border px-3 py-1.5 font-monospace">
+                        Monitoring {{ total_nominated }} Assigned Running Staff
+                    </span>
+                </div>
+            </div>
+
+            <!-- 9 CHECKPOINTS QUICK FILTER PILLS -->
+            <div class="d-flex flex-wrap gap-1.5 mt-2 pt-2 border-top">
+                <a href="{{ url_for('supervisor.dashboard', weak_in='ALL') }}" class="btn btn-sm {% if weak_in_filter == 'all' or not weak_in_filter %}btn-secondary{% else %}btn-outline-secondary{% endif %} py-1 px-2 small">
+                    All Squad ({{ total_nominated }})
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='any_weak') }}" class="btn btn-sm {% if weak_in_filter == 'any_weak' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small fw-bold">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> All Vulnerable ({{ weak_crews_cnt }})
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='signal_call_out') }}" class="btn btn-sm {% if weak_in_filter == 'signal_call_out' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-traffic-light me-1"></i> Signal Call: <strong>{{ weak_param_counts.signal_call_out }}</strong>
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='brake_technique') }}" class="btn btn-sm {% if weak_in_filter == 'brake_technique' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-dharmachakra me-1"></i> Brake Tech: <strong>{{ weak_param_counts.brake_technique }}</strong>
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='high_speed_tendency') }}" class="btn btn-sm {% if weak_in_filter == 'high_speed_tendency' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-gauge-simple-high me-1"></i> Speed: <strong>{{ weak_param_counts.high_speed_tendency }}</strong>
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='pf_entry_speed') }}" class="btn btn-sm {% if weak_in_filter == 'pf_entry_speed' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-train-subway me-1"></i> PF/Yellow: <strong>{{ weak_param_counts.pf_entry_speed }}</strong>
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='psr_tsr_observation') }}" class="btn btn-sm {% if weak_in_filter == 'psr_tsr_observation' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> PSR/TSR: <strong>{{ weak_param_counts.psr_tsr_observation }}</strong>
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='alp_performance') }}" class="btn btn-sm {% if weak_in_filter == 'alp_performance' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-user-check me-1"></i> ALP: <strong>{{ weak_param_counts.alp_performance }}</strong>
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='whistling_habit') }}" class="btn btn-sm {% if weak_in_filter == 'whistling_habit' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-bullhorn me-1"></i> Whistling: <strong>{{ weak_param_counts.whistling_habit }}</strong>
+                </a>
+                <a href="{{ url_for('supervisor.dashboard', weak_in='bft_bpt_test') }}" class="btn btn-sm {% if weak_in_filter == 'bft_bpt_test' %}btn-danger{% else %}btn-outline-danger{% endif %} py-1 px-2 small">
+                    <i class="fa-solid fa-stopwatch me-1"></i> BFT/BPT: <strong>{{ weak_param_counts.bft_bpt_test }}</strong>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- SEARCH & FILTER SQUAD ROSTER -->
     <div class="card shadow-sm border-0 mb-3 bg-light">
         <div class="card-body p-3">
@@ -241,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover table-bordered align-middle small mb-0">
+            <table class="table table-hover table-bordered align-middle small mb-0 datatable" id="squadRosterTable">
                 <thead class="table-dark">
                     <tr class="text-nowrap text-center">
                         <th>#</th>
@@ -460,9 +572,21 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <div class="row g-2">
                                                     <!-- 1. SIGNAL CALL OUT -->
                                                     <div class="col-md-6">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">1</span> Signal Call Out
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">1</span> Signal Call Out
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_signal_call_out" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <select name="signal_call_out" class="form-select form-select-sm">
                                                             <option value="Satisfactory (Loud, Clear with Proper Hand Gesture)" selected>Satisfactory (Loud, Clear with Proper Hand Gesture)</option>
                                                             <option value="Satisfactory (Loud Voice Calling)">Satisfactory (Loud Voice Calling)</option>
@@ -474,9 +598,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                     <!-- 2. BRAKE TECHNIQUE -->
                                                     <div class="col-md-6">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">2</span> Brake Technique
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">2</span> Brake Technique
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_brake_technique" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <select name="brake_technique" class="form-select form-select-sm">
                                                             <option value="Smooth & Controlled (Proper Dynamic / Regenerative Braking)" selected>Smooth & Controlled (Proper Dynamic / Regenerative Braking)</option>
                                                             <option value="Graduated Application Maintained">Graduated Application Maintained</option>
@@ -488,9 +624,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                     <!-- 3. HIGH SPEED TENDENCY -->
                                                     <div class="col-md-6">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">3</span> High Speed Tendency
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">3</span> High Speed Tendency
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_high_speed_tendency" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <select name="high_speed_tendency" class="form-select form-select-sm">
                                                             <option value="Nil (Strict Adherence to Sectional MPS)" selected>Nil (Strict Adherence to Sectional MPS)</option>
                                                             <option value="Controlled Speed Maintenance Throughout">Controlled Speed Maintenance Throughout</option>
@@ -502,9 +650,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                     <!-- 4. PF ENTRY SPEED / YELLOW PASSING SPEED -->
                                                     <div class="col-md-6">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">4</span> PF Entry Speed / Yellow Passing Speed
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">4</span> PF Entry Speed / Yellow Passing Speed
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_pf_entry_speed" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <select name="pf_entry_speed" class="form-select form-select-sm">
                                                             <option value="Controlled Entry (<15 kmph at PF / Within Limits at Yellow)" selected>Controlled Entry (<15 kmph at PF / Within Limits at Yellow)</option>
                                                             <option value="Speed Controlled Well in Advance Before Platform">Speed Controlled Well in Advance Before Platform</option>
@@ -516,9 +676,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                     <!-- 5. PSR/TSR OBSERVATION -->
                                                     <div class="col-md-6">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">5</span> PSR / TSR Observation
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">5</span> PSR / TSR Observation
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_psr_tsr_observation" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <select name="psr_tsr_observation" class="form-select form-select-sm">
                                                             <option value="100% Strict Compliance to Caution Orders & Speed Boards" selected>100% Strict Compliance to Caution Orders & Speed Boards</option>
                                                             <option value="Coasting Adopted Early Before Restriction Zone">Coasting Adopted Early Before Restriction Zone</option>
@@ -530,9 +702,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                     <!-- 6. PERFORMANCE OF ALP -->
                                                     <div class="col-md-6">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">6</span> Performance of ALP
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">6</span> Performance of ALP
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_alp_performance" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <select name="alp_performance" class="form-select form-select-sm">
                                                             <option value="Alert, Vigilant, Loud Calling & Active Signal Exchange" selected>Alert, Vigilant, Loud Calling & Active Signal Exchange</option>
                                                             <option value="Satisfactory Lookout & Machine Monitoring">Satisfactory Lookout & Machine Monitoring</option>
@@ -544,9 +728,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                     <!-- 7. WHISTLING AT THE L/C AND W/L BOARD -->
                                                     <div class="col-md-6">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">7</span> Whistling at L/C & W/L Board
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">7</span> Whistling at L/C & W/L Board
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_whistling_habit" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <select name="whistling_habit" class="form-select form-select-sm">
                                                             <option value="Continuous Intermittent Whistling Maintained at all W/L & L/C" selected>Continuous Intermittent Whistling Maintained at all W/L & L/C</option>
                                                             <option value="Satisfactory Whistling at Boards and Gates">Satisfactory Whistling at Boards and Gates</option>
@@ -558,9 +754,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                     <!-- 8. BRAKE FEEL TEST AND BRAKE POWER TEST -->
                                                     <div class="col-md-6">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">8</span> Brake Feel & Power Test (BFT / BPT)
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">8</span> Brake Feel & Power Test (BFT / BPT)
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_bft_bpt_test" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <select name="bft_bpt_test" class="form-select form-select-sm">
                                                             <option value="Both BFT & BPT Successfully Conducted After Starting & on Run" selected>Both BFT & BPT Successfully Conducted After Starting & on Run</option>
                                                             <option value="BFT Conducted at First Opportunity; Satisfactory Retardation">BFT Conducted at First Opportunity; Satisfactory Retardation</option>
@@ -572,9 +780,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                                     <!-- 9. OTHER OBSERVATION -->
                                                     <div class="col-12">
-                                                        <label class="form-label small fw-bold text-dark">
-                                                            <span class="badge bg-primary me-1">9</span> Other Observation
-                                                        </label>
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <label class="form-label small fw-bold text-dark mb-0">
+                                                                <span class="badge bg-primary me-1">9</span> Other Operational Observation
+                                                            </label>
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <span class="small text-muted" style="font-size: 0.75rem;">Score:</span>
+                                                                <select name="score_other_observations" class="form-select form-select-sm fw-bold border-primary py-0" style="width: 105px; font-size: 0.8rem;">
+                                                                    <option value="5" selected>&#9733; 5/5</option>
+                                                                    <option value="4">&#9733; 4/5</option>
+                                                                    <option value="3">&#9733; 3/5</option>
+                                                                    <option value="2">&#9733; 2/5</option>
+                                                                    <option value="1">&#9733; 1/5</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         <input type="text" name="other_observations" class="form-control form-control-sm" placeholder="e.g. Cab cleanliness, RS valve check, neutral section coasting, hand gesture discipline...">
                                                     </div>
                                                 </div>
