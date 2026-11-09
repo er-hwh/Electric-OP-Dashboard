@@ -27,4 +27,19 @@ document.addEventListener('DOMContentLoaded', function() {
             bsAlert.close();
         });
     }, 6000);
+
+    // Prevent Bootstrap modal blinking / focus loops by ensuring all modals are direct children of body
+    function relocateModalsToBody() {
+        document.querySelectorAll('.modal').forEach(function(modalEl) {
+            if (modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+        });
+    }
+    relocateModalsToBody();
+    document.addEventListener('show.bs.modal', function(e) {
+        if (e.target && e.target.parentElement !== document.body) {
+            document.body.appendChild(e.target);
+        }
+    });
 });

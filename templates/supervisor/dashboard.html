@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Supervisor Dashboard | Chief Loco Inspector Console{% endblock %}
+{% block title %}Supervisor Dashboard | Chief Loco Inspector Console
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.modal').forEach(function(modalEl) {
+        if (modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-4 py-4">
@@ -26,9 +39,6 @@
             </div>
             <a href="{{ url_for('supervisor.movements') }}" class="btn btn-primary btn-sm fw-bold shadow-sm d-flex align-items-center">
                 <i class="fa-solid fa-person-walking me-1"></i> Daily Movements
-            </a>
-            <a href="{{ url_for('supervisor.training_medical') }}" class="btn btn-outline-info btn-sm fw-bold shadow-sm d-flex align-items-center">
-                <i class="fa-solid fa-graduation-cap me-1"></i> Squad Training & PME
             </a>
             <a href="{{ url_for('supervisor.new_movement') }}" class="btn btn-outline-primary btn-sm fw-bold shadow-sm d-flex align-items-center">
                 <i class="fa-solid fa-plus-circle me-1"></i> Log Activity
@@ -356,7 +366,27 @@
                             </td>
                         </tr>
 
-                        <!-- MODAL: QUICK FOOTPLATE -->
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>
+                                No crew records match your active search or squad assignment.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SQUAD CREW ACTION MODALS (OUTSIDE TABLE)   -->
+    <!-- ========================================== -->
+    {% for item in squad_data %}
+        {% set r = item.record %}
+        {% set comp = item.compliance %}
+        {% set u = item.user %}
+<!-- MODAL: QUICK FOOTPLATE -->
                         <div class="modal fade" id="fpModal{{ r.id }}" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -640,19 +670,7 @@
                                 </div>
                             </div>
                         </div>
-
-                    {% else %}
-                        <tr>
-                            <td colspan="10" class="text-center py-4 text-muted">
-                                <i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>
-                                No crew records match your active search or squad assignment.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    {% endfor %}
 
     <!-- RECENT FOOTPLATE INSPECTIONS LOGGED -->
     <div class="rail-card p-4">

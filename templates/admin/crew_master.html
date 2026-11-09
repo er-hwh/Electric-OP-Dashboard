@@ -191,8 +191,18 @@
                                     </form>
                                 </td>
                             </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-                            <!-- Edit Crew Modal -->
+    <!-- EDIT CREW MODALS (OUTSIDE TABLE) -->
+    {% if crew.items %}
+        {% for c in crew.items %}
+<!-- Edit Crew Modal -->
                             <div class="modal fade" id="editCrewModal{{ c.id }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
@@ -288,12 +298,7 @@
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+        {% endfor %}
+    {% endif %}
 </div>
 {% endblock %}

@@ -270,8 +270,23 @@
                                 </button>
                             </td>
                         </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="12" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-clipboard-list fa-3x mb-3 text-secondary opacity-50"></i>
+                                <h6>No Movement Records Found</h6>
+                                <p class="small mb-0">No CLI activities match the selected filter criteria within the 90-day retention period.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-                        <!-- OFFICER REMARK MODAL -->
+    <!-- OFFICER REMARK MODALS (OUTSIDE TABLE) -->
+    {% for m in movements %}
+<!-- OFFICER REMARK MODAL -->
                         <div class="modal fade" id="remarkModal{{ m.id }}" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -306,18 +321,6 @@
                                 </div>
                             </div>
                         </div>
-                    {% else %}
-                        <tr>
-                            <td colspan="12" class="text-center py-5 text-muted">
-                                <i class="fa-solid fa-clipboard-list fa-3x mb-3 text-secondary opacity-50"></i>
-                                <h6>No Movement Records Found</h6>
-                                <p class="small mb-0">No CLI activities match the selected filter criteria within the 90-day retention period.</p>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 {% endblock %}

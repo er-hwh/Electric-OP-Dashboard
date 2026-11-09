@@ -114,8 +114,16 @@
                                 </button>
                             </td>
                         </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-                        <!-- Edit Lobby Modal -->
+    <!-- EDIT LOBBY MODALS (OUTSIDE TABLE) -->
+    {% for l in lobbies %}
+<!-- Edit Lobby Modal -->
                         <div class="modal fade" id="editLobbyModal{{ l.id }}" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -170,11 +178,6 @@
                                 </div>
                             </div>
                         </div>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 {% endblock %}
