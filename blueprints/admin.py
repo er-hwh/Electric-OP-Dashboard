@@ -11,7 +11,14 @@ from flask import (
 try:
     import pandas as pd
 except ImportError:
-    pd = None
+    import sys
+    _venv = r'C:\Users\Indian Railway\Desktop\PCNL General Shift\WebApp\backup\hwh-division-operation-dashboard\hwh-division-operation-dashboard\venv\Lib\site-packages'
+    if _venv not in sys.path:
+        sys.path.insert(0, _venv)
+    try:
+        import pandas as pd
+    except ImportError:
+        pd = None
 from werkzeug.utils import secure_filename
 from database import db
 from models import (
@@ -29,7 +36,7 @@ from blueprints.excel_helper import (
 admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.before_request
-@role_required('admin')
+@role_required('admin', 'officer')
 def admin_protection():
     pass
 
@@ -567,7 +574,7 @@ def save_crew_batch():
 #  EXCEL UPLOAD  — multi-file, 5 upload types
 # ─────────────────────────────────────────────────────────────────
 
-ALLOWED_EXTENSIONS = {'.xlsx', '.xls'}
+ALLOWED_EXTENSIONS = {'.xlsx', '.xls', '.csv'}
 
 def _allowed_file(filename):
     return os.path.splitext(filename.lower())[1] in ALLOWED_EXTENSIONS
@@ -586,6 +593,21 @@ def _safe_str(val):
     return s
 
 
+def _parse_cms_date(val_str):
+    if not val_str or str(val_str).strip() in ('-', '', 'None', 'NA', 'N/A', 'nan'):
+        return None
+    s = str(val_str).strip().split(' ')[0]
+    for fmt in ('%d-%m-%Y', '%d/%m/%Y', '%Y-%m-%d', '%d-%m-%y', '%d/%m/%y'):
+        try:
+            d = datetime.strptime(s, fmt).date()
+            if d.year < 1930:
+                d = d.replace(year=d.year + 100)
+            return d
+        except Exception:
+            continue
+    return None
+
+
 def _find_header_row(df_raw):
     """
     CMS reports dump 1-2 title rows before the actual header.
@@ -594,29 +616,131 @@ def _find_header_row(df_raw):
     Returns the 0-based index of the header row within df_raw.
     """
     keywords = {'NAME', 'CREW', 'CLI', 'LI ID', 'CREWID', 'CREW ID',
-                'DESIGNATION', 'MOBILE', 'DESIG', 'HRMS', 'CADRE', 'SNO', 'S.NO',
-                'SL NO.', 'SL NO', 'GRADE', 'HQ', 'DOB', 'DOA'}
+                'DESIGNATION', 'MOBILE', 'DESIG', 'HRMS', 'CADRE', 'SNO', 'S.NO', 'SNO.',
+                'SL NO.', 'SL NO', 'GRADE', 'HQ', 'DOB', 'DOA', 'CALL SERVE ADDRESS',
+                'PRESENT PAY', 'RETIREMENTDATE', 'REFT DUE', 'EMP NO', 'LEVEL'}
     for i, row in df_raw.iterrows():
         cells = [str(v).strip().upper() for v in row if str(v).strip()]
-        if any(kw in cells for kw in keywords) and len(cells) >= 3:
+        if any(kw in cells for kw in keywords) and len(cells) >= 2:
             return i
     return 0  # fallback: first row
 
 
+class RecordList(list):
+    def __init__(self, items=None, columns=None):
+        super().__init__(items or [])
+        self.columns = columns or []
+
+    def iterrows(self):
+        for idx, item in enumerate(self):
+            yield idx, item
+
+def _clean_cms_val(val):
+    if val is None:
+        return ""
+    if isinstance(val, float) and val.is_integer():
+        return str(int(val)).strip()
+    s = str(val).strip()
+    if s.endswith('.0') and not s.endswith('..0'):
+        base = s[:-2]
+        if base.replace('-', '').isdigit():
+            s = base
+    return s
+
 def _load_cms_excel(file_path):
     """
-    Load a CMS-style Excel that has 1-2 title rows before the real column
-    header. Reads all columns strictly as string (dtype=str) to guarantee
-    preservation of leading zeros in Staff PF, CUG, Mobile, Crew ID, etc.
+    Load a CMS-style Excel or CSV that has 1-2 title rows before the real column
+    header. Reads all columns strictly as string to guarantee preservation of
+    leading zeros in Staff PF, CUG, Mobile, Crew ID, etc.
+    Uses openpyxl and built-in csv for zero-dependency reliability.
     """
-    df_raw = pd.read_excel(file_path, header=None, dtype=str)
-    hdr_idx = _find_header_row(df_raw)
-    # Use that row as header, reading all cells as string to preserve leading zeros
-    df = pd.read_excel(file_path, header=hdr_idx, dtype=str)
-    df.columns = [str(c).strip().upper() for c in df.columns]
-    # Drop rows where all values are NaN
-    df.dropna(how='all', inplace=True)
-    return df
+    import csv
+    records = []
+    headers = []
+    
+    if file_path.lower().endswith('.csv'):
+        raw_rows = []
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            reader = csv.reader(f)
+            for r in reader:
+                if any(c.strip() for c in r):
+                    raw_rows.append([_clean_cms_val(c) for c in r])
+    else:
+        import openpyxl
+        wb = openpyxl.load_workbook(file_path, data_only=True)
+        sheet = wb.active
+        raw_rows = []
+        for r in sheet.iter_rows(values_only=True):
+            if any(c is not None and str(c).strip() != "" for c in r):
+                raw_rows.append([_clean_cms_val(c) for c in r])
+
+    if not raw_rows:
+        return RecordList([], [])
+
+    keywords = {
+        'CREW ID', 'CREWID', 'CREW NAME', 'MOBILE NO', 'SNO', 'S.NO', 'SNO.',
+        'EMP NO', 'RETIREMENTDATE', 'REFT DUE', 'CALL SERVE ADDRESS', 'PRESENT PAY',
+        'DESIGNATION', 'CREW DESG', 'FATHER', 'TRACTION', 'CADRE', 'HRMS ID',
+        'CREW TYPE', 'LI ID', 'CLI ID', 'SAFETY COUNSELLING', 'TRAINING TYPE'
+    }
+
+    hdr_idx = 0
+    for i, r in enumerate(raw_rows[:15]):
+        cells_up = [c.upper() for c in r if c]
+        matched = sum(1 for c in cells_up if any(kw in c for kw in keywords))
+        if matched >= 2:
+            hdr_idx = i
+            break
+
+    raw_headers = raw_rows[hdr_idx]
+    headers = [str(h).strip().upper() if str(h).strip() else f"COL_{idx+1}" for idx, h in enumerate(raw_headers)]
+
+    for r in raw_rows[hdr_idx + 1:]:
+        if not any(c for c in r):
+            continue
+        rec = {}
+        for i, h in enumerate(headers):
+            rec[h] = r[i] if i < len(r) else ""
+        records.append(rec)
+
+    return RecordList(records, headers)
+
+
+def detect_cms_upload_type(df):
+    cols = [str(c).strip().upper() for c in df.columns]
+    cols_set = set(cols)
+    cols_joined = ' '.join(cols)
+
+    # 1. Call Serve Details
+    if 'CALL SERVE ADDRESS' in cols_set or 'PERMANENT ADDRESS' in cols_set:
+        return 'crew_data'
+
+    # 2. Service Particulars
+    if any(k in cols_set for k in ['PRESENT PAY', 'INCRMNT DUE DATE', 'RETIREMENT DATE', 'LEVEL', 'CREW DESG']):
+        if 'REFT DUE' not in cols_set and 'CALL SERVE ADDRESS' not in cols_set:
+            return 'service_particulars'
+
+    # 3. Other Details
+    if any(k in cols_set for k in ['REFT DUE', 'REFD DUE', 'REFE DUE', 'CREW BASEID', 'SIMULATOR', 'SALP', 'SHR']):
+        return 'other_details'
+
+    # 4. Crew Bio Summary
+    if any(k in cols_set for k in ['CREW TYPE', 'FATHER', 'TRACTION', 'EDU. QUAL.', 'TECH. QUAL.', 'I. PME', 'B.GRP.', 'VISION', 'CREW GRADE']):
+        return 'crew_summary'
+
+    # 5. CLI Biodata
+    if any(k in cols_set for k in ['LI ID', 'CLI ID', 'PAN NO']):
+        return 'cli_biodata'
+
+    # 6. Counselling Master
+    if any(k in cols_set for k in ['SAFETY COUNSELLING', 'LAST FOOTPLATE', 'SPAD HISTORY', 'BA FAIL']):
+        return 'counselling'
+
+    # 7. Training
+    if any(k in cols_set for k in ['TRAINING TYPE', 'INSTITUTE', 'VALIDITY']):
+        return 'training'
+
+    return 'crew_data'
 
 
 @admin_bp.route('/upload-excel', methods=['GET', 'POST'])
@@ -648,47 +772,45 @@ def upload_excel():
             total_files += 1
 
             try:
-                if upload_type == 'crew_data':
-                    df = _load_cms_excel(file_path)
+                df = _load_cms_excel(file_path)
+                curr_type = upload_type
+                if curr_type == 'auto_detect' or not curr_type:
+                    curr_type = detect_cms_upload_type(df)
+
+                if curr_type in ('crew_data', 'call_serve'):
                     count = process_crew_data_excel(df)
                     total_processed += count
-
-                elif upload_type == 'crew_summary':
-                    df = _load_cms_excel(file_path)
+                elif curr_type == 'service_particulars':
+                    count = process_service_particulars_excel(df)
+                    total_processed += count
+                elif curr_type == 'crew_summary':
                     count = process_crew_summary_excel(df)
                     total_processed += count
-
-                elif upload_type == 'cli_biodata':
-                    df = _load_cms_excel(file_path)
+                elif curr_type in ('other_details', 'crew_other_details'):
+                    count = process_other_details_excel(df)
+                    total_processed += count
+                elif curr_type == 'cli_biodata':
                     count = process_cli_biodata_excel(df)
                     total_processed += count
-
-                elif upload_type == 'counselling':
-                    # Counselling master sheet has proper headers in row 1; read as dtype=str to preserve leading zeros
-                    df = pd.read_excel(file_path, dtype=str)
-                    df.columns = [str(c).strip().upper() for c in df.columns]
-                    df.dropna(how='all', inplace=True)
+                elif curr_type == 'counselling':
                     count = process_counselling_excel(df)
                     total_processed += count
-
-                elif upload_type == 'training':
-                    df = pd.read_excel(file_path, dtype=str)
-                    df.columns = [str(c).strip().upper() for c in df.columns]
-                    df.dropna(how='all', inplace=True)
+                elif curr_type == 'training':
                     count = process_training_excel(df)
                     total_processed += count
-
                 else:
-                    errors.append(f"Unknown upload type '{upload_type}'.")
-                    break
+                    errors.append(f"Could not auto-determine report type for '{filename}'.")
 
             except Exception as e:
                 errors.append(f"Error in '{filename}': {str(e)}")
 
         # Flash results
         label_map = {
-            'crew_data': 'Crew Data (CMS)',
-            'crew_summary': 'Crew Summary / Bio',
+            'auto_detect': 'Smart CMS Import (Auto-Detect)',
+            'crew_data': 'Call Serve Address (Division Data)',
+            'service_particulars': 'Service Particulars (Division Data)',
+            'crew_summary': 'Crew Bio Summary (Lobbywise)',
+            'other_details': 'Crew Bio Other Details (Lobbywise)',
             'cli_biodata': 'CLI Bio Data',
             'counselling': 'Crew Counselling Records',
             'training': 'Training Records',
@@ -774,6 +896,8 @@ def process_crew_data_excel(df):
                 break
 
         email = _safe_str(row.get('EMAIL ID', row.get('EMAIL', '')))
+        call_serve_addr = _safe_str(row.get('CALL SERVE ADDRESS', row.get('CALL SERVE', '')))
+        perm_addr = _safe_str(row.get('PERMANENT ADDRESS', row.get('PERMANENT', '')))
 
         # Username = mobile (10-digit); fallback = crew ID
         username = mobile if len(mobile) == 10 else crew_id_str
@@ -795,6 +919,10 @@ def process_crew_data_excel(df):
                 is_active=True,
                 password_must_change=True
             )
+            if call_serve_addr:
+                user.set_custom_field('call_serve_address', call_serve_addr)
+            if perm_addr:
+                user.set_custom_field('permanent_address', perm_addr)
             db.session.add(user)
             users_by_username[username] = user
             if mobile:
@@ -810,6 +938,10 @@ def process_crew_data_excel(df):
                 user.lobby_id = lobby_id
             if not user.pf_number:
                 user.pf_number = crew_id_str
+            if call_serve_addr:
+                user.set_custom_field('call_serve_address', call_serve_addr)
+            if perm_addr:
+                user.set_custom_field('permanent_address', perm_addr)
             user.is_active = True
 
         success_count += 1
@@ -918,6 +1050,249 @@ def process_crew_summary_excel(df):
 
 
 # ─────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────
+#  PARSER 2A — CMS Crew Service Particulars (Division Data)
+#  Cols: SNO.|CREW ID|CREW NAME|CREW DESG|LEVEL|CADRE|EMP NO|PRESENT PAY|
+#        BIRTH DATE|APPOINT DATE|PROMOTION DATE|INCRMNT DUE DATE|RETIREMENT DATE
+# ─────────────────────────────────────────────────────────────────
+
+def process_service_particulars_excel(df):
+    """Parse CMS Crew Service Particulars report."""
+    from werkzeug.security import generate_password_hash
+    default_hash = generate_password_hash('12345')
+
+    success_count = 0
+    lobby_map = {l.code.upper(): l.id for l in Lobby.query.all()}
+    existing_users = User.query.all()
+    users_by_username = {u.username: u for u in existing_users if u.username}
+    users_by_mobile = {u.mobile: u for u in existing_users if u.mobile}
+    users_by_pf = {u.pf_number.strip().upper(): u for u in existing_users if u.pf_number}
+
+    DESIG_MAP = {
+        'ASST LOCO PILOT': 'ALP',
+        'ASSISTANT LOCO PILOT': 'ALP',
+        'SR ASST LOCO PILOT': 'Sr. ALP',
+        'SENIOR ASST LOCO PILOT': 'Sr. ALP',
+        'LOCO PILOT PASSENGER': 'LPP',
+        'LOCO PILOT GOODS': 'LPG',
+        'LOCO PILOT MAIL': 'LPM',
+        'LOCO PILOT MAIL/EXPRESS': 'LPM',
+        'MOTORMAN': 'MMAN',
+        'SR LOCO PILOT SHUNTER': 'LPS-II',
+        'LOCO PILOT SHUNTER': 'LPS-I',
+        'SSHT': 'LPS-II',
+        'SHT': 'LPS-I',
+    }
+
+    for _, row in df.iterrows():
+        crew_id_str = _safe_str(row.get('CREW ID', row.get('CREWID', ''))).strip()
+        if not crew_id_str or crew_id_str.upper() in ('CREW ID', 'CREWID', 'SNO', 'SNO.', 'S.NO'):
+            continue
+
+        crew_name = _safe_str(row.get('CREW NAME', ''))
+        desig_raw = _safe_str(row.get('CREW DESG', row.get('DESIGNATION', 'ALP'))).upper()
+        desig = DESIG_MAP.get(desig_raw, desig_raw) or 'ALP'
+
+        level = _safe_str(row.get('LEVEL', ''))
+        cadre = _safe_str(row.get('CADRE', ''))
+        emp_no = _safe_str(row.get('EMP NO', row.get('EMP_NO', row.get('EMPLOYEE NO', ''))))
+        present_pay = _safe_str(row.get('PRESENT PAY', row.get('BASIC PAY', '')))
+
+        birth_date = _parse_cms_date(row.get('BIRTH DATE', row.get('DOB', '')))
+        appoint_date = _parse_cms_date(row.get('APPOINT DATE', row.get('DOA', '')))
+        promo_date = _safe_str(row.get('PROMOTION DATE', ''))
+        inc_date = _safe_str(row.get('INCRMNT DUE DATE', ''))
+        retire_date = _safe_str(row.get('RETIREMENT DATE', ''))
+
+        lobby_id = None
+        for lcode in sorted(lobby_map.keys(), key=len, reverse=True):
+            if crew_id_str.upper().startswith(lcode):
+                lobby_id = lobby_map[lcode]
+                break
+
+        user = users_by_pf.get(crew_id_str.upper()) or users_by_username.get(crew_id_str)
+        if not user and emp_no:
+            user = users_by_pf.get(emp_no.upper())
+
+        if not user:
+            user = User(
+                username=crew_id_str,
+                password_hash=default_hash,
+                role='crew',
+                sub_role=desig,
+                full_name=crew_name,
+                pf_number=crew_id_str,
+                hrms_id=emp_no if emp_no else None,
+                lobby_id=lobby_id,
+                date_of_birth=birth_date,
+                date_of_appointment=appoint_date,
+                is_active=True,
+                password_must_change=True
+            )
+            db.session.add(user)
+            users_by_username[crew_id_str] = user
+            users_by_pf[crew_id_str.upper()] = user
+        else:
+            if crew_name:
+                user.full_name = crew_name
+            if desig:
+                user.sub_role = desig
+            if lobby_id and not user.lobby_id:
+                user.lobby_id = lobby_id
+            if birth_date:
+                user.date_of_birth = birth_date
+            if appoint_date:
+                user.date_of_appointment = appoint_date
+            if emp_no and not user.hrms_id:
+                user.hrms_id = emp_no
+
+        if level:
+            user.set_custom_field('pay_level', level)
+        if cadre:
+            cadre_str = 'Electric' if cadre.upper() == 'E' else ('Mechanical' if cadre.upper() == 'M' else cadre)
+            user.set_custom_field('cadre_stream', cadre_str)
+        if emp_no:
+            user.set_custom_field('emp_no', emp_no)
+        if present_pay:
+            user.set_custom_field('present_pay', present_pay)
+        if promo_date:
+            user.set_custom_field('promotion_date', promo_date)
+        if inc_date:
+            user.set_custom_field('increment_due_date', inc_date)
+        if retire_date:
+            user.set_custom_field('retirement_date', retire_date)
+
+        success_count += 1
+        if success_count % 500 == 0:
+            db.session.commit()
+
+    db.session.commit()
+    return success_count
+
+
+# ─────────────────────────────────────────────────────────────────
+#  PARSER 2B — CMS Crew Biodata Other Details (Lobbywise)
+#  Cols: S.NO|CREW BASEID|CREWID|CREW NAME|CATEGORY|DESIG|CADRE|RETIREMENTDATE|
+#        REFT DUE|REFD DUE|REFE DUE|PME DUE|PDthONE|DRGPDDONE|WDG4|WDP4|SIMULATOR|
+#        APPOINTMENTDATE.|SALP|SHR|LPG|LPP|LPM
+# ─────────────────────────────────────────────────────────────────
+
+def process_other_details_excel(df):
+    """Parse CMS Crew Biodata Other Details report."""
+    from werkzeug.security import generate_password_hash
+    default_hash = generate_password_hash('12345')
+
+    success_count = 0
+    lobby_map = {l.code.upper(): l.id for l in Lobby.query.all()}
+    existing_users = User.query.all()
+    users_by_username = {u.username: u for u in existing_users if u.username}
+    users_by_mobile = {u.mobile: u for u in existing_users if u.mobile}
+    users_by_pf = {u.pf_number.strip().upper(): u for u in existing_users if u.pf_number}
+
+    for _, row in df.iterrows():
+        crew_id_str = _safe_str(row.get('CREWID', row.get('CREW ID', ''))).strip()
+        if not crew_id_str or crew_id_str.upper() in ('CREWID', 'CREW ID', 'SNO', 'S.NO'):
+            continue
+
+        crew_name = _safe_str(row.get('CREW NAME', ''))
+        base_id = _safe_str(row.get('CREW BASEID', ''))
+        social_cat = _safe_str(row.get('CATEGORY', ''))
+        desig = _safe_str(row.get('DESIG', ''))
+        cadre = _safe_str(row.get('CADRE', ''))
+        retire_date = _safe_str(row.get('RETIREMENTDATE', row.get('RETIREMENT DATE', '')))
+
+        reft_due = _safe_str(row.get('REFT DUE', ''))
+        refd_due = _safe_str(row.get('REFD DUE', ''))
+        refe_due = _safe_str(row.get('REFE DUE', ''))
+        pme_due_str = _safe_str(row.get('PME DUE', ''))
+        pme_due = _parse_cms_date(pme_due_str)
+
+        simulator = _safe_str(row.get('SIMULATOR', ''))
+        appoint_str = _safe_str(row.get('APPOINTMENTDATE.', row.get('APPOINTMENT DATE', '')))
+        appoint_date = _parse_cms_date(appoint_str)
+
+        salp_date = _safe_str(row.get('SALP', ''))
+        shr_date = _safe_str(row.get('SHR', ''))
+        lpg_date = _safe_str(row.get('LPG', ''))
+        lpp_date = _safe_str(row.get('LPP', ''))
+        lpm_date = _safe_str(row.get('LPM', ''))
+
+        lobby_id = None
+        for check_id in (base_id, crew_id_str):
+            for lcode in sorted(lobby_map.keys(), key=len, reverse=True):
+                if check_id.upper().startswith(lcode):
+                    lobby_id = lobby_map[lcode]
+                    break
+            if lobby_id:
+                break
+
+        user = users_by_pf.get(crew_id_str.upper()) or users_by_username.get(crew_id_str)
+        if not user:
+            user = User(
+                username=crew_id_str,
+                password_hash=default_hash,
+                role='crew',
+                sub_role=desig or 'ALP',
+                full_name=crew_name,
+                pf_number=crew_id_str,
+                lobby_id=lobby_id,
+                date_of_appointment=appoint_date,
+                pme_due_date=pme_due,
+                is_active=True,
+                password_must_change=True
+            )
+            db.session.add(user)
+            users_by_username[crew_id_str] = user
+            users_by_pf[crew_id_str.upper()] = user
+        else:
+            if crew_name and not user.full_name:
+                user.full_name = crew_name
+            if desig and not user.sub_role:
+                user.sub_role = desig
+            if lobby_id and not user.lobby_id:
+                user.lobby_id = lobby_id
+            if appoint_date and not user.date_of_appointment:
+                user.date_of_appointment = appoint_date
+            if pme_due:
+                user.pme_due_date = pme_due
+
+        if base_id:
+            user.set_custom_field('crew_base_id', base_id)
+        if social_cat and social_cat != 'NA':
+            user.set_custom_field('social_category', social_cat)
+        if cadre:
+            cadre_str = 'Electric' if cadre.upper() == 'E' else ('Mechanical' if cadre.upper() == 'M' else cadre)
+            user.set_custom_field('cadre_stream', cadre_str)
+        if retire_date:
+            user.set_custom_field('retirement_date', retire_date)
+        if reft_due and reft_due != '-':
+            user.set_custom_field('reft_due_date', reft_due)
+        if refd_due and refd_due != '-':
+            user.set_custom_field('refd_due_date', refd_due)
+        if refe_due and refe_due != '-':
+            user.set_custom_field('refe_due_date', refe_due)
+        if pme_due_str and pme_due_str != '-':
+            user.set_custom_field('pme_due_date_str', pme_due_str)
+        if simulator and simulator != '-':
+            user.set_custom_field('simulator_due', simulator)
+        if salp_date and salp_date != '-':
+            user.set_custom_field('salp_date', salp_date)
+        if shr_date and shr_date != '-':
+            user.set_custom_field('shunter_date', shr_date)
+        if lpg_date and lpg_date != '-':
+            user.set_custom_field('lpg_date', lpg_date)
+        if lpp_date and lpp_date != '-':
+            user.set_custom_field('lpp_date', lpp_date)
+        if lpm_date and lpm_date != '-':
+            user.set_custom_field('lpm_date', lpm_date)
+
+        success_count += 1
+        if success_count % 500 == 0:
+            db.session.commit()
+
+    db.session.commit()
+    return success_count
+
 #  PARSER 3 — CMS CLI/TI Bio Data
 #  Cols (row 3+): 1(serial)|LI ID|NAME|FATHER NAME|HQ|DOB*|DOA*|DOP*|EMP NO|PAN NO|
 #                 QUALIFICATION|BASIC PAY|DESIG|MOBILE NO|ADDRESS
@@ -1235,6 +1610,52 @@ def download_template(template_type):
         }
         fname = 'Template_Crew_Data_CMS.xlsx'
 
+    elif template_type == 'service_particulars':
+        data = {
+            'SNO.': [1, 2, 3],
+            'CREW ID': ['AZ1054', 'BWN1644', 'RPH1074'],
+            'CREW NAME': ['S K MONDAL MMAN', 'SUBHASH KR SINGH I ELEC', 'GOPAL CHOUDHARY CONV'],
+            'CREW DESG': ['MMAN', 'LPG', 'LPM'],
+            'LEVEL': ['6', '6', '6'],
+            'CADRE': ['E', 'E', 'E'],
+            'EMP NO': ['502HWH00002', '50200404796', '50214593518'],
+            'PRESENT PAY': ['64100', '46200', '70000'],
+            'BIRTH DATE': ['22-10-1978', '17-07-1986', '09-01-1975'],
+            'APPOINT DATE': ['27-01-2004', '14-05-2013', '12-01-2000'],
+            'PROMOTION DATE': ['26-10-2022', '25-04-2017', '28-04-2022'],
+            'INCRMNT DUE DATE': ['01-07-2027', '01-01-2027', '01-01-2025'],
+            'RETIREMENT DATE': ['31-10-2038', '31-07-2046', '31-01-2035']
+        }
+        fname = 'Template_Service_Particulars_CMS.xlsx'
+
+    elif template_type == 'other_details':
+        data = {
+            'S.NO': [1, 2, 3],
+            'CREW BASEID': ['BWN2193', 'BWN2421', 'RPH1169'],
+            'CREWID': ['RPH1074', 'RPH1123', 'RPH1169'],
+            'CREW NAME': ['GOPAL CHOUDHARY CONV', 'DILIP KUMAR CONV', 'MANOJ KUMAR MANDAL CONV'],
+            'CATEGORY': ['NA', 'NA', 'NA'],
+            'DESIG': ['LPM', 'LPM', 'LPM'],
+            'CADRE': ['E', 'E', 'E'],
+            'RETIREMENTDATE': ['31-01-35', '31-05-31', '30-09-37'],
+            'REFT DUE': ['22-02-27', '24-02-28', '08-08-27'],
+            'REFD DUE': ['04-08-28', '-', '-'],
+            'REFE DUE': ['04-08-28', '17-02-28', '03-08-29'],
+            'PME DUE': ['15-01-28', '05-09-27', '10-03-28'],
+            'PDthONE': ['10-03-15', '-', '-'],
+            'DRGPDDONE': ['-', '-', '-'],
+            'WDG4': ['22-02-27', '24-02-28', '08-08-27'],
+            'WDP4': ['-', '-', '-'],
+            'SIMULATOR': ['-', '-', '-'],
+            'APPOINTMENTDATE.': ['12-01-00', '20-01-98', '03-04-06'],
+            'SALP': ['-', '-', '-'],
+            'SHR': ['-', '-', '-'],
+            'LPG': ['03-07-14', '03-08-17', '09-04-15'],
+            'LPP': ['23-12-16', '20-06-19', '25-06-22'],
+            'LPM': ['28-04-22', '31-12-24', '05-08-26']
+        }
+        fname = 'Template_Crew_Other_Details_CMS.xlsx'
+
     elif template_type == 'crew_summary':
         data = {
             'CREWID': ['HWH7009', 'AZ1069', 'BWN1001'],
@@ -1321,8 +1742,16 @@ def download_template(template_type):
         flash('Invalid template requested.', 'danger')
         return redirect(url_for('admin.upload_excel'))
 
-    df = pd.DataFrame(data)
-    df.to_excel(output, index=False)
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Template"
+    headers = list(data.keys())
+    ws.append(headers)
+    num_rows = len(data[headers[0]]) if headers else 0
+    for r in range(num_rows):
+        ws.append([data[h][r] for h in headers])
+    wb.save(output)
     output.seek(0)
     return send_file(
         output,

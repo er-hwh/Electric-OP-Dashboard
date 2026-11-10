@@ -98,6 +98,7 @@
                                 <li><hr class="dropdown-divider"></li>
                                 {% if current_user.is_admin() %}
                                     <li><a class="dropdown-item fw-bold text-danger" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>Admin Console (System Edit)</a></li>
+                                    <li><a class="dropdown-item fw-bold text-success" href="{{ url_for('admin.upload_excel') }}"><i class="fa-solid fa-file-excel me-2 text-success"></i>Upload CMS Excels</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.crew_master') }}"><i class="fa-solid fa-users-gear me-2 text-primary"></i>Crew Master Database</a></li>
                                     <li><a class="dropdown-item fw-bold text-dark" href="{{ url_for('admin.important_tools') }}"><i class="fa-solid fa-screwdriver-wrench me-2 text-warning"></i>Important Tools (Admin Only)</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('officer.cli_movements') }}"><i class="fa-solid fa-person-walking me-2 text-primary"></i>CLI Movement Monitor</a></li>

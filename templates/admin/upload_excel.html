@@ -52,12 +52,22 @@
           <label class="form-label fw-semibold fs-6">Step 1 — Select Upload Type</label>
           <div class="row g-3">
 
-            {% set types = [
-              ('crew_data',    'fas fa-id-card',    'bg-primary',   'Crew Data (CMS)',        'CMS Call Serve Report\nCols: CREW ID · CREW NAME · DESIGNATION · MOBILE NO · EMAIL · ADDRESS'),
-              ('crew_summary', 'fas fa-users',      'bg-success',   'Crew Summary / Bio',     'CMS Bio Summary\nCols: CREWID · HRMS · CADRE · DOB · PME · CLI Name · Grade · Vision'),
-              ('cli_biodata',  'fas fa-user-tie',   'bg-warning',   'CLI Bio Data',           'CMS CLI/TI Biodata\nCols: LI ID · NAME · HQ · DOB · DOA · DOP · EMP NO · MOBILE'),
-              ('counselling',  'fas fa-clipboard-list','bg-danger',  'Crew Counselling Master','Master Sheet\nCols: CLI · CREW ID · GRADE · FOOTPLATE · COUNSELLING dates · BA FAIL · SPAD · REMARKS'),
-              ('training',     'fas fa-graduation-cap','bg-info',    'Training Records',       'Custom Training Sheet\nCols: MOBILE · TRAINING TYPE · INSTITUTE · LAST DONE · DUE DATE'),
+                        {% set types = [
+              ('auto_detect',          'fas fa-wand-magic-sparkles', 'bg-dark',      '⚡ Auto-Detect (Smart Batch)',      'Drop any CMS report — system inspects headers and chooses the right parser automatically'),
+              ('crew_data',            'fas fa-map-location-dot',    'bg-primary',   '1. Call Serve Address (Division)',   'CMS Call Serve Details (Division-wide)
+Cols: CREW ID · CREW NAME · DESIGNATION · MOBILE · EMAIL · CALL SERVE & PERMANENT ADDRESS'),
+              ('service_particulars',  'fas fa-file-invoice-dollar', 'bg-success',   '2. Service Particulars (Division)',  'CMS Service Particulars (Division-wide)
+Cols: CREW ID · CREW DESG · LEVEL · CADRE · EMP NO · PRESENT PAY · DOB · DOA · PROMOTION · RETIREMENT'),
+              ('crew_summary',         'fas fa-users-viewfinder',    'bg-info',      '3. Crew Bio Summary (Lobbywise)',    'CMS Biodata Summary (Lobbywise)
+Cols: CREWID · FATHER · GENDER · HRMS · CADRE · EDU/TECH · PME · VISION · T.MARK · CLI · GRADE'),
+              ('other_details',        'fas fa-calendar-check',      'bg-warning',   '4. Other Details (Lobbywise)',       'CMS Biodata Other Details (Lobbywise)
+Cols: CREW BASEID · CREWID · REFT/REFD/REFE DUE · PME DUE · SIMULATOR · SALP/SHR/LPG/LPP/LPM'),
+              ('cli_biodata',          'fas fa-user-tie',            'bg-secondary', '5. CLI / TI Bio Data',               'CMS CLI/TI Biodata
+Cols: LI ID · NAME · HQ · DOB · DOA · DOP · EMP NO · MOBILE'),
+              ('counselling',          'fas fa-clipboard-list',      'bg-danger',    '6. Counselling Master Sheet',        'Division Counselling Sheet
+Cols: CLI · CREW ID · GRADE · FOOTPLATE · SPM · CVVRS · BA FAIL · SPAD · REMARKS'),
+              ('training',             'fas fa-graduation-cap',      'bg-primary',   '7. Training & Refresher Records',    'Training Sheet
+Cols: MOBILE · TRAINING TYPE · INSTITUTE · LAST DONE · DUE DATE'),
             ] %}
 
             {% for val, icon, color, title, desc in types %}
@@ -92,8 +102,8 @@
                style="border-color:#002244;cursor:pointer;transition:background .2s;">
             <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
             <p class="mb-2 fw-semibold">Drag & Drop Excel files here or click to browse</p>
-            <p class="text-muted small mb-3">Supports .xlsx and .xls — select multiple files at once (hold Ctrl)</p>
-            <input type="file" name="files" id="fileInput" multiple accept=".xlsx,.xls"
+            <p class="text-muted small mb-3">Supports .xlsx, .xls and .csv — select multiple files at once (hold Ctrl)</p>
+            <input type="file" name="files" id="fileInput" multiple accept=".xlsx,.xls,.csv"
                    class="d-none">
             <button type="button" class="btn btn-outline-primary px-4"
                     onclick="document.getElementById('fileInput').click()">
@@ -126,12 +136,14 @@
     <div class="card-body">
       <p class="text-muted mb-3">Download pre-filled sample templates to understand the expected column format for each upload type.</p>
       <div class="row g-3">
-        {% for val, icon, color, title in [
-          ('crew_data',    'fas fa-id-card',         'btn-primary',  'Crew Data Template'),
-          ('crew_summary', 'fas fa-users',            'btn-success',  'Crew Summary Template'),
-          ('cli_biodata',  'fas fa-user-tie',         'btn-warning',  'CLI Bio Data Template'),
-          ('counselling',  'fas fa-clipboard-list',   'btn-danger',   'Counselling Template'),
-          ('training',     'fas fa-graduation-cap',   'btn-info',     'Training Records Template'),
+                {% for val, icon, color, title in [
+          ('crew_data',            'fas fa-map-location-dot',    'btn-primary',   'Call Serve Template'),
+          ('service_particulars',  'fas fa-file-invoice-dollar', 'btn-success',   'Service Particulars Template'),
+          ('crew_summary',         'fas fa-users-viewfinder',    'btn-info',      'Crew Summary Template'),
+          ('other_details',        'fas fa-calendar-check',      'btn-warning',   'Other Details Template'),
+          ('cli_biodata',          'fas fa-user-tie',            'btn-secondary', 'CLI Bio Data Template'),
+          ('counselling',          'fas fa-clipboard-list',      'btn-danger',    'Counselling Template'),
+          ('training',             'fas fa-graduation-cap',      'btn-dark',      'Training Records Template'),
         ] %}
         <div class="col-6 col-md-4 col-lg-3 col-xl-2">
           <a href="{{ url_for('admin.download_template', template_type=val) }}"
