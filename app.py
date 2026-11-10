@@ -1,7 +1,11 @@
 import os
+import warnings
+from sqlalchemy.exc import LegacyAPIWarning
 from flask import Flask, session, g
 from config import Config
 from database import db
+
+warnings.filterwarnings('ignore', category=LegacyAPIWarning)
 
 def create_app():
     app = Flask(__name__)
@@ -19,7 +23,7 @@ def create_app():
         user = None
         unread_count = 0
         if 'user_id' in session:
-            user = User.query.get(session['user_id'])
+            user = db.session.get(User, session['user_id'])
             if user:
                 # Count unread messages
                 if user.is_officer():
@@ -64,6 +68,10 @@ def create_app():
     app.register_blueprint(control_bp, url_prefix='/control')
     app.register_blueprint(control_bp, name='control_root')
     app.register_blueprint(duty_hours_bp)
+
+    @app.route('/favicon.ico')
+    def favicon():
+        return ('', 204)
 
     return app
 

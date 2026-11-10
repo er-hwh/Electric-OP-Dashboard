@@ -169,6 +169,7 @@ def index():
     # Counts
     crew_count = User.query.filter_by(role='crew', is_active=True).count()
     cli_count = User.query.filter_by(role='supervisor', is_active=True).count()
+    clis = User.query.filter_by(role='supervisor', is_active=True).order_by(User.full_name).all()
 
     return render_template(
         'public/index.html',
@@ -181,8 +182,39 @@ def index():
         lobby_strengths=lobby_strengths,
         strength_summary=strength_summary,
         crew_count=crew_count,
-        cli_count=cli_count
+        cli_count=cli_count,
+        clis=clis
     )
+
+
+@public_bp.route('/lobby/<int:lobby_id>/update', methods=['POST'])
+def update_lobby_info(lobby_id):
+    lobby = db.session.get(Lobby, lobby_id) if hasattr(db.session, 'get') else Lobby.query.get_or_404(lobby_id)
+    if not lobby:
+        flash("Lobby not found.", "danger")
+        return redirect(url_for('public.index'))
+    
+    ccc_name = request.form.get('ccc_name', '').strip()
+    phone = request.form.get('phone', '').strip()
+    jurisdiction = request.form.get('operational_jurisdiction', '').strip()
+    description = request.form.get('description', '').strip()
+    in_charge_id = request.form.get('in_charge_cli_id', '').strip()
+    is_sister = request.form.get('is_sister_lobby') == '1'
+
+    lobby.ccc_name = ccc_name or None
+    lobby.phone = phone or None
+    lobby.operational_jurisdiction = jurisdiction or None
+    lobby.description = description or None
+    lobby.is_sister_lobby = is_sister
+    if in_charge_id and in_charge_id.isdigit():
+        lobby.in_charge_cli_id = int(in_charge_id)
+    elif in_charge_id == '':
+        lobby.in_charge_cli_id = None
+        
+    db.session.commit()
+    flash(f"Lobby '{lobby.code}' ({lobby.name}) information updated successfully.", "success")
+    next_url = request.form.get('next_url') or (url_for('public.index') + f'#lobby-{lobby.code}')
+    return redirect(next_url)
 
 @public_bp.route('/about')
 def about():
