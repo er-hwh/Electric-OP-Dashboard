@@ -4,11 +4,49 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Move all modals to body to fix z-index inside scrollable containers
     document.querySelectorAll('.modal').forEach(function(modalEl) {
         if (modalEl.parentElement !== document.body) {
             document.body.appendChild(modalEl);
         }
     });
+
+    // Initialize squadRosterTable manually — do NOT use generic .datatable class
+    // to avoid DataTables TN/18 "Incorrect column count" error which fires when
+    // an empty-state <td colspan="10"> is present in the tbody.
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+        var $tbl = $('#squadRosterTable');
+        if ($tbl.length && !$.fn.DataTable.isDataTable($tbl[0])) {
+            // Remove any empty-state colspan rows before DataTable touches the DOM
+            $tbl.find('tbody tr').each(function() {
+                if ($(this).find('td[colspan]').length) {
+                    $(this).remove();
+                }
+            });
+            $tbl.DataTable({
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search crew name, ID, CUG...",
+                    lengthMenu: "Show _MENU_ records",
+                    info: "Showing _START_ to _END_ of _TOTAL_ crew",
+                    infoEmpty: "No crew records in squad",
+                    emptyTable: '<div class=\"text-center py-3 text-muted\"><i class=\"fa-solid fa-users-slash fa-2x mb-2 d-block\"></i>No crew assigned to your squad yet.</div>',
+                    paginate: {
+                        previous: '<i class=\"fa-solid fa-chevron-left\"></i>',
+                        next: '<i class=\"fa-solid fa-chevron-right\"></i>'
+                    }
+                },
+                responsive: false,
+                autoWidth: false,
+                order: [],
+                columnDefs: [
+                    { orderable: false, targets: [0, 9] }
+                ]
+            });
+        }
+    }
 });
 </script>
 {% endblock %}
@@ -215,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td><span class="badge bg-danger">{{ d.parameter_focus }}</span></td>
                             <td>{{ d.instruction_text }}</td>
                             <td>
-                                <span class="fw-bold {% if d.deadline_date and d.deadline_date < date.today() and d.status == 'PENDING' %}text-danger{% else %}text-dark{% endif %}">
+                                <span class="fw-bold {% if d.deadline_date and d.deadline_date < (today or date.today()) and d.status == 'PENDING' %}text-danger{% else %}text-dark{% endif %}">
                                     {{ d.deadline_date.strftime('%d-%b-%Y') if d.deadline_date else '--' }}
                                 </span>
                             </td>
@@ -353,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover table-bordered align-middle small mb-0 datatable" id="squadRosterTable">
+            <table class="table table-hover table-bordered align-middle small mb-0" id="squadRosterTable">
                 <thead class="table-dark">
                     <tr class="text-nowrap text-center">
                         <th>#</th>

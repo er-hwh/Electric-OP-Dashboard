@@ -1,4 +1,5 @@
 import os
+from datetime import date
 import warnings
 from sqlalchemy.exc import LegacyAPIWarning
 from flask import Flask, session, g
@@ -45,7 +46,7 @@ def create_app():
                     ).count()
 
         lobbies = Lobby.query.order_by(Lobby.code).all()
-        return dict(current_user=user, all_lobbies=lobbies, unread_count=unread_count)
+        return dict(current_user=user, all_lobbies=lobbies, unread_count=unread_count, today=date.today(), date=date)
 
     # Register Blueprints
     from blueprints.auth import auth_bp

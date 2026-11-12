@@ -17,7 +17,7 @@ from blueprints.auth import role_required
 supervisor_bp = Blueprint('supervisor', __name__)
 
 @supervisor_bp.before_request
-@role_required('supervisor')
+@role_required('supervisor', 'officer', 'admin')
 def supervisor_protection():
     pass
 
@@ -771,16 +771,20 @@ def crew_dossier(crew_user_id):
     param_scores = latest_fp.get_parameter_scores() if latest_fp else {}
     weak_params = latest_fp.get_weak_parameters(threshold=3) if latest_fp else []
 
+    cf = crew.get_custom_fields() if hasattr(crew, 'get_custom_fields') else {}
     return render_template(
         'supervisor/crew_dossier.html',
         cli=cli,
+        officer=cli if (cli and getattr(cli, 'is_officer', lambda: False)()) else None,
         crew=crew,
         c_rec=c_rec,
         all_fps=all_fps,
         latest_fp=latest_fp,
         param_scores=param_scores,
         weak_params=weak_params,
-        directives=directives
+        directives=directives,
+        cf=cf,
+        today=date.today()
     )
 
 
@@ -1048,7 +1052,9 @@ def movements():
         current_cli=str(cli.id),
         current_activity='ALL',
         current_lobby='ALL',
-        current_date=''
+        current_date='',
+        retention_cutoff=cutoff,
+        total_activities=len(movements_list)
     )
 
 @supervisor_bp.route('/movements/new', methods=['GET', 'POST'])

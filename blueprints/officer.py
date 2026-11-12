@@ -310,7 +310,9 @@ def cli_movements():
         current_cli=cli_filter,
         current_activity=activity_filter,
         current_lobby=lobby_filter,
-        current_date=date_filter
+        current_date=date_filter,
+        retention_cutoff=cutoff_date,
+        total_activities=len(movements)
     )
 
 @officer_bp.route('/cli-movements/<int:movement_id>/remark', methods=['POST'])
@@ -608,16 +610,20 @@ def crew_dossier(crew_user_id):
     param_scores = latest_fp.get_parameter_scores() if latest_fp else {}
     weak_params = latest_fp.get_weak_parameters(threshold=3) if latest_fp else []
 
+    cf = crew.get_custom_fields() if hasattr(crew, 'get_custom_fields') else {}
     return render_template(
         'supervisor/crew_dossier.html',
         officer=officer,
+        cli=officer,
         crew=crew,
         c_rec=c_rec,
         all_fps=all_fps,
         latest_fp=latest_fp,
         param_scores=param_scores,
         weak_params=weak_params,
-        directives=directives
+        directives=directives,
+        cf=cf,
+        today=date.today()
     )
 
 
