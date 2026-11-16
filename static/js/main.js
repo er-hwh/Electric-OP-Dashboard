@@ -69,6 +69,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+    window.initDataTables = initDataTables;
     initDataTables();
 
 });
+window.addEventListener('load', function() { if (window.initDataTables) window.initDataTables(); });

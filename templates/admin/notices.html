@@ -91,7 +91,7 @@
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-secondary w-100 fw-bold">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">
                         <i class="fa-solid fa-filter me-1"></i> Filter
                     </button>
                     <a href="{{ url_for('admin.notices_list') }}" class="btn btn-outline-secondary">
@@ -109,7 +109,7 @@
             <span class="text-muted small">Showing {{ notices|length }} record(s)</span>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0 datatable">
                 <thead class="table-light">
                     <tr>
                         <th style="width: 5%;">#</th>

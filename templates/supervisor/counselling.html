@@ -68,6 +68,10 @@
                         Clear
                     </a>
                 </div>
+                <div class="col-md-2 d-flex gap-2 align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+                    <a href="{{ url_for('supervisor.counselling') }}" class="btn btn-outline-secondary btn-sm" title="Reset Filters"><i class="fa-solid fa-arrows-rotate"></i></a>
+                </div>
                 <div class="col-md-2 text-md-end text-muted small">
                     <strong>{{ total }}</strong> record(s) listed
                 </div>
@@ -78,7 +82,7 @@
     <!-- COUNSELLING TABLE -->
     <div class="rail-card p-0 shadow-sm border-0">
         <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle small mb-0">
+            <table class="table table-hover table-striped align-middle small mb-0 datatable">
                 <thead class="table-dark">
                     <tr>
                         <th>#</th>

@@ -102,7 +102,10 @@
                     <input type="text" name="q" class="form-control form-control-sm" placeholder="Crew Name, PF, Mobile..." value="{{ current_q }}">
                 </div>
                 <div class="col-md-1 d-flex align-items-end pt-3">
-                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold" title="Filter"><i class="fa-solid fa-filter"></i></button>
+                    <div class="d-flex gap-1 w-100">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold" title="Filter"><i class="fa-solid fa-filter"></i></button>
+                        <a href="{{ url_for('officer.training_monitor') }}" class="btn btn-outline-secondary btn-sm" title="Reset Filters"><i class="fa-solid fa-arrows-rotate"></i></a>
+                    </div>
                 </div>
             </form>
         </div>
@@ -117,7 +120,7 @@
             <small class="text-muted"><i class="fa-solid fa-circle-info me-1 text-primary"></i>Refresher: 3 Years &bull; ABS: 6 Months &bull; PME: ≤45y (4y), 45-55y (2y), >55y (1y)</small>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-nowrap">
+            <table class="table table-hover align-middle mb-0 text-nowrap datatable">
                 <thead class="table-light text-uppercase small">
                     <tr>
                         <th class="ps-3">Crew Member</th>
