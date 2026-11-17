@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+{% extends "supervisor/base_cli.html" %}
 
 {% block title %}Log CLI Daily Activity | Electric Operation HWH{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-4">
+<div class="container-fluid px-0">
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card border-0 shadow-sm rounded-3">
@@ -167,6 +167,36 @@
                                 <textarea name="remarks" class="form-control" rows="2" placeholder="Any additional field notes or follow-up required..."></textarea>
                             </div>
                         </div>
+
+                        <!-- 5. DYNAMIC FIELDS CONFIGURED BY ADMIN -->
+                        {% if custom_fields %}
+                        <h6 class="fw-bold text-warning-emphasis border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-sliders me-1 text-warning"></i> 5. Divisional Checkpoints &amp; Dynamic Fields (Admin Configured)
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            {% for cf in custom_fields %}
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-dark">
+                                    {{ cf.field_label }} {% if cf.is_required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {% if cf.field_type == 'select' %}
+                                    <select name="cf_{{ cf.field_name }}" class="form-select" {% if cf.is_required %}required{% endif %}>
+                                        <option value="">-- Select --</option>
+                                        {% for opt in cf.get_options() %}
+                                            <option value="{{ opt }}">{{ opt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% elif cf.field_type == 'number' %}
+                                    <input type="number" step="any" name="cf_{{ cf.field_name }}" class="form-control" placeholder="Enter {{ cf.field_label }}" {% if cf.is_required %}required{% endif %}>
+                                {% elif cf.field_type == 'date' %}
+                                    <input type="date" name="cf_{{ cf.field_name }}" class="form-control" {% if cf.is_required %}required{% endif %}>
+                                {% else %}
+                                    <input type="text" name="cf_{{ cf.field_name }}" class="form-control" placeholder="Enter {{ cf.field_label }}" {% if cf.is_required %}required{% endif %}>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
 
                         <div class="d-flex justify-content-end gap-2 border-top pt-3">
                             <a href="{{ url_for('supervisor.movements') }}" class="btn btn-outline-secondary px-4">

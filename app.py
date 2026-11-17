@@ -74,6 +74,16 @@ def create_app():
     def favicon():
         return ('', 204)
 
+    @app.route('/login')
+    def login_redirect():
+        from flask import redirect, url_for, request
+        return redirect(url_for('auth.login', **request.args))
+
+    @app.route('/admin/login')
+    def admin_login_redirect():
+        from flask import redirect, url_for
+        return redirect(url_for('auth.login', role='admin'))
+
     return app
 
 if __name__ == '__main__':

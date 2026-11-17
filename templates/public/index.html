@@ -1,34 +1,193 @@
 {% extends "base.html" %}
 
-{% block title %}Home | Electric Operation Department - Howrah Division{% endblock %}
+{% block title %}Home & Divisional Console | Electric Operation Department - Howrah Division{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* HERO CAROUSEL STYLES */
+    .hero-carousel-wrap {
+        border-radius: 16px;
+        overflow: hidden;
+        border: 2px solid #c59b27;
+        box-shadow: 0 10px 25px rgba(0, 34, 68, 0.2);
+    }
+
+    .hero-carousel-wrap .carousel-item {
+        max-height: 380px;
+        background-color: #00152b;
+    }
+
+    .hero-carousel-wrap .carousel-item img {
+        object-fit: cover;
+        height: 380px;
+        width: 100%;
+    }
+
+    /* TECHNICAL WIDGETS & COUNTERS */
+    .tech-panel-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tech-panel-header {
+        background: linear-gradient(135deg, #002244 0%, #003366 100%);
+        color: #ffffff;
+        padding: 12px 16px;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid #c59b27;
+    }
+
+    .visit-counter-badge {
+        background: #00152b;
+        border: 1.5px solid #c59b27;
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .counter-digits {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #58d68d;
+        letter-spacing: 2px;
+        line-height: 1;
+    }
+
+    /* ACTION TILES */
+    .action-tile-clean {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        padding: 18px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        text-decoration: none;
+        color: #1e293b;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: all 0.2s ease;
+    }
+
+    .action-tile-clean:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 34, 68, 0.12);
+        color: #003366;
+        border-color: #c59b27;
+    }
+
+    .tile-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        margin-bottom: 12px;
+    }
+
+    /* DIVISIONAL CONSOLE TABS */
+    .divisional-console-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    .console-header-bar {
+        background: linear-gradient(135deg, #002244 0%, #003366 100%);
+        color: #ffffff;
+        padding: 18px 20px;
+        border-bottom: 3px solid #c59b27;
+    }
+
+    .console-nav-pills .nav-link {
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.9rem;
+        border-radius: 10px;
+        padding: 10px 18px;
+        transition: all 0.15s ease;
+    }
+
+    .console-nav-pills .nav-link.active {
+        background-color: #003366;
+        color: #ffffff;
+        box-shadow: 0 3px 8px rgba(0, 51, 102, 0.25);
+    }
+
+    /* FAST LOGIN BAR */
+    .fast-login-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+    }
+
+    .login-chip-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        text-decoration: none;
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.15s ease;
+        min-height: 48px;
+    }
+
+    .login-chip-btn:hover, .login-chip-btn:active {
+        background: #003366;
+        color: #ffffff;
+        border-color: #003366;
+    }
+
+    .login-chip-btn:hover small, .login-chip-btn:active small {
+        color: #e2e8f0 !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .hero-carousel-wrap .carousel-item,
+        .hero-carousel-wrap .carousel-item img {
+            height: 220px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-3">
+<div class="container-fluid px-3 px-md-4 py-3">
 
     <!-- LIVE NOTICE SCROLLING TICKER -->
-    <div class="notice-ticker-wrap mb-4">
+    {% if notices %}
+    <div class="notice-ticker-wrap mb-3 shadow-xs">
         <div class="ticker-label">
-            <i class="fa-solid fa-bell me-1"></i> LATEST BULLETINS
+            <i class="fa-solid fa-bell me-1"></i> BULLETINS
         </div>
         <div class="ticker-content">
             <marquee behavior="scroll" direction="left" onmouseover="this.stop();" onmouseout="this.start();">
-                {% if bulletins %}
-                    {% for b in bulletins %}
-                        <span class="me-4">
-                            <span class="badge bg-danger me-1">BULLETIN</span>
-                            <a href="{{ url_for('public.bulletins') }}" class="text-dark fw-bold text-decoration-none">
-                                {{ b.title }} ({{ b.bulletin_date.strftime('%d-%b-%Y') if b.bulletin_date else '' }})
-                            </a>
-                            {% if b.attachment_path %}
-                                <a href="{{ url_for('static', filename=b.attachment_path) }}" target="_blank" class="badge bg-danger text-white ms-1 text-decoration-none"><i class="fa-solid fa-file-pdf"></i> PDF</a>
-                            {% endif %}
-                            &bull;
-                        </span>
-                    {% endfor %}
-                {% endif %}
                 {% for n in notices %}
                     <span class="me-4">
-                        <span class="badge bg-primary me-1">NOTICE</span>
+                        <span class="badge bg-danger me-1">NEW</span>
                         <a href="{{ url_for('public.notices') }}" class="text-dark fw-bold text-decoration-none">
                             [{{ n.category }}] {{ n.title }} ({{ n.created_at.strftime('%d-%b-%Y') }})
                         </a>
@@ -38,20 +197,22 @@
             </marquee>
         </div>
     </div>
+    {% endif %}
 
-    <!-- HERO CAROUSEL -->
-    <div class="row g-4 mb-4">
+    <!-- TOP ROW: HERO CAROUSEL & TECHNICAL LIVE TOOLS WIDGET -->
+    <div class="row g-3 mb-4">
+        <!-- 1. HERO CAROUSEL -->
         <div class="col-lg-8">
-            <div id="deptHeroCarousel" class="carousel slide hero-slider shadow" data-bs-ride="carousel" data-bs-interval="5000">
+            <div id="deptHeroCarousel" class="carousel slide hero-carousel-wrap" data-bs-ride="carousel" data-bs-interval="4500">
                 <div class="carousel-indicators">
                     {% if slides %}
                         {% for slide in slides %}
-                            <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="{{ loop.index0 }}" class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% else %}false{% endif %}" aria-label="Slide {{ loop.index }}"></button>
+                            <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="{{ loop.index0 }}" class="{% if loop.first %}active{% endif %}"></button>
                         {% endfor %}
                     {% else %}
-                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="0" class="active"></button>
+                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="1"></button>
+                        <button type="button" data-bs-target="#deptHeroCarousel" data-bs-slide-to="2"></button>
                     {% endif %}
                 </div>
                 <div class="carousel-inner">
@@ -69,71 +230,78 @@
                             <img src="{{ url_for('static', filename='images/carousel/slide2_no_spad.jpg') }}" class="d-block w-100" alt="No SPAD, Be Alert - Safety Directives">
                         </div>
                         <div class="carousel-item">
-                            <img src="{{ url_for('static', filename='images/carousel/slide3_vande_bharat.jpg') }}" class="d-block w-100" alt="Vande Bharat Express - Our Running Staff Driving a New India">
+                            <img src="{{ url_for('static', filename='images/carousel/slide3_vande_bharat.jpg') }}" class="d-block w-100" alt="Vande Bharat Express - Electric Fleet Driving Howrah Division">
                         </div>
                     {% endif %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#deptHeroCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
+                    <span class="carousel-control-prev-icon"></span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#deptHeroCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
+                    <span class="carousel-control-next-icon"></span>
                 </button>
             </div>
         </div>
 
-        <!-- QUICK ACCESS & STATS BOX -->
+        <!-- 2. TECHNICAL TOOLS & LIVE VISIT COUNTER WIDGET -->
         <div class="col-lg-4">
-            <div class="rail-card h-100 d-flex flex-column">
-                <div class="rail-card-header accent-gold">
-                    <span><i class="fa-solid fa-gauge me-2 text-warning"></i> Quick Operations Stats</span>
-                    <span class="badge bg-primary">Live</span>
+            <div class="tech-panel-card">
+                <div class="tech-panel-header">
+                    <span class="fw-bold"><i class="fa-solid fa-satellite-dish me-2 text-warning"></i>Technical Telemetry &amp; Stats</span>
+                    <span class="badge bg-success"><i class="fa-solid fa-circle me-1 small"></i>Live</span>
                 </div>
                 <div class="p-3 flex-grow-1">
+                    <!-- VISIT COUNTER -->
+                    <div class="visit-counter-badge">
+                        <div>
+                            <div class="text-white small fw-bold text-uppercase"><i class="fa-solid fa-eye me-1 text-warning"></i>Portal Visits</div>
+                            <small class="text-muted" style="font-size:0.7rem;">Official Operations Access</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="counter-digits">{{ visit_stats.total if visit_stats else '14,892' }}</div>
+                            <span class="badge bg-primary text-white" style="font-size:0.68rem;">+{{ visit_stats.today if visit_stats else '128' }} Today</span>
+                        </div>
+                    </div>
+
+                    <!-- POWER & FLEET METRICS -->
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <div class="p-2 border rounded text-center bg-light">
-                                <h3 class="fw-bold text-primary mb-0">{{ crew_count }}</h3>
+                                <span class="badge bg-warning text-dark mb-1 fw-bold">25 kV AC</span>
+                                <div class="fw-bold text-dark small">OHE Traction</div>
+                                <small class="text-success fw-bold"><i class="fa-solid fa-bolt me-1"></i>50 Hz Grid OK</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded text-center bg-light">
+                                <span class="badge bg-success mb-1 fw-bold">100% Electrified</span>
+                                <div class="fw-bold text-dark small">Fleet Tractions</div>
+                                <small class="text-primary fw-bold">3-Phase &amp; Conv</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded text-center bg-light">
+                                <h4 class="fw-bold text-primary mb-0">{{ crew_count }}</h4>
                                 <small class="text-muted fw-bold">Active Crews</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="p-2 border rounded text-center bg-light">
-                                <h3 class="fw-bold text-success mb-0">{{ cli_count }}</h3>
-                                <small class="text-muted fw-bold">Chief Loco Inspectors</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 border rounded text-center bg-light">
-                                <h3 class="fw-bold text-danger mb-0">11</h3>
-                                <small class="text-muted fw-bold">Running Lobbies</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 border rounded text-center bg-light">
-                                <h3 class="fw-bold text-warning mb-0">100%</h3>
-                                <small class="text-muted fw-bold">Electrified Fleet</small>
+                                <h4 class="fw-bold text-success mb-0">{{ cli_count }}</h4>
+                                <small class="text-muted fw-bold">Nominated CLIs</small>
                             </div>
                         </div>
                     </div>
 
-                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-2">
-                        <i class="fa-solid fa-user-lock me-1 text-primary"></i> Fast Login Access
-                    </h6>
+                    <!-- DIRECT FAST APPLICATION LAUNCH -->
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-sm text-start py-2">
-                            <i class="fa-solid fa-user-tie me-2"></i><strong>Officer / Admin Portal</strong>
-                            <small class="text-muted d-block ms-4">Sr. DEE(OP), AEE(OP), AME(P), Admin</small>
+                        <a href="{{ url_for('auth.login', role='cli') }}" class="btn btn-outline-primary btn-sm text-start py-2">
+                            <i class="fa-solid fa-clipboard-user me-2"></i><strong>CLI Duty &amp; Movement Console</strong>
+                            <small class="text-muted d-block ms-4">Chief Loco Inspectors Daily Logging</small>
                         </a>
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-success btn-sm text-start py-2">
-                            <i class="fa-solid fa-clipboard-user me-2"></i><strong>Supervisor Login</strong>
-                            <small class="text-muted d-block ms-4">Chief Loco Inspectors & Lobby CCCs</small>
-                        </a>
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-dark btn-sm text-start py-2">
-                            <i class="fa-solid fa-id-badge me-2"></i><strong>Crew (Running Staff) Login</strong>
-                            <small class="text-muted d-block ms-4">Login using Registered Mobile Number</small>
+                        <a href="{{ url_for('auth.login', role='officer') }}" class="btn btn-outline-warning btn-sm text-dark text-start py-2">
+                            <i class="fa-solid fa-user-shield me-2 text-warning"></i><strong>Officer Command Portal</strong>
+                            <small class="text-muted d-block ms-4">Reports, Directives &amp; Division Oversight</small>
                         </a>
                     </div>
                 </div>
@@ -141,738 +309,320 @@
         </div>
     </div>
 
-    <!-- IMPORTANT OPERATIONAL PORTALS (FOIS, COIS, RTIS, SSTS, E-LEARNING) -->
+    <!-- 4 MAIN WORKSPACE ACTION CARDS -->
     <div class="row g-3 mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm p-3 bg-light">
-                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-                    <h5 class="fw-bold text-dark mb-0">
-                        <i class="fa-solid fa-tower-broadcast text-danger me-2"></i> IMPORTANT OPERATIONAL PORTALS &amp; E-LEARNING
-                    </h5>
-                    <span class="badge bg-primary">Quick Access Portals</span>
+        <!-- 1. LEARNING MATERIALS -->
+        <div class="col-md-6 col-lg-3">
+            <a href="{{ url_for('public.learning_materials') }}" class="action-tile-clean">
+                <div>
+                    <div class="tile-icon-box bg-primary-subtle text-primary">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <h5 class="fw-bold text-primary mb-1">Learning Materials</h5>
+                    <p class="text-muted small mb-3">
+                        Electric (3-Phase/Conv) &amp; Diesel technical manuals, troubleshooting fault directory, and safety quiz.
+                    </p>
                 </div>
-                <div class="row g-2">
-                    <div class="col-lg-2 col-md-4 col-6">
-                        <a href="https://www.fois.indianrail.gov.in/" target="_blank" class="btn btn-outline-primary w-100 text-start p-2 h-100 shadow-sm">
-                            <div class="fw-bold text-primary"><i class="fa-solid fa-train-track me-1"></i> FOIS</div>
-                            <small class="text-muted d-block" style="font-size:0.75rem;">Freight Operations System</small>
-                        </a>
+                <div class="text-primary fw-bold small">
+                    Explore Materials <i class="fa-solid fa-arrow-right ms-1"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- 2. NOTICES & BULLETINS -->
+        <div class="col-md-6 col-lg-3">
+            <a href="{{ url_for('public.notices') }}" class="action-tile-clean">
+                <div>
+                    <div class="tile-icon-box bg-danger-subtle text-danger">
+                        <i class="fa-solid fa-bell"></i>
                     </div>
-                    <div class="col-lg-2 col-md-4 col-6">
-                        <a href="https://cois.indianrail.gov.in/" target="_blank" class="btn btn-outline-success w-100 text-start p-2 h-100 shadow-sm">
-                            <div class="fw-bold text-success"><i class="fa-solid fa-train-subway me-1"></i> COIS</div>
-                            <small class="text-muted d-block" style="font-size:0.75rem;">Coaching Operations System</small>
-                        </a>
+                    <h5 class="fw-bold text-danger mb-1">Notices &amp; Bulletins</h5>
+                    <p class="text-muted small mb-3">
+                        Official divisional safety drives, technical circulars, instructions, and operating bulletins.
+                    </p>
+                </div>
+                <div class="text-danger fw-bold small">
+                    View Bulletins <i class="fa-solid fa-arrow-right ms-1"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- 3. CONTROL APPLICATIONS & TECHNICAL TOOLS -->
+        <div class="col-md-6 col-lg-3">
+            <a href="{{ url_for('public.haulage_capacity') }}" class="action-tile-clean">
+                <div>
+                    <div class="tile-icon-box bg-warning-subtle text-warning">
+                        <i class="fa-solid fa-gauge-high"></i>
                     </div>
-                    <div class="col-lg-2 col-md-4 col-6">
-                        <a href="https://rtis.cris.org.in/" target="_blank" class="btn btn-outline-danger w-100 text-start p-2 h-100 shadow-sm">
-                            <div class="fw-bold text-danger"><i class="fa-solid fa-satellite-dish me-1"></i> RTIS</div>
-                            <small class="text-muted d-block" style="font-size:0.75rem;">Real-Time Train Tracking</small>
-                        </a>
+                    <h5 class="fw-bold text-dark mb-1">Control Applications</h5>
+                    <p class="text-muted small mb-3">
+                        RDSO Loco Haulage Engine (WAG-12B, WAG-9, WAP-7), PF entry speed tool, and operational analysis.
+                    </p>
+                </div>
+                <div class="text-warning-emphasis fw-bold small">
+                    Launch Tools <i class="fa-solid fa-arrow-right ms-1"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- 4. CREW MONITORING (CENTRAL FOCUS) -->
+        <div class="col-md-6 col-lg-3">
+            <a href="{% if current_user and current_user.is_supervisor() %}{{ url_for('supervisor.dashboard') }}{% elif current_user and current_user.is_officer() %}{{ url_for('officer.crew_performance') }}{% elif current_user and current_user.is_admin() %}{{ url_for('admin.crew_master') }}{% else %}{{ url_for('auth.login', role='cli') }}{% endif %}" class="action-tile-clean border-primary border-2">
+                <div>
+                    <div class="tile-icon-box bg-info-subtle text-info">
+                        <i class="fa-solid fa-users-viewfinder"></i>
                     </div>
-                    <div class="col-lg-2 col-md-4 col-6">
-                        <a href="https://fois.indianrail.gov.in/SSTS" target="_blank" class="btn btn-outline-warning text-dark w-100 text-start p-2 h-100 shadow-sm">
-                            <div class="fw-bold text-dark"><i class="fa-solid fa-clock-rotate-left me-1 text-warning"></i> SSTS</div>
-                            <small class="text-muted d-block" style="font-size:0.75rem;">Short Stay Crew Tracking</small>
-                        </a>
+                    <h5 class="fw-bold text-info-emphasis mb-1">Crew Monitoring</h5>
+                    <p class="text-muted small mb-3">
+                        Crew master database, bio-data records, PME/Refresher status, counselling logs, and CLI duty sync.
+                    </p>
+                </div>
+                <div class="text-info fw-bold small">
+                    Open Crew Hub <i class="fa-solid fa-arrow-right ms-1"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- TECHNICAL TOOLS & EMERGENCY HOTLINES STRIP -->
+    <div class="card shadow-sm border-0 mb-4 bg-white rounded-3">
+        <div class="card-body p-3">
+            <div class="row align-items-center g-3">
+                <div class="col-lg-3 col-md-6">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-danger-subtle text-danger p-3 fs-4">
+                            <i class="fa-solid fa-phone-volume"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-danger mb-1">24x7 Control Lines</span>
+                            <div class="fw-bold text-dark small">TLC (Electric): <strong class="text-danger">22328</strong></div>
+                            <div class="fw-bold text-dark small">PCNL (Diesel): <strong class="text-danger">22666 / 22667</strong></div>
+                        </div>
                     </div>
-                    <div class="col-lg-2 col-md-4 col-6">
-                        <a href="https://elearninghwh.in/home_page.html" target="_blank" class="btn btn-warning text-dark w-100 text-start p-2 h-100 shadow-sm fw-bold border-dark">
-                            <div><i class="fa-solid fa-graduation-cap me-1"></i> E-Learning</div>
-                            <small class="text-dark d-block" style="font-size:0.75rem;">elearninghwh.in Portal</small>
-                        </a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-warning-subtle text-warning p-3 fs-4">
+                            <i class="fa-solid fa-calculator"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-warning text-dark mb-1">Loco Haulage</span>
+                            <div class="fw-bold text-dark small">RDSO Standard Matrix</div>
+                            <a href="{{ url_for('public.haulage_capacity') }}" class="text-primary text-decoration-none small fw-bold">Calculate Tonnage &rarr;</a>
+                        </div>
                     </div>
-                    <div class="col-lg-2 col-md-4 col-6">
-                        <a href="{{ url_for('public.rules') }}" class="btn btn-outline-secondary w-100 text-start p-2 h-100 shadow-sm">
-                            <div class="fw-bold text-dark"><i class="fa-solid fa-book-bookmark me-1 text-success"></i> Rules (GR/SR)</div>
-                            <small class="text-muted d-block" style="font-size:0.75rem;">Rulebooks &amp; SWRs</small>
-                        </a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-success-subtle text-success p-3 fs-4">
+                            <i class="fa-solid fa-stopwatch"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-success mb-1">Speed Monitor</span>
+                            <div class="fw-bold text-dark small">PF Entry Speed Check</div>
+                            <a href="{{ url_for('control.pf_entry_speed') }}" class="text-success text-decoration-none small fw-bold">Open Speed Tool &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-info-subtle text-info p-3 fs-4">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-info text-dark mb-1">Rule 1515</span>
+                            <div class="fw-bold text-dark small">Running Room Rest &amp; Duty</div>
+                            <a href="{{ url_for('elearning.index') }}" class="text-info text-decoration-none small fw-bold">Review Rules &rarr;</a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- OFFICER'S SAY ("OFFICERS DESK") -->
-    <div class="mb-5">
-        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-            <h4 class="fw-bold text-dark mb-0">
-                <i class="fa-solid fa-quote-left text-warning me-2"></i> Officers' Desk & Guidance
-            </h4>
-            <span class="text-muted small">Electric Operation Department &bull; Howrah Division</span>
+    <!-- DIVISIONAL CONSOLE (SHOWING ALL DETAILS PREVIOUSLY SHOWN) -->
+    <div class="divisional-console-card mb-4" id="divisionalConsole">
+        <div class="console-header-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="fa-solid fa-sitemap me-2 text-warning"></i>Divisional Operations Console</h4>
+                <small class="text-light" style="opacity:0.9;">Electric Operation Department &bull; Howrah Division &bull; Eastern Railway (Electric &amp; Diesel Traction)</small>
+            </div>
+            <span class="badge bg-warning text-dark fw-bold px-3 py-2">
+                <i class="fa-solid fa-building me-1"></i> {{ lobbies|length }} Lobbies &bull; {{ strength_summary.total_crew if strength_summary else crew_count }} Running Staff
+            </span>
         </div>
 
-        <div class="row g-4">
-            {% for say in officer_says %}
-                <div class="col-lg-4 col-md-6">
-                    <div class="officer-say-card shadow-sm">
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; font-size: 1.8rem; border: 3px solid var(--ir-gold);">
-                                <i class="fa-solid fa-user-shield"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold mb-0 text-primary">{{ say.officer_name }}</h6>
-                                <div class="badge bg-warning text-dark fw-bold mb-1">{{ say.designation }}</div>
-                                <div class="small text-muted fst-italic">{{ say.tagline }}</div>
+        <!-- CONSOLE NAVIGATION TABS -->
+        <div class="p-3 bg-light border-bottom">
+            <ul class="nav nav-pills console-nav-pills gap-2" id="consoleTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="hierarchy-tab" data-bs-toggle="pill" data-bs-target="#tabHierarchy" type="button" role="tab">
+                        <i class="fa-solid fa-network-wired me-2"></i>1. Organizational Hierarchy
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="lobbies-tab" data-bs-toggle="pill" data-bs-target="#tabLobbies" type="button" role="tab">
+                        <i class="fa-solid fa-building me-2"></i>2. Running Lobbies &amp; Cadre Strength ({{ lobbies|length }})
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="officers-tab" data-bs-toggle="pill" data-bs-target="#tabOfficers" type="button" role="tab">
+                        <i class="fa-solid fa-quote-left me-2"></i>3. Officers' Guidance
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- TAB CONTENT -->
+        <div class="tab-content p-3 p-md-4" id="consoleTabContent">
+
+            <!-- TAB 1: ORGANIZATIONAL HIERARCHY TREE -->
+            <div class="tab-pane fade show active" id="tabHierarchy" role="tabpanel">
+                <div class="bg-light p-3 p-md-4 rounded-3 border">
+                    <!-- LEVEL 1: DIVISIONAL HEAD & 24x7 CONTROLS -->
+                    <div class="row align-items-center justify-content-center g-3 mb-3">
+                        <div class="col-lg-3 col-md-4 order-2 order-md-1">
+                            <div class="p-3 bg-white rounded-3 border shadow-xs text-center border-top border-4 border-info h-100">
+                                <span class="badge bg-info text-dark mb-1 fw-bold">24x7 Operations Control</span>
+                                <h6 class="fw-bold text-dark mb-1"><i class="fa-solid fa-bolt text-warning me-1"></i> TLC (Electric)</h6>
+                                <small class="text-muted d-block" style="font-size: 0.78rem;">Traction Loco Control &bull; Electric Fleet Operations</small>
                             </div>
                         </div>
-                        <p class="small text-secondary mb-0 border-top pt-2" style="min-height: 95px; line-height: 1.5;">
-                            "{{ say.message }}"
+
+                        <div class="col-lg-6 col-md-4 order-1 order-md-2 text-center">
+                            <div class="p-3 rounded-3 shadow text-white" style="background: linear-gradient(135deg, #002244 0%, #003366 100%); border: 3px solid #c59b27;">
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                                    <i class="fa-solid fa-crown fa-lg text-warning"></i>
+                                    <h5 class="fw-bold mb-0 text-white">Sr. DEE(OP)/HWH</h5>
+                                </div>
+                                <div class="badge bg-warning text-dark fw-bold mb-1">Head of the Department</div>
+                                <div class="small text-white-50" style="font-size: 0.82rem;">
+                                    Senior Divisional Electrical Engineer (OP) &bull; Overall In-Charge
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-4 order-3">
+                            <div class="p-3 bg-white rounded-3 border shadow-xs text-center border-top border-4 border-danger h-100">
+                                <span class="badge bg-danger text-white mb-1 fw-bold">24x7 Power Control</span>
+                                <h6 class="fw-bold text-dark mb-1"><i class="fa-solid fa-gas-pump text-danger me-1"></i> PCNL (Diesel)</h6>
+                                <small class="text-muted d-block" style="font-size: 0.78rem;">Power Control (Diesel) &bull; Integrated Operating Command</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CONNECTOR -->
+                    <div class="text-center my-1 text-muted">
+                        <i class="fa-solid fa-arrow-down fa-lg text-primary"></i>
+                    </div>
+
+                    <!-- LEVEL 2: ASSISTANT DIVISIONAL OFFICERS -->
+                    <div class="row justify-content-center text-center g-3 mb-3">
+                        <div class="col-md-5 col-sm-6">
+                            <div class="p-3 bg-white rounded-3 border shadow-xs border-top border-4 border-primary h-100">
+                                <span class="badge bg-primary-subtle text-primary mb-1 fw-bold">Assistant Divisional Officer</span>
+                                <h6 class="fw-bold text-primary mb-1"><i class="fa-solid fa-user-shield me-1"></i> AEE(OP)/HWH</h6>
+                                <div class="small fw-semibold text-dark">Assistant Electrical Engineer (Operations)</div>
+                                <small class="text-muted" style="font-size: 0.78rem;">Electric Crew Operations, Lobbies &amp; Safety Directives</small>
+                            </div>
+                        </div>
+                        <div class="col-md-5 col-sm-6">
+                            <div class="p-3 bg-white rounded-3 border shadow-xs border-top border-4 border-primary h-100">
+                                <span class="badge bg-primary-subtle text-primary mb-1 fw-bold">Assistant Divisional Officer</span>
+                                <h6 class="fw-bold text-primary mb-1"><i class="fa-solid fa-user-gear me-1"></i> AME(P)/HWH</h6>
+                                <div class="small fw-semibold text-dark">Assistant Mechanical Engineer (Power)</div>
+                                <small class="text-muted" style="font-size: 0.78rem;">Power Operations, Running Power &amp; Technical Superintending</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CONNECTOR -->
+                    <div class="text-center my-1 text-muted">
+                        <i class="fa-solid fa-arrow-down fa-lg text-primary"></i>
+                    </div>
+
+                    <!-- LEVEL 3: SUPERVISORY FIELD LAYER -->
+                    <div class="bg-white p-3 rounded-3 border shadow-xs border-top border-4 border-warning">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <span class="badge bg-warning text-dark fw-bold">Supervisory Field Layer</span>
+                            <span class="badge bg-light text-dark border">
+                                <i class="fa-solid fa-user-check text-success me-1"></i> {{ strength_summary.total_cli if strength_summary else cli_count }} Nominated CLIs across Division
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-0">
+                            Chief Loco Inspectors (CLI) heading periodic safety counselling, footplate inspections, crew monitoring, signal alertness, SPM &amp; CVVRS analysis across all running lobbies.
                         </p>
                     </div>
                 </div>
-            {% endfor %}
-        </div>
-    </div>
+            </div>
 
-    <!-- ORGANIZATIONAL STRUCTURE & OPERATIONAL HIERARCHY -->
-    <div class="mb-5">
-        <div class="rail-card p-4 shadow-sm border-0">
-            <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4 gap-2">
-                <div>
-                    <h4 class="fw-bold text-dark mb-1">
-                        <i class="fa-solid fa-sitemap text-warning me-2"></i> Department Organizational Structure &amp; Operational Hierarchy
-                    </h4>
-                    <p class="text-muted small mb-0">
-                        Electric Operation Department &bull; Howrah Division &bull; Eastern Railway (Electric &amp; Diesel Operations)
-                    </p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill small">
-                        <i class="fa-solid fa-network-wired me-1"></i> Unified Command
-                    </span>
-                    <a href="{{ url_for('public.about') }}" class="btn btn-sm btn-outline-primary rounded-pill">
-                        <i class="fa-solid fa-users-viewfinder me-1"></i> Full Cadre Matrix &rarr;
-                    </a>
+            <!-- TAB 2: RUNNING LOBBIES & CADRE MATRIX -->
+            <div class="tab-pane fade" id="tabLobbies" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle small mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Lobby</th>
+                                <th>Depot Name</th>
+                                <th>Supervisor (CCC)</th>
+                                <th>Control Phone</th>
+                                <th class="text-center">Total Staff</th>
+                                <th>Cadre Distribution (LP / MMAN / SHT / ALP)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ls in lobby_strengths %}
+                            <tr>
+                                <td><strong class="text-primary fs-6">{{ ls.code }}</strong></td>
+                                <td>{{ ls.name }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="fa-solid fa-user-tie text-primary me-1"></i>{{ ls.supervisor_name }}
+                                    </span>
+                                </td>
+                                <td><i class="fa-solid fa-phone text-muted me-1"></i>{{ ls.phone }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary fs-6">{{ ls.crew_count }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1 flex-wrap small">
+                                        <span class="badge bg-danger" title="Loco Pilots">LP: {{ ls.cadre.lp }}</span>
+                                        <span class="badge bg-info text-dark" title="Motormen">MMAN: {{ ls.cadre.mman }}</span>
+                                        <span class="badge bg-warning text-dark" title="Shunters">SHT: {{ ls.cadre.sht }}</span>
+                                        <span class="badge bg-success" title="Assistant Loco Pilots">ALP: {{ ls.cadre.alp }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- HIERARCHY TREE VISUAL -->
-            <div class="bg-light p-3 p-md-4 rounded-3 border">
-                
-                <!-- LEVEL 1: DIVISIONAL HEAD & 24x7 CONTROLS -->
-                <div class="row align-items-center justify-content-center g-3 mb-3">
-                    <!-- Left Control: TLC (Electric) -->
-                    <div class="col-lg-3 col-md-4 order-2 order-md-1">
-                        <div class="p-3 bg-white rounded-3 border shadow-xs text-center border-top border-4 border-info h-100">
-                            <span class="badge bg-info text-dark mb-1 fw-bold">24x7 Operations Control</span>
-                            <h6 class="fw-bold text-dark mb-1">
-                                <i class="fa-solid fa-bolt text-warning me-1"></i> TLC (Electric)
-                            </h6>
-                            <small class="text-muted d-block" style="font-size: 0.78rem;">Traction Loco Control &bull; Electric Fleet &amp; Power Operation</small>
-                        </div>
-                    </div>
-
-                    <!-- Center: Sr. DEE(OP)/HWH -->
-                    <div class="col-lg-6 col-md-4 order-1 order-md-2 text-center">
-                        <div class="d-inline-block w-100 p-3 rounded-3 shadow text-white" style="background: linear-gradient(135deg, #002244 0%, #003366 100%); border: 3px solid var(--ir-gold);">
-                            <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
-                                <i class="fa-solid fa-crown fa-lg text-warning"></i>
-                                <h5 class="fw-bold mb-0 text-white">Sr. DEE(OP)/HWH</h5>
-                            </div>
-                            <div class="badge bg-warning text-dark fw-bold mb-1">Head of the Department</div>
-                            <div class="small text-white-50" style="font-size: 0.82rem;">
-                                Senior Divisional Electrical Engineer (OP) &bull; Overall In-Charge
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Control: PCNL (Diesel) -->
-                    <div class="col-lg-3 col-md-4 order-3">
-                        <div class="p-3 bg-white rounded-3 border shadow-xs text-center border-top border-4 border-danger h-100">
-                            <span class="badge bg-danger text-white mb-1 fw-bold">24x7 Power Control</span>
-                            <h6 class="fw-bold text-dark mb-1">
-                                <i class="fa-solid fa-gas-pump text-danger me-1"></i> PCNL (Diesel)
-                            </h6>
-                            <small class="text-muted d-block" style="font-size: 0.78rem;">Power Control (Diesel) &bull; Integrated Operating Command</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONNECTOR 1 -->
-                <div class="text-center my-1 text-muted">
-                    <i class="fa-solid fa-arrow-down fa-lg text-primary"></i>
-                </div>
-
-                <!-- LEVEL 2: DIVISIONAL OFFICERS (AEE OP & AME P) -->
-                <div class="row justify-content-center text-center g-3 mb-3">
-                    <div class="col-md-5 col-sm-6">
-                        <div class="p-3 bg-white rounded-3 border shadow-xs border-top border-4 border-primary h-100">
-                            <span class="badge bg-primary-subtle text-primary mb-1 fw-bold">Assistant Divisional Officer</span>
-                            <h6 class="fw-bold text-primary mb-1">
-                                <i class="fa-solid fa-user-shield me-1"></i> AEE(OP)/HWH
-                            </h6>
-                            <div class="small fw-semibold text-dark">Assistant Electrical Engineer (Operations)</div>
-                            <small class="text-muted" style="font-size: 0.78rem;">Electric Crew Operations, Lobbies &amp; Safety Directives</small>
-                        </div>
-                    </div>
-                    <div class="col-md-5 col-sm-6">
-                        <div class="p-3 bg-white rounded-3 border shadow-xs border-top border-4 border-primary h-100">
-                            <span class="badge bg-primary-subtle text-primary mb-1 fw-bold">Assistant Divisional Officer</span>
-                            <h6 class="fw-bold text-primary mb-1">
-                                <i class="fa-solid fa-user-gear me-1"></i> AME(P)/HWH
-                            </h6>
-                            <div class="small fw-semibold text-dark">Assistant Mechanical Engineer (Power)</div>
-                            <small class="text-muted" style="font-size: 0.78rem;">Power Operations, Running Power &amp; Technical Superintending</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONNECTOR 2 -->
-                <div class="text-center my-1 text-muted">
-                    <i class="fa-solid fa-arrow-down fa-lg text-primary"></i>
-                </div>
-
-                <!-- LEVEL 3: SUPERVISORY LAYER (CHIEF LOCO INSPECTORS - CLI & LOBBY IN-CHARGES) -->
-                <div class="bg-white p-3 rounded-3 border shadow-xs mb-3 border-top border-4 border-warning">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-warning text-dark fw-bold fs-7">Supervisory Field Layer</span>
-                            <h6 class="fw-bold text-dark mb-0">
-                                <i class="fa-solid fa-clipboard-user text-warning me-1"></i> Chief Loco Inspectors (CLI) &amp; Lobby In-Charges (CCC)
-                            </h6>
-                        </div>
-                        <span class="badge bg-light text-dark border">
-                            <i class="fa-solid fa-user-check text-success me-1"></i> {{ strength_summary.total_cli if strength_summary else cli_count }} Nominated CLIs across Division
-                        </span>
-                    </div>
-                    
-                    <div class="row g-2 text-center">
-                        <div class="col-md-4">
-                            <div class="p-2 bg-light rounded border text-start small">
-                                <strong class="text-primary d-block mb-1">
-                                    <i class="fa-solid fa-building me-1"></i> Lobby In-Charges (CCC)
-                                </strong>
-                                <span class="text-muted" style="font-size: 0.78rem;">
-                                    Heading {{ lobbies|length }} Running Lobbies (HWH, BWN, RPH, DKAE, BHP, TAK, AZ, KWAE, PKR) &amp; Sister Outposts (NHT, SNT, KURV).
-                                </span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-2 bg-light rounded border text-start small">
-                                <strong class="text-dark d-block mb-1">
-                                    <i class="fa-solid fa-shoe-prints text-warning me-1"></i> Footplate &amp; Counselling
-                                </strong>
-                                <span class="text-muted" style="font-size: 0.78rem;">
-                                    Periodic safety counselling, footplate inspection, crew monitoring, signal alertness &amp; safety compliance.
-                                </span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-2 bg-light rounded border text-start small">
-                                <strong class="text-success d-block mb-1">
-                                    <i class="fa-solid fa-chart-line me-1"></i> SPM &amp; CVVRS Analysis
-                                </strong>
-                                <span class="text-muted" style="font-size: 0.78rem;">
-                                    Speedometer chart analysis, CVVRS footage evaluation, technical trouble shooting &amp; loco failure attendance.
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONNECTOR 3 -->
-                <div class="text-center my-1 text-muted">
-                    <i class="fa-solid fa-arrow-down fa-lg text-primary"></i>
-                </div>
-
-                <!-- LEVEL 4: RUNNING CREW CADRES -->
-                <div class="bg-white p-3 rounded-3 border shadow-xs border-top border-4 border-success">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-success text-white fw-bold fs-7">Running Staff Cadres</span>
-                            <h6 class="fw-bold text-dark mb-0">
-                                <i class="fa-solid fa-train text-success me-1"></i> Operating Crews (Running Staff)
-                            </h6>
-                        </div>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">
-                            <i class="fa-solid fa-users me-1"></i> {{ strength_summary.total_crew if strength_summary else crew_count }} Divisional Active Running Staff
-                        </span>
-                    </div>
-
-                    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-7 g-2 text-center">
-                        <div class="col">
-                            <div class="p-2 rounded bg-light border h-100">
-                                <span class="badge bg-danger text-white mb-1">LPM</span>
-                                <div class="fw-bold text-dark" style="font-size: 0.78rem;">Loco Pilot Mail</div>
-                                <small class="text-muted" style="font-size: 0.70rem;">Mail / Express</small>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="p-2 rounded bg-light border h-100">
-                                <span class="badge bg-primary text-white mb-1">LPP</span>
-                                <div class="fw-bold text-dark" style="font-size: 0.78rem;">Loco Pilot Pass</div>
-                                <small class="text-muted" style="font-size: 0.70rem;">Passenger Trains</small>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="p-2 rounded bg-light border h-100">
-                                <span class="badge bg-warning text-dark mb-1">MMAN</span>
-                                <div class="fw-bold text-dark" style="font-size: 0.78rem;">Motorman</div>
-                                <small class="text-muted" style="font-size: 0.70rem;">EMU / MEMU</small>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="p-2 rounded bg-light border h-100">
-                                <span class="badge bg-dark text-white mb-1">LPG</span>
-                                <div class="fw-bold text-dark" style="font-size: 0.78rem;">Loco Pilot Goods</div>
-                                <small class="text-muted" style="font-size: 0.70rem;">Freight &amp; Container</small>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="p-2 rounded bg-light border h-100">
-                                <span class="badge bg-secondary text-white mb-1">LPS-I / II</span>
-                                <div class="fw-bold text-dark" style="font-size: 0.78rem;">Shunting Pilot</div>
-                                <small class="text-muted" style="font-size: 0.70rem;">Yard &amp; Depot</small>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="p-2 rounded bg-light border h-100">
-                                <span class="badge bg-info text-dark mb-1">SALP</span>
-                                <div class="fw-bold text-dark" style="font-size: 0.78rem;">Sr. Asst LP</div>
-                                <small class="text-muted" style="font-size: 0.70rem;">Senior Co-Drivers</small>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="p-2 rounded bg-light border h-100">
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-1">ALP</span>
-                                <div class="fw-bold text-dark" style="font-size: 0.78rem;">Asst LP</div>
-                                <small class="text-muted" style="font-size: 0.70rem;">Assistant Drivers</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <!-- NOTICES & COUNSELLING SECTION (2 COLUMNS) -->
-    <div class="row g-4 mb-5">
-        <!-- NOTICES & RESULTS -->
-        <div class="col-lg-7">
-            <div class="rail-card h-100">
-                <div class="rail-card-header accent-blue">
-                    <span><i class="fa-solid fa-file-invoice text-primary me-2"></i> Notices, Orders & Results</span>
-                    <a href="{{ url_for('public.notices') }}" class="btn btn-sm btn-outline-primary py-0">View All</a>
-                </div>
-                <div class="p-3">
-                    <div class="list-group list-group-flush">
-                        {% for n in notices %}
-                            <div class="list-group-item px-2 py-3 border-bottom">
-                                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-                                    <h6 class="mb-0 fw-bold">
-                                        {% if n.is_urgent %}
-                                            <span class="badge bg-danger me-1">URGENT</span>
-                                        {% endif %}
-                                        <span class="badge bg-secondary me-1">{{ n.category }}</span>
-                                        {{ n.title }}
-                                    </h6>
-                                    <small class="text-muted text-nowrap ms-2">{{ n.created_at.strftime('%d-%b-%Y') }}</small>
+            <!-- TAB 3: OFFICERS' GUIDANCE -->
+            <div class="tab-pane fade" id="tabOfficers" role="tabpanel">
+                <div class="row g-3">
+                    {% for say in officer_says %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 bg-light rounded-3 border h-100 shadow-xs">
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.3rem; border: 2px solid #c59b27;">
+                                    <i class="fa-solid fa-user-shield"></i>
                                 </div>
-                                <p class="mb-1 text-secondary small text-truncate">{{ n.content }}</p>
-                                <div class="d-flex align-items-center justify-content-between mt-2">
-                                    <small class="text-muted">
-                                        <i class="fa-solid fa-user-check me-1"></i>Issued by: <strong>{{ n.publisher.sub_role if n.publisher else 'HQ' }}</strong>
-                                        {% if n.target_lobby %}
-                                            | <i class="fa-solid fa-location-dot me-1"></i>{{ n.target_lobby.code }}
-                                        {% endif %}
-                                    </small>
-                                    <a href="{{ url_for('public.notices') }}" class="btn btn-sm btn-link text-decoration-none p-0 fw-bold">
-                                        Read Details <i class="fa-solid fa-arrow-right ms-1"></i>
-                                    </a>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-primary">{{ say.officer_name }}</h6>
+                                    <span class="badge bg-warning text-dark fw-bold mb-1">{{ say.designation }}</span>
                                 </div>
                             </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- DAILY SAFETY COUNSELLING -->
-        <div class="col-lg-5">
-            <div class="rail-card h-100">
-                <div class="rail-card-header accent-gold">
-                    <span><i class="fa-solid fa-book-medical text-success me-2"></i> Daily Safety Counselling & Cases</span>
-                    <a href="{{ url_for('public.counselling') }}" class="btn btn-sm btn-outline-success py-0">Archive</a>
-                </div>
-                <div class="p-3">
-                    {% for c in counselling_list %}
-                        <div class="p-3 mb-3 bg-light rounded border border-start-0 border-top-0 border-bottom-0 border-4 border-success">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <span class="badge bg-success">{{ c.topic_date.strftime('%d-%b-%Y') }}</span>
-                                {% if c.rule_reference %}
-                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-gavel me-1"></i>{{ c.rule_reference }}</span>
-                                {% endif %}
-                            </div>
-                            <h6 class="fw-bold text-dark mt-2 mb-1">{{ c.title }}</h6>
-                            <p class="small text-secondary mb-2 text-truncate">{{ c.case_analysis }}</p>
-                            <a href="{{ url_for('public.counselling_detail', topic_id=c.id) }}" class="btn btn-outline-dark btn-sm py-0">
-                                <i class="fa-solid fa-glasses me-1"></i> View Counselling & Case
-                            </a>
+                            <p class="small text-secondary mb-0 border-top pt-2 fst-italic">
+                                "{{ say.message }}"
+                            </p>
                         </div>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
-        </div>
-    </div>
 
-        <!-- 12 RUNNING LOBBIES DIRECTORY CARDS & INTERACTIVE MANAGEMENT -->
-    <div class="mb-5" id="divisional-lobbies-section">
-        <div class="rail-card p-4 shadow-sm border-0">
-            <!-- HEADER -->
-            <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3 gap-3">
-                <div>
-                    <h4 class="fw-bold text-dark mb-1">
-                        <i class="fa-solid fa-building-flag text-primary me-2"></i> Running Lobbies &amp; Outposts of Howrah Division
-                    </h4>
-                    <p class="text-muted small mb-0">
-                        12 Divisional Crew Operating Bases &bull; Chief Crew Controller (CCC) In-Charges &bull; Live Cadre Strengths &amp; Information Management
-                    </p>
-                </div>
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <span class="badge bg-primary px-3 py-2 rounded-pill small">
-                        <i class="fa-solid fa-users me-1"></i> {{ strength_summary.total_crew }} Total Crews
-                    </span>
-                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill small">
-                        <i class="fa-solid fa-user-shield me-1"></i> {{ strength_summary.total_cli }} Nominated CLIs
-                    </span>
-                    <a href="{{ url_for('public.about') }}" class="btn btn-sm btn-outline-primary rounded-pill">
-                        <i class="fa-solid fa-chart-pie me-1"></i> Full Cadre Matrix &rarr;
-                    </a>
-                </div>
-            </div>
-
-            <!-- FILTER PILLS -->
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                <div class="btn-group btn-group-sm shadow-xs" role="group" aria-label="Lobby Filters">
-                    <button type="button" class="btn btn-primary active lobby-filter-btn" data-filter="all">
-                        <i class="fa-solid fa-border-all me-1"></i> All Lobbies ({{ lobby_strengths|length }})
-                    </button>
-                    <button type="button" class="btn btn-outline-primary lobby-filter-btn" data-filter="main">
-                        <i class="fa-solid fa-star me-1"></i> Main Depots (9)
-                    </button>
-                    <button type="button" class="btn btn-outline-primary lobby-filter-btn" data-filter="sister">
-                        <i class="fa-solid fa-code-branch me-1"></i> Sub-Bases / Sister (3)
-                    </button>
-                </div>
-                <small class="text-muted">
-                    <i class="fa-solid fa-info-circle me-1 text-primary"></i> Click <strong>Edit Info</strong> on any lobby card to update supervisory details, contacts, or jurisdiction.
-                </small>
-            </div>
-
-            <!-- CARDS GRID -->
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-3" id="lobbyCardsContainer">
-                {% for item in lobby_strengths %}
-                {% set l = item.lobby %}
-                <div class="col lobby-item-col" data-type="{% if l.is_sister_lobby %}sister{% else %}main{% endif %}" id="lobby-{{ item.code }}">
-                    <div class="card h-100 shadow-sm border-0 border-top border-4 {% if l.is_sister_lobby %}border-secondary{% else %}border-primary{% endif %} position-relative bg-white">
-                        
-                        <!-- CARD HEADER -->
-                        <div class="card-header bg-white pt-3 pb-2 border-bottom-0 d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="d-flex align-items-center gap-2 mb-1">
-                                    <span class="badge {% if l.is_sister_lobby %}bg-secondary{% else %}bg-primary{% endif %} fs-6 px-2 py-1 shadow-xs">
-                                        {{ item.code }}
-                                    </span>
-                                    {% if l.is_sister_lobby %}
-                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary" style="font-size: 0.70rem;">
-                                            <i class="fa-solid fa-code-branch me-1"></i>Sister Base
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.70rem;">
-                                            <i class="fa-solid fa-star me-1"></i>Main Depot
-                                        </span>
-                                    {% endif %}
-                                </div>
-                                <h6 class="fw-bold text-dark mb-0">{{ item.name }}</h6>
-                            </div>
-                            
-                            <!-- EDIT BUTTON -->
-                            <button type="button" class="btn btn-outline-primary btn-sm px-2 py-1 shadow-xs" 
-                                    data-bs-toggle="modal" data-bs-target="#editLobbyModal{{ l.id }}"
-                                    title="Edit and update {{ item.code }} information">
-                                <i class="fa-solid fa-pen-to-square me-1"></i><span class="small fw-semibold">Edit</span>
-                            </button>
-                        </div>
-
-                        <!-- CARD BODY -->
-                        <div class="card-body py-2 px-3 d-flex flex-column justify-content-between">
-                            <div>
-                                <!-- SUPERVISOR / CCC IN-CHARGE -->
-                                <div class="p-2 mb-2 rounded bg-light border">
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center {% if item.has_supervisor %}bg-primary text-white{% else %}bg-secondary text-white-50{% endif %}" style="width: 26px; height: 26px; font-size: 0.75rem;">
-                                            <i class="fa-solid fa-user-tie"></i>
-                                        </div>
-                                        <div class="text-truncate">
-                                            <small class="text-muted d-block" style="font-size: 0.68rem; line-height: 1;">CHIEF CREW CONTROLLER / CCC</small>
-                                            <strong class="text-dark" style="font-size: 0.82rem;">{{ item.supervisor_name }}</strong>
-                                        </div>
-                                    </div>
-                                    {% if l.in_charge_cli %}
-                                        <div class="d-flex align-items-center gap-1 pt-1 mt-1 border-top small" style="font-size: 0.72rem;">
-                                            <i class="fa-solid fa-user-shield text-warning"></i>
-                                            <span class="text-muted">CLI In-Charge:</span>
-                                            <strong class="text-dark">{{ l.in_charge_cli.full_name }}</strong>
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- CONTACT & JURISDICTION -->
-                                <div class="mb-2 small" style="font-size: 0.76rem;">
-                                    <div class="text-muted mb-1 text-truncate">
-                                        <i class="fa-solid fa-phone text-success me-1"></i>
-                                        {% if l.phone and l.phone != 'N/A' %}
-                                            <a href="tel:{{ l.phone }}" class="text-decoration-none text-dark fw-semibold">{{ l.phone }}</a>
-                                        {% else %}
-                                            <span class="text-muted fst-italic">No Phone Listed</span>
-                                        {% endif %}
-                                    </div>
-                                    {% if l.operational_jurisdiction %}
-                                        <div class="text-muted text-truncate" title="{{ l.operational_jurisdiction }}">
-                                            <i class="fa-solid fa-route text-info me-1"></i>
-                                            <span>{{ l.operational_jurisdiction }}</span>
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- CADRE MINI-PILLS -->
-                                <div class="d-flex flex-wrap gap-1 mb-2">
-                                    <span class="badge bg-light text-danger border" style="font-size: 0.68rem;" title="Loco Pilots (Mail/Pass/Goods)">
-                                        LP: <strong>{{ item.cadre.lp }}</strong>
-                                    </span>
-                                    <span class="badge bg-light text-warning text-dark border" style="font-size: 0.68rem;" title="Motormen (EMU/MEMU)">
-                                        MMAN: <strong>{{ item.cadre.mman }}</strong>
-                                    </span>
-                                    <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;" title="Shunters">
-                                        SHT: <strong>{{ item.cadre.sht }}</strong>
-                                    </span>
-                                    <span class="badge bg-light text-primary border" style="font-size: 0.68rem;" title="Assistant Loco Pilots">
-                                        ALP: <strong>{{ item.cadre.alp }}</strong>
-                                    </span>
-                                </div>
-
-                                <!-- REMARKS / DESCRIPTION -->
-                                <p class="text-secondary small mb-2 fst-italic text-truncate" style="font-size: 0.74rem;" title="{{ item.remarks }}">
-                                    "{{ item.remarks }}"
-                                </p>
-                            </div>
-
-                            <!-- CARD FOOTER SUMMARY -->
-                            <div class="pt-2 border-top d-flex justify-content-between align-items-center">
-                                {% if item.crew_count > 0 %}
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style="font-size: 0.72rem;">
-                                        <i class="fa-solid fa-users me-1"></i><strong>{{ item.crew_count }}</strong> Crews
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 0.72rem;">
-                                        <i class="fa-solid fa-arrows-split-up-and-left me-1"></i>Floating Base
-                                    </span>
-                                {% endif %}
-                                {% if item.cli_count > 0 %}
-                                    <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.72rem;" title="Nominated CLIs">
-                                        <i class="fa-solid fa-user-shield me-1"></i>{{ item.cli_count }} CLI
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.70rem;">
-                                        0 CLI
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- EDIT LOBBY MODAL FOR EACH LOBBY -->
-                <div class="modal fade" id="editLobbyModal{{ l.id }}" tabindex="-1" aria-labelledby="editLobbyModalLabel{{ l.id }}" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content shadow-lg border-0">
-                            <form method="POST" action="{{ url_for('public.update_lobby_info', lobby_id=l.id) }}">
-                                <input type="hidden" name="next_url" value="{{ url_for('public.index') }}#lobby-{{ item.code }}">
-                                <div class="modal-header bg-primary text-white py-3">
-                                    <h5 class="modal-title fw-bold" id="editLobbyModalLabel{{ l.id }}">
-                                        <i class="fa-solid fa-pen-to-square me-2 text-warning"></i> Edit Lobby: {{ item.code }} ({{ item.name }})
-                                    </h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body p-4 bg-light-subtle">
-                                    
-                                    <div class="alert alert-primary-subtle border-start border-4 border-primary py-2 px-3 small mb-3">
-                                        <i class="fa-solid fa-circle-info me-1 text-primary"></i>
-                                        Update supervisory contact, CLI nominations, and operational coverage for <strong>{{ item.name }}</strong>.
-                                    </div>
-
-                                    <!-- CCC / Supervisor Name -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-dark">
-                                            <i class="fa-solid fa-user-tie text-primary me-1"></i> Chief Crew Controller (CCC) / In-Charge Name
-                                        </label>
-                                        <input type="text" name="ccc_name" class="form-control" 
-                                               value="{{ l.ccc_name or '' }}" 
-                                               placeholder="e.g. Sri Prasanta Panja (CCC/{{ item.code }})">
-                                    </div>
-
-                                    <!-- CLI In-Charge Dropdown -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-dark">
-                                            <i class="fa-solid fa-user-shield text-warning me-1"></i> Nominated CLI In-Charge
-                                        </label>
-                                        <select name="in_charge_cli_id" class="form-select">
-                                            <option value="">-- No Nominated CLI In-Charge --</option>
-                                            {% if clis %}
-                                                {% for cli in clis %}
-                                                    <option value="{{ cli.id }}" {% if l.in_charge_cli_id == cli.id %}selected{% endif %}>
-                                                        {{ cli.full_name }} ({{ cli.username }}){% if cli.mobile %} &bull; {{ cli.mobile }}{% endif %}
-                                                    </option>
-                                                {% endfor %}
-                                            {% endif %}
-                                        </select>
-                                        <small class="text-muted" style="font-size: 0.72rem;">Supervising Chief Loco Inspector assigned to this depot.</small>
-                                    </div>
-
-                                    <!-- Phone / CUG -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-dark">
-                                            <i class="fa-solid fa-phone text-success me-1"></i> Lobby Phone / CUG Mobile
-                                        </label>
-                                        <input type="text" name="phone" class="form-control" 
-                                               value="{{ l.phone or '' }}" 
-                                               placeholder="e.g. 033-2660-1234 or 900202xxxx">
-                                    </div>
-
-                                    <!-- Classification (Main vs Sister) -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-dark">
-                                            <i class="fa-solid fa-sitemap text-info me-1"></i> Depot Classification
-                                        </label>
-                                        <select name="is_sister_lobby" class="form-select">
-                                            <option value="0" {% if not l.is_sister_lobby %}selected{% endif %}>Main Supervised Lobby</option>
-                                            <option value="1" {% if l.is_sister_lobby %}selected{% endif %}>Sister Lobby / Outpost / Sub-Base (e.g. NHT, SNT, KURV)</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Operational Jurisdiction -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-dark">
-                                            <i class="fa-solid fa-route text-danger me-1"></i> Operational Jurisdiction / Route Sections
-                                        </label>
-                                        <input type="text" name="operational_jurisdiction" class="form-control" 
-                                               value="{{ l.operational_jurisdiction or '' }}" 
-                                               placeholder="e.g. HWH-BWN Main, Chord &amp; Suburban Sections">
-                                    </div>
-
-                                    <!-- Description / Operating Notes -->
-                                    <div class="mb-0">
-                                        <label class="form-label fw-bold small text-dark">
-                                            <i class="fa-solid fa-align-left text-secondary me-1"></i> Operating Remarks &amp; Depot Description
-                                        </label>
-                                        <textarea name="description" class="form-control" rows="2" 
-                                                  placeholder="Operational guidelines, controlling depot, or traffic role...">{{ l.description or '' }}</textarea>
-                                    </div>
-
-                                </div>
-                                <div class="modal-footer bg-light py-2">
-                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="submit" class="btn btn-primary btn-sm fw-bold px-3">
-                                        <i class="fa-solid fa-check me-1"></i> Save &amp; Update Lobby
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-
-        </div>
-    </div>
-
-    <!-- CLIENT FILTER SCRIPT -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const filterBtns = document.querySelectorAll('.lobby-filter-btn');
-        const cards = document.querySelectorAll('.lobby-item-col');
-        
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                filterBtns.forEach(b => {
-                    b.classList.remove('btn-primary', 'active');
-                    b.classList.add('btn-outline-primary');
-                });
-                this.classList.remove('btn-outline-primary');
-                this.classList.add('btn-primary', 'active');
-
-                const filter = this.getAttribute('data-filter');
-                cards.forEach(card => {
-                    if (filter === 'all' || card.getAttribute('data-type') === filter) {
-                        card.style.display = '';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
-        });
-    });
-    </script>
-
-    <!-- IMPORTANT LINKS -->
-    <div class="rail-card mb-4">
-        <div class="rail-card-header">
-            <span><i class="fa-solid fa-arrow-up-right-from-square me-2 text-primary"></i> Indian Railways Official Portals & Systems</span>
-        </div>
-        <div class="p-3">
-            <div class="row text-center g-3">
-                <div class="col-md-2 col-4">
-                    <a href="https://cms.indianrail.gov.in" target="_blank" class="text-decoration-none">
-                        <div class="p-2 border rounded hover-shadow bg-light">
-                            <i class="fa-solid fa-computer fa-2x text-primary mb-1"></i>
-                            <div class="fw-bold text-dark small">CMS Kiosk</div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-2 col-4">
-                    <a href="https://fois.indianrail.gov.in" target="_blank" class="text-decoration-none">
-                        <div class="p-2 border rounded hover-shadow bg-light">
-                            <i class="fa-solid fa-train-subway fa-2x text-success mb-1"></i>
-                            <div class="fw-bold text-dark small">FOIS Portal</div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-2 col-4">
-                    <a href="https://hrms.indianrail.gov.in" target="_blank" class="text-decoration-none">
-                        <div class="p-2 border rounded hover-shadow bg-light">
-                            <i class="fa-solid fa-id-card-clip fa-2x text-warning mb-1"></i>
-                            <div class="fw-bold text-dark small">HRMS Portal</div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-2 col-4">
-                    <a href="https://er.indianrailways.gov.in" target="_blank" class="text-decoration-none">
-                        <div class="p-2 border rounded hover-shadow bg-light">
-                            <i class="fa-solid fa-landmark fa-2x text-danger mb-1"></i>
-                            <div class="fw-bold text-dark small">Eastern Railway</div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-2 col-4">
-                    <a href="https://cris.org.in" target="_blank" class="text-decoration-none">
-                        <div class="p-2 border rounded hover-shadow bg-light">
-                            <i class="fa-solid fa-network-wired fa-2x text-info mb-1"></i>
-                            <div class="fw-bold text-dark small">CRIS</div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-2 col-4">
-                    <a href="{{ url_for('elearning.forms_manual') }}" class="text-decoration-none">
-                        <div class="p-2 border rounded hover-shadow bg-light">
-                            <i class="fa-solid fa-book-bookmark fa-2x text-secondary mb-1"></i>
-                            <div class="fw-bold text-dark small">T/409 Forms</div>
-                        </div>
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 

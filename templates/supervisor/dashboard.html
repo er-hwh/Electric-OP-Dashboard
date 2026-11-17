@@ -1,6 +1,7 @@
-{% extends "base.html" %}
+{% extends "supervisor/base_cli.html" %}
 
-{% block title %}Supervisor Dashboard | Chief Loco Inspector Console
+{% block title %}Supervisor Dashboard | Chief Loco Inspector Console{% endblock %}
+
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -12,12 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Initialize squadRosterTable manually — do NOT use generic .datatable class
-    // to avoid DataTables TN/18 "Incorrect column count" error which fires when
-    // an empty-state <td colspan="10"> is present in the tbody.
     if (typeof $ !== 'undefined' && $.fn.DataTable) {
         var $tbl = $('#squadRosterTable');
         if ($tbl.length && !$.fn.DataTable.isDataTable($tbl[0])) {
-            // Remove any empty-state colspan rows before DataTable touches the DOM
             $tbl.find('tbody tr').each(function() {
                 if ($(this).find('td[colspan]').length) {
                     $(this).remove();
@@ -51,10 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 {% endblock %}
 
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid px-4 py-4">
+<div class="container-fluid px-0">
 
     <!-- SUPERVISOR BANNER -->
     <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
@@ -169,6 +165,101 @@ document.addEventListener('DOMContentLoaded', function() {
                     {% else %}
                         <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>All queries addressed</span>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SELECT ACTIVITY TYPE QUICK LAUNCH BAR (MATCHING USER'S IMAGE DESIGN) -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-dark text-uppercase small" style="letter-spacing: 0.8px;">
+                <i class="fa-solid fa-list-check me-2 text-primary"></i> SELECT ACTIVITY TYPE (CLI Frontline Monitoring)
+            </span>
+            <span class="badge bg-primary-subtle text-primary small">9 Mandatory Duties</span>
+        </div>
+        <div class="card-body p-3">
+            <div class="row g-2">
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.new_footplate') }}" class="btn btn-outline-primary w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none">
+                        <i class="fa-solid fa-train text-primary fs-5"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">Footplate</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">9-Point Rubric</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.new_movement', activity='SPM Analysis') }}" class="btn btn-outline-warning w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none text-dark">
+                        <i class="fa-solid fa-chart-line text-warning fs-5"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">SPM Analysis</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">Speed Check</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.new_movement', activity='CVVRS Inspection') }}" class="btn btn-outline-info w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none text-dark">
+                        <i class="fa-solid fa-video text-info fs-5"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">CVVRS Video</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">Cab Vigilance</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.new_movement', activity='Locomotive Failure Attendance') }}" class="btn btn-outline-danger w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none">
+                        <i class="fa-solid fa-triangle-exclamation text-danger fs-5"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">Loco Failure</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">Attendance</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.new_movement', activity='Crew Problem Attendance') }}" class="btn btn-outline-secondary w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none">
+                        <i class="fa-solid fa-user-gear text-secondary fs-5"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">Crew Problem</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">Attendance</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.counselling') }}" class="btn btn-outline-success w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none">
+                        <i class="fa-solid fa-comments text-success fs-5"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">Counselling</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">Safety Coaching</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.new_movement', activity='Yard Inspection') }}" class="btn btn-outline-dark w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none">
+                        <i class="fa-solid fa-warehouse fs-5" style="color: #8b5cf6;"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">Yard Inspection</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">Shunting/Points</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.new_movement', activity='Station Inspection') }}" class="btn btn-outline-primary w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none">
+                        <i class="fa-solid fa-building text-primary fs-5"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">Station Check</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">Lobby/Running Room</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <a href="{{ url_for('supervisor.new_movement', activity='Other Supervisory Duties') }}" class="btn btn-outline-secondary w-100 p-2 text-start d-flex align-items-center gap-2 rounded-3 shadow-none">
+                        <i class="fa-solid fa-clipboard-list text-dark fs-5"></i>
+                        <div class="overflow-hidden">
+                            <strong class="d-block text-truncate" style="font-size: 0.8rem;">Other Duties</strong>
+                            <small class="text-muted" style="font-size: 0.68rem;">Admin / Seminar</small>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>

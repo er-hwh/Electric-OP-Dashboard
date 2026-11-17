@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "admin/base_admin.html" %}
 
 {% block title %}Dynamic Custom Fields Management | Electric Operation HWH{% endblock %}
 
@@ -44,6 +44,7 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-4">ID</th>
+                            <th>Module Target</th>
                             <th>Field Label</th>
                             <th>Internal Key</th>
                             <th>Data Type</th>
@@ -56,7 +57,7 @@
                     <tbody>
                         {% if not fields %}
                             <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
+                                <td colspan="9" class="text-center py-5 text-muted">
                                     <i class="fa-solid fa-cube fa-3x text-secondary mb-3 d-block opacity-50"></i>
                                     No custom fields created yet. Click <strong>"Add Custom Field"</strong> above to extend the database schema.
                                 </td>
@@ -65,6 +66,13 @@
                             {% for f in fields %}
                             <tr>
                                 <td class="ps-4 text-muted fw-bold">#{{ f.id }}</td>
+                                <td>
+                                    {% if f.entity_type == 'cli_log' %}
+                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-clipboard-user me-1"></i>CLI Log &amp; Duty</span>
+                                    {% else %}
+                                        <span class="badge bg-primary"><i class="fa-solid fa-users-gear me-1"></i>Crew Master</span>
+                                    {% endif %}
+                                </td>
                                 <td><strong class="text-dark">{{ f.field_label }}</strong></td>
                                 <td><code>{{ f.field_name }}</code></td>
                                 <td>
@@ -127,6 +135,15 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Target Module <span class="text-danger">*</span></label>
+                        <select name="entity_type" class="form-select fw-bold">
+                            <option value="cli_log" selected>CLI Daily Duty &amp; Movement Log (Field Checkpoints)</option>
+                            <option value="crew">Crew Master Database (Staff Records)</option>
+                        </select>
+                        <small class="text-muted">Choose whether this field extends CLI Daily Logs or Crew Master Profile.</small>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Field Label <span class="text-danger">*</span></label>
                         <input type="text" name="field_label" class="form-control" placeholder="e.g. Safety Grading / Blood Group" required>

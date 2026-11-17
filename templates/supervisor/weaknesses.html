@@ -1,0 +1,202 @@
+{% extends "supervisor/base_cli.html" %}
+
+{% block title %}Longitudinal Deficiencies & Weaknesses Ledger | CLI Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- TOP HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <span class="badge bg-danger fs-6"><i class="fa-solid fa-shield-halved me-1"></i> Safety Compliance Engine</span>
+                <span class="badge bg-primary text-white"><i class="fa-solid fa-arrows-spin me-1"></i> 3-Clean-Run Resolution Algorithm</span>
+                <span class="badge bg-dark text-warning"><i class="fa-solid fa-train me-1"></i> Howrah Division</span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">Longitudinal Weaknesses & Deficiencies Ledger</h3>
+            <small class="text-muted">Automated safety tracking: Deficiencies (Rating &le; 3) automatically resolve only after 3 consecutive clean runs (&ge; 4 &star;).</small>
+        </div>
+        <div class="d-flex gap-2 mt-2 mt-md-0">
+            <a href="{{ url_for('supervisor.new_footplate') }}" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-train me-1"></i> New Footplate Inspection
+            </a>
+            <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Squad Roster
+            </a>
+        </div>
+    </div>
+
+    <!-- METRICS STRIP -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-4 border-danger rounded-3 bg-white">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">Active Weaknesses</small>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <h3 class="fw-bold text-danger mb-0">{{ active_count }}</h3>
+                    <span class="badge bg-danger-subtle text-danger small">Tracking</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-4 border-warning rounded-3 bg-white">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">Multi-Lapse Crews</small>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <h3 class="fw-bold text-warning mb-0">{{ multi_lapse_count }}</h3>
+                    <span class="badge bg-warning-subtle text-warning small">&ge;2 Weaknesses</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-4 border-info rounded-3 bg-white">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">Clean Run Progress</small>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <h3 class="fw-bold text-info mb-0">{{ in_progress_count }}</h3>
+                    <span class="badge bg-info-subtle text-info small">1 or 2 Clean Runs</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-4 border-success rounded-3 bg-white">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.72rem;">Resolved Deficiencies</small>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <h3 class="fw-bold text-success mb-0">{{ resolved_count }}</h3>
+                    <span class="badge bg-success-subtle text-success small">3/3 Clean Runs</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER & LEDGER TABLE CARD -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-list-check text-primary fs-5"></i>
+                <h5 class="fw-bold mb-0 text-dark">Crew Weakness Records</h5>
+            </div>
+            <!-- STATUS TABS -->
+            <ul class="nav nav-pills nav-fill gap-1" id="weaknessTabs">
+                <li class="nav-item">
+                    <a class="nav-link py-1 px-3 small {% if current_status == 'ACTIVE' %}active fw-bold{% else %}text-muted{% endif %}" href="{{ url_for('supervisor.weaknesses', status='ACTIVE') }}">
+                        <i class="fa-solid fa-triangle-exclamation me-1 text-danger"></i> Active ({{ active_count }})
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link py-1 px-3 small {% if current_status == 'RESOLVED' %}active fw-bold{% else %}text-muted{% endif %}" href="{{ url_for('supervisor.weaknesses', status='RESOLVED') }}">
+                        <i class="fa-solid fa-circle-check me-1 text-success"></i> Resolved ({{ resolved_count }})
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link py-1 px-3 small {% if current_status == 'ALL' %}active fw-bold{% else %}text-muted{% endif %}" href="{{ url_for('supervisor.weaknesses', status='ALL') }}">
+                        <i class="fa-solid fa-layer-group me-1"></i> All Records
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="weaknessTable">
+                <thead class="table-light text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                    <tr>
+                        <th class="ps-3">Crew Member</th>
+                        <th>Safety Point</th>
+                        <th>Deficiency Observation</th>
+                        <th>Date Noted</th>
+                        <th>3-Clean-Run Progress</th>
+                        <th>Status</th>
+                        <th class="text-end pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td class="ps-3">
+                            <div class="fw-bold text-dark">{{ item.crew.full_name if item.crew else 'Unknown Crew' }}</div>
+                            <small class="text-muted">{{ item.crew.sub_role if item.crew else '' }} &bull; ID: {{ item.crew.username if item.crew else item.crew_id }}</small>
+                            {% if item.crew and item.crew.lobby %}
+                            <span class="badge bg-light text-dark border ms-1" style="font-size: 0.65rem;">{{ item.crew.lobby.code }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary mb-1">Point {{ item.point_no }}</span>
+                            <div class="small fw-bold text-dark">{{ item.point_name }}</div>
+                            <small class="text-muted" style="font-size: 0.7rem;">{{ item.point_key }}</small>
+                        </td>
+                        <td>
+                            <div class="small text-dark p-2 rounded bg-light border-start border-3 {% if item.status == 'ACTIVE' %}border-danger{% else %}border-success{% endif %}">
+                                {{ item.deficiency_details }}
+                            </div>
+                        </td>
+                        <td>
+                            <small class="fw-bold text-dark d-block">{{ item.date_identified.strftime('%d-%b-%Y') if item.date_identified else '-' }}</small>
+                            {% if item.identifying_fpo_id %}
+                            <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">FPO #{{ item.identifying_fpo_id }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="min-width: 170px;">
+                            {% if item.status == 'ACTIVE' %}
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="fw-bold {% if item.clean_runs_count == 0 %}text-danger{% elif item.clean_runs_count == 1 %}text-warning{% else %}text-info{% endif %}">
+                                        {{ item.clean_runs_count }} / 3 Clean Runs
+                                    </small>
+                                    <small class="text-muted" style="font-size: 0.68rem;">{{ 3 - item.clean_runs_count }} needed</small>
+                                </div>
+                                <div class="progress" style="height: 7px;">
+                                    <div class="progress-bar {% if item.clean_runs_count == 0 %}bg-danger{% elif item.clean_runs_count == 1 %}bg-warning{% else %}bg-info{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ (item.clean_runs_count / 3 * 100)|round }}%;">
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-success fw-bold small">
+                                    <i class="fa-solid fa-circle-check me-1"></i> 3/3 Runs Completed
+                                </div>
+                                <small class="text-muted" style="font-size: 0.7rem;">Resolved: {{ item.date_resolved.strftime('%d-%b-%Y') if item.date_resolved else 'Yes' }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.status == 'ACTIVE' %}
+                                <span class="badge bg-danger text-white"><i class="fa-solid fa-triangle-exclamation me-1"></i> ACTIVE</span>
+                            {% elif item.status == 'RESOLVED' %}
+                                <span class="badge bg-success text-white"><i class="fa-solid fa-check me-1"></i> RESOLVED</span>
+                            {% else %}
+                                <span class="badge bg-secondary text-white">{{ item.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-3">
+                            <a href="{{ url_for('supervisor.new_footplate', crew_id=item.crew_id) }}" class="btn btn-outline-primary btn-sm py-1 px-2" title="Conduct Footplate Inspection">
+                                <i class="fa-solid fa-train me-1"></i> Inspect
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-shield-cat fa-3x mb-2 text-success opacity-50 d-block"></i>
+                            <h6 class="fw-bold">No Weakness Records Found in this View</h6>
+                            <p class="small text-muted mb-0">All inspected running staff currently have 0 active deficiencies or filters are applied.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if ($('#weaknessTable tbody tr').length > 1 && !$('#weaknessTable tbody tr td[colspan]').length) {
+        $('#weaknessTable').DataTable({
+            pageLength: 25,
+            order: [[3, 'desc']],
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search crew, safety point...",
+                lengthMenu: "Show _MENU_ entries"
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "admin/base_admin.html" %}
 
 {% block title %}Crew Master Database | Electric Operation HWH{% endblock %}
 
@@ -200,105 +200,104 @@
     </div>
 
     <!-- EDIT CREW MODALS (OUTSIDE TABLE) -->
-    {% if crew.items %}
-        {% for c in crew.items %}
-<!-- Edit Crew Modal -->
-                            <div class="modal fade" id="editCrewModal{{ c.id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form method="POST" action="{{ url_for('admin.quick_update_crew', crew_id=c.id) }}">
-                                            <div class="modal-header bg-primary text-white">
-                                                <h5 class="modal-title fw-bold">
-                                                    <i class="fa-solid fa-user-pen me-2"></i> Edit Crew: {{ c.full_name }}
-                                                </h5>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body p-4 text-start">
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold">Full Name</label>
-                                                    <input type="text" name="full_name" class="form-control" value="{{ c.full_name }}" required>
-                                                </div>
+    {% for c in crews %}
+        {% set c_cf = c.get_custom_fields() %}
+        <!-- Edit Crew Modal -->
+        <div class="modal fade" id="editCrewModal{{ c.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ url_for('admin.quick_update_crew', crew_id=c.id) }}">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title fw-bold">
+                                <i class="fa-solid fa-user-pen me-2"></i> Edit Crew: {{ c.full_name }}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4 text-start">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Full Name</label>
+                                <input type="text" name="full_name" class="form-control" value="{{ c.full_name }}" required>
+                            </div>
 
-                                                <div class="row g-2 mb-3">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-bold">Mobile (10 Digits)</label>
-                                                        <input type="text" name="mobile" class="form-control" value="{{ c.mobile }}" maxlength="10" required>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-bold">Employee ID / PF</label>
-                                                        <input type="text" name="pf_number" class="form-control" value="{{ c.pf_number or '' }}">
-                                                    </div>
-                                                </div>
-
-                                                <div class="row g-2 mb-3">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-bold">Crew Category / Cadre</label>
-                                                        <select name="sub_role" class="form-select">
-                                                            {% for cat in categories %}
-                                                                <option value="{{ cat }}" {% if c.sub_role == cat %}selected{% endif %}>{{ cat }}</option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-bold">Assigned Lobby</label>
-                                                        <select name="lobby_id" class="form-select">
-                                                            <option value="">-- Select Lobby --</option>
-                                                            {% for l in lobbies %}
-                                                                <option value="{{ l.id }}" {% if c.lobby_id == l.id %}selected{% endif %}>
-                                                                    {{ l.code }} - {{ l.name }}
-                                                                </option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold">Nominated Chief Loco Inspector (CLI)</label>
-                                                    <select name="cli_id" class="form-select">
-                                                        <option value="">-- None / Unassigned --</option>
-                                                        {% for cli in clis %}
-                                                            <option value="{{ cli.id }}" {% if c.cli_id == cli.id %}selected{% endif %}>
-                                                                {{ cli.full_name }} ({{ cli.username }}) - {{ cli.lobby.code if cli.lobby else '' }}
-                                                            </option>
-                                                        {% endfor %}
-                                                    </select>
-                                                </div>
-
-                                                <!-- Custom Fields Inputs -->
-                                                {% if custom_fields %}
-                                                    <h6 class="fw-bold text-muted border-top pt-3 mt-3">Dynamic Custom Fields</h6>
-                                                    {% for cf in custom_fields %}
-                                                        <div class="mb-2">
-                                                            <label class="form-label small fw-bold">{{ cf.field_label }}</label>
-                                                            {% if cf.field_type == 'select' %}
-                                                                <select name="{{ cf.field_name }}" class="form-select form-select-sm">
-                                                                    <option value="">-- Select --</option>
-                                                                    {% for opt in cf.get_options() %}
-                                                                        <option value="{{ opt }}" {% if cf_data.get(cf.field_name) == opt %}selected{% endif %}>{{ opt }}</option>
-                                                                    {% endfor %}
-                                                                </select>
-                                                            {% elif cf.field_type == 'date' %}
-                                                                <input type="date" name="{{ cf.field_name }}" class="form-control form-control-sm" value="{{ cf_data.get(cf.field_name, '') }}">
-                                                            {% elif cf.field_type == 'number' %}
-                                                                <input type="number" name="{{ cf.field_name }}" class="form-control form-control-sm" value="{{ cf_data.get(cf.field_name, '') }}">
-                                                            {% else %}
-                                                                <input type="text" name="{{ cf.field_name }}" class="form-control form-control-sm" value="{{ cf_data.get(cf.field_name, '') }}">
-                                                            {% endif %}
-                                                        </div>
-                                                    {% endfor %}
-                                                {% endif %}
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-primary fw-bold">
-                                                    <i class="fa-solid fa-save me-1"></i> Save Changes
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Mobile (10 Digits)</label>
+                                    <input type="text" name="mobile" class="form-control" value="{{ c.mobile }}" maxlength="10" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Employee ID / PF</label>
+                                    <input type="text" name="pf_number" class="form-control" value="{{ c.pf_number or '' }}">
                                 </div>
                             </div>
-        {% endfor %}
-    {% endif %}
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Crew Category / Cadre</label>
+                                    <select name="sub_role" class="form-select">
+                                        {% for cat in categories %}
+                                            <option value="{{ cat }}" {% if c.sub_role == cat %}selected{% endif %}>{{ cat }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Assigned Lobby</label>
+                                    <select name="lobby_id" class="form-select">
+                                        <option value="">-- Select Lobby --</option>
+                                        {% for l in lobbies %}
+                                            <option value="{{ l.id }}" {% if c.lobby_id == l.id %}selected{% endif %}>
+                                                {{ l.code }} - {{ l.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nominated Chief Loco Inspector (CLI)</label>
+                                <select name="cli_id" class="form-select">
+                                    <option value="">-- None / Unassigned --</option>
+                                    {% for cli in clis %}
+                                        <option value="{{ cli.id }}" {% if c.cli_id == cli.id %}selected{% endif %}>
+                                            {{ cli.full_name }} ({{ cli.username }}) - {{ cli.lobby.code if cli.lobby else '' }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Custom Fields Inputs -->
+                            {% if custom_fields %}
+                                <h6 class="fw-bold text-muted border-top pt-3 mt-3">Dynamic Custom Fields</h6>
+                                {% for cf in custom_fields %}
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">{{ cf.field_label }}</label>
+                                        {% if cf.field_type == 'select' %}
+                                            <select name="{{ cf.field_name }}" class="form-select form-select-sm">
+                                                <option value="">-- Select --</option>
+                                                {% for opt in cf.get_options() %}
+                                                    <option value="{{ opt }}" {% if c_cf.get(cf.field_name) == opt %}selected{% endif %}>{{ opt }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        {% elif cf.field_type == 'date' %}
+                                            <input type="date" name="{{ cf.field_name }}" class="form-control form-control-sm" value="{{ c_cf.get(cf.field_name, '') }}">
+                                        {% elif cf.field_type == 'number' %}
+                                            <input type="number" name="{{ cf.field_name }}" class="form-control form-control-sm" value="{{ c_cf.get(cf.field_name, '') }}">
+                                        {% else %}
+                                            <input type="text" name="{{ cf.field_name }}" class="form-control form-control-sm" value="{{ c_cf.get(cf.field_name, '') }}">
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary fw-bold">
+                                <i class="fa-solid fa-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
 </div>
 {% endblock %}

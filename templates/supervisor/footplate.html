@@ -1,106 +1,961 @@
-{% extends "base.html" %}
+{% extends "supervisor/base_cli.html" %}
 
-{% block title %}Footplate Inspection & Counselling Log | CLI Console{% endblock %}
+{% block title %}Footplate Safety Observation System (FPO) | Howrah Division{% endblock %}
+
+{% block extra_css %}
+<style>
+    .star-rating-group {
+        display: inline-flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+        gap: 4px;
+    }
+    .star-rating-group input {
+        display: none;
+    }
+    .star-rating-group label {
+        cursor: pointer;
+        font-size: 1.6rem;
+        color: #cbd5e1;
+        transition: color 0.15s ease-in-out, transform 0.15s ease;
+        padding: 0 2px;
+    }
+    .star-rating-group label:hover,
+    .star-rating-group label:hover ~ label,
+    .star-rating-group input:checked ~ label {
+        color: #f59e0b;
+    }
+    .star-rating-group label:active {
+        transform: scale(1.2);
+    }
+    .rating-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+    .remark-chip {
+        display: inline-block;
+        font-size: 0.72rem;
+        padding: 4px 10px;
+        border-radius: 14px;
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        cursor: pointer;
+        margin: 2px 2px;
+        transition: all 0.15s ease;
+        user-select: none;
+    }
+    .remark-chip:hover {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+    }
+    .remark-chip.chip-critical {
+        border-color: #fca5a5;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+    .remark-chip.chip-critical:hover {
+        background: #dc2626;
+        color: #ffffff;
+    }
+    .point-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #ffffff;
+        padding: 16px;
+        margin-bottom: 16px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .point-card.point-deficient {
+        border-color: #f87171;
+        background: #fffafa;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+    }
+    .point-card.point-na {
+        opacity: 0.55;
+        background: #f8fafc;
+    }
+    .calc-sticky-bar {
+        position: sticky;
+        bottom: 60px; /* Above mobile dock */
+        z-index: 1010;
+        background: linear-gradient(135deg, #00152b 0%, #002b5c 100%);
+        color: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        border: 1.5px solid var(--cli-gold);
+        padding: 14px 18px;
+        margin-top: 24px;
+    }
+    @media (min-width: 992px) {
+        .calc-sticky-bar {
+            bottom: 20px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-9">
-            <div class="rail-card p-4">
-                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
-                    <div>
-                        <span class="badge bg-success mb-1 fs-6"><i class="fa-solid fa-file-pen me-1"></i> Footplate Inspection & Monitoring</span>
-                        <h4 class="fw-bold text-dark mb-0">Record Footplate Inspection & Technical Counselling</h4>
-                        <small class="text-muted">Observance of signal calling, brake test, neutral section, speed compliance & safety rules</small>
+<div class="container-fluid px-0">
+    <!-- BREADCRUMB & HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <span class="badge bg-primary text-white"><i class="fa-solid fa-train me-1"></i> FRONT-LINE CAB MONITORING</span>
+                <span class="badge bg-warning text-dark"><i class="fa-solid fa-scale-balanced me-1"></i> 9-Point Standard Rubric</span>
+                <span class="badge bg-dark text-warning"><i class="fa-solid fa-arrows-spin me-1"></i> 3-Clean-Run Engine</span>
+            </div>
+            <h4 class="fw-bold text-dark mb-0">Footplate Safety Observation System (FPO)</h4>
+            <small class="text-muted">Observance of signal call-outs, braking, PSR/TSR, yellow passing speed, BFT/BPT & cab discipline.</small>
+        </div>
+        <div class="d-flex gap-2 mt-2 mt-md-0">
+            <a href="{{ url_for('supervisor.weaknesses') }}" class="btn btn-outline-danger btn-sm fw-bold">
+                <i class="fa-solid fa-shield-halved me-1"></i> Weaknesses Ledger
+            </a>
+            <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- PRE-INSPECTION SAFETY ALERT BANNER (AJAX / REACTIVE) -->
+    <div id="safetyAlertBanner" class="alert alert-warning border-2 shadow-sm d-none mb-4" role="alert">
+        <div class="d-flex align-items-start gap-3">
+            <div class="fs-2 text-danger mt-1">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <h5 class="alert-heading fw-bold mb-0" id="alertBannerTitle">Pre-Inspection Safety Advisory</h5>
+                    <div id="repeatOffenderBadge" class="d-none">
+                        <span class="badge bg-danger text-white py-1 px-2"><i class="fa-solid fa-bell me-1"></i> REPEAT OFFENDER (&ge;2 WEAKNESSES)</span>
                     </div>
-                    <a href="{{ url_for('supervisor.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
-                    </a>
                 </div>
-
-                <form method="POST" action="{{ url_for('supervisor.new_footplate') }}">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-dark">Select Crew Member <span class="text-danger">*</span></label>
-                            <select name="crew_id" class="form-select" required>
-                                <option value="">-- Select Running Staff --</option>
-                                {% for c in my_crews %}
-                                    <option value="{{ c.id }}" {% if request.args.get('crew_id') == c.id|string %}selected{% endif %}>
-                                        {{ c.full_name }} ({{ c.sub_role }}) - Mob: {{ c.mobile }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-dark">Date of Inspection <span class="text-danger">*</span></label>
-                            <input type="date" name="inspection_date" class="form-control" value="{{ now_date or '' }}" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-dark">Train Number <span class="text-danger">*</span></label>
-                            <input type="text" name="train_no" class="form-control" placeholder="e.g. 12301 Up / 37812 EMU / Goods PKR" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-dark">Locomotive / EMU Rake No. <span class="text-danger">*</span></label>
-                            <input type="text" name="loco_no" class="form-control" placeholder="e.g. WAP-7 30201 / WAG-9 42881" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-dark">From Station</label>
-                            <input type="text" name="from_station" class="form-control" placeholder="e.g. HWH">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-dark">To Station</label>
-                            <input type="text" name="to_station" class="form-control" placeholder="e.g. BWN">
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold small text-dark">Departure Time</label>
-                            <input type="time" name="departure_time" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold small text-dark">Arrival Time</label>
-                            <input type="time" name="arrival_time" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold small text-dark">Footplate KM (KMA - ACS 64)</label>
-                            <input type="number" step="0.1" name="footplate_km" class="form-control" placeholder="e.g. 108.5">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold small text-dark">Grading Awarded <span class="text-danger">*</span></label>
-                            <select name="grading" class="form-select" required>
-                                <option value="A">Grade A (Exemplary & High Vigilance)</option>
-                                <option value="B">Grade B (Satisfactory & Safe)</option>
-                                <option value="C">Grade C (Needs Improvement / Minor Lapses)</option>
-                                <option value="D">Grade D (Unsatisfactory / Monitored Crew)</option>
-                            </select>
+                <div class="row g-2 mt-2">
+                    <!-- FPO CYCLE STATUS -->
+                    <div class="col-md-4">
+                        <div class="p-2 bg-white rounded border">
+                            <small class="text-muted fw-bold d-block text-uppercase" style="font-size: 0.68rem;">90-Day Footplate Cycle</small>
+                            <span id="fpoStatusPill" class="badge bg-secondary">Checking...</span>
+                            <small id="fpoDaysText" class="text-muted ms-1 small"></small>
                         </div>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-dark">Safety Aspects Checked on Run:</label>
-                        <textarea name="aspects_covered" class="form-control" rows="2" placeholder="e.g. Signal calling aloud between LP & ALP, RS valve test, Caution order adherence, W/L intermittent whistling at level crossings, Neutral section coasting."></textarea>
+                    <!-- PME / MEDICAL & REFRESHER STATUS -->
+                    <div class="col-md-4">
+                        <div class="p-2 bg-white rounded border">
+                            <small class="text-muted fw-bold d-block text-uppercase" style="font-size: 0.68rem;">PME & Refresher Due</small>
+                            <span id="pmeStatusPill" class="badge bg-secondary">Checking...</span>
+                            <small id="reftStatusText" class="text-muted ms-1 small"></small>
+                        </div>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-dark">Deficiencies / Irregularities Observed (if any):</label>
-                        <textarea name="deficiencies" class="form-control" rows="2" placeholder="Note any delayed whistling, improper signal exchange, or late brake application..."></textarea>
+                    <!-- ACTIVE WEAKNESSES COUNT -->
+                    <div class="col-md-4">
+                        <div class="p-2 bg-white rounded border">
+                            <small class="text-muted fw-bold d-block text-uppercase" style="font-size: 0.68rem;">Active Weaknesses Ledger</small>
+                            <span id="weaknessCountPill" class="badge bg-secondary">0 Active</span>
+                            <small class="text-muted ms-1 small">3 clean runs to clear</small>
+                        </div>
                     </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small text-dark">Counselling Imparted to the Crew:</label>
-                        <textarea name="counselling_given" class="form-control" rows="3" placeholder="Explain the exact safety guidance and rule pointers given to the crew during this footplate..."></textarea>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg fs-6 fw-bold shadow-sm">
-                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Footplate Inspection Record
-                        </button>
-                    </div>
-                </form>
-
+                </div>
+                <!-- ACTIVE DEFICIENCY LIST -->
+                <div id="activeWeaknessesList" class="mt-2 pt-2 border-top d-none">
+                    <small class="fw-bold text-danger d-block mb-1"><i class="fa-solid fa-clock-rotate-left me-1"></i> Active Past Weaknesses to Verify in this Run:</small>
+                    <ul class="mb-0 ps-3 small text-dark" id="weaknessUl"></ul>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- MAIN FORM -->
+    <form method="POST" action="{{ url_for('supervisor.new_footplate') }}" id="fpoForm">
+        <!-- 1. CREW & RUN SETUP -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2 text-primary"></i>1. Running Staff &amp; Trip Configuration</h5>
+                <span class="badge bg-light text-dark border">Step 1 of 2</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <!-- LP (LOCO PILOT) SELECTION -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-dark">Loco Pilot (LP / Motorman) <span class="text-danger">*</span></label>
+                        <select name="crew_id" id="crewSelect" class="form-select" required onchange="onCrewSelected(this.value)">
+                            <option value="">-- Select Loco Pilot --</option>
+                            {% for c in my_crews %}
+                                <option value="{{ c.id }}" {% if preselect_crew_id == c.id|string %}selected{% endif %}>
+                                    {{ c.full_name }} ({{ c.sub_role or 'LP' }}) &bull; ID: {{ c.username }} {% if c.lobby %}[{{ c.lobby.code }}]{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text small">Select running crew member to automatically fetch 90-day overdue status &amp; active weaknesses.</div>
+                    </div>
+
+                    <!-- ALP ON BOARD TOGGLE & SELECTION -->
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-bold small text-dark mb-0">Assistant Loco Pilot (ALP)</label>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="alpOnBoardSwitch" name="alp_on_board" value="1" checked onchange="toggleAlpSection()">
+                                <label class="form-check-label small fw-bold text-muted" for="alpOnBoardSwitch">ALP on board</label>
+                            </div>
+                        </div>
+                        <select name="alp_user_id" id="alpSelect" class="form-select">
+                            <option value="">-- Select Co-Driver / ALP (Optional) --</option>
+                            {% for a in all_crews %}
+                                <option value="{{ a.id }}">{{ a.full_name }} ({{ a.sub_role or 'ALP' }}) &bull; ID: {{ a.username }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text small" id="alpHelpText">Turn off for single-man operations (EMU/MEMU/Light Engine). Point 8 will be marked N/A automatically.</div>
+                    </div>
+
+                    <!-- DATE & TRAIN TYPE -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-dark">Date of Inspection <span class="text-danger">*</span></label>
+                        <input type="date" name="inspection_date" class="form-control" value="{{ now_date }}" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-dark">Train Type <span class="text-danger">*</span></label>
+                        <select name="train_type" id="trainTypeSelect" class="form-select" required onchange="onTrainTypeChange()">
+                            <option value="Mail/Express" selected>Mail / Express / Superfast</option>
+                            <option value="Passenger">Passenger Ordinary</option>
+                            <option value="EMU">EMU Suburban</option>
+                            <option value="MEMU">MEMU Suburban</option>
+                            <option value="Goods">Goods / Freight</option>
+                            <option value="Other">Light Engine / Shunting / Other</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-dark">Train Number <span class="text-danger">*</span></label>
+                        <input type="text" name="train_no" class="form-control text-uppercase" placeholder="e.g. 12301 UP / 37812" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-dark">Locomotive / EMU Rake <span class="text-danger">*</span></label>
+                        <input type="text" name="loco_no" class="form-control text-uppercase" placeholder="e.g. WAP-7 30201 / WAG-9" required>
+                    </div>
+
+                    <!-- SECTION FROM & TO -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-dark">Section From</label>
+                        <input type="text" name="from_station" class="form-control text-uppercase" placeholder="e.g. HWH">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-dark">Section To</label>
+                        <input type="text" name="to_station" class="form-control text-uppercase" placeholder="e.g. BWN">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small text-dark">Departure Time</label>
+                        <input type="time" name="departure_time" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small text-dark">Arrival Time</label>
+                        <input type="time" name="arrival_time" class="form-control">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small text-dark">Footplate KM (KMA)</label>
+                        <input type="number" step="0.1" name="footplate_km" class="form-control" placeholder="KM travelled" value="0.0">
+                        <div class="form-text small" style="font-size:0.68rem;">Rule 1515 ACS 64</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. THE 9 MANDATORY SAFETY EVALUATION POINTS -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check me-2 text-warning"></i>2. The 9 Mandatory Safety Evaluation Rubrics</h5>
+                    <small class="text-muted">Grade each aspect from 1 to 5 Stars. Scores &le; 3 automatically trip longitudinal weakness tracking.</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="fa-solid fa-star me-1"></i> 5 &amp; 4: Clean Run</span>
+                    <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> &le; 3: Deficiency</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+
+                <!-- POINT 1 -->
+                <div class="point-card" id="card_p1">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 1</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">Signal Call-Out &amp; Hand Gestures</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">G&amp;SR 3.78, 4.40</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary-subtle text-secondary small">Never N/A</span>
+                            <div class="star-rating-group" data-point="1">
+                                <input type="radio" id="p1_star5" name="score_signal_call_out" value="5" checked onchange="onScoreChanged(1, 5)"><label for="p1_star5" title="5 Stars - Exemplary">★</label>
+                                <input type="radio" id="p1_star4" name="score_signal_call_out" value="4" onchange="onScoreChanged(1, 4)"><label for="p1_star4" title="4 Stars - Satisfactory">★</label>
+                                <input type="radio" id="p1_star3" name="score_signal_call_out" value="3" onchange="onScoreChanged(1, 3)"><label for="p1_star3" title="3 Stars - Needs Improvement">★</label>
+                                <input type="radio" id="p1_star2" name="score_signal_call_out" value="2" onchange="onScoreChanged(1, 2)"><label for="p1_star2" title="2 Stars - Serious Lapse">★</label>
+                                <input type="radio" id="p1_star1" name="score_signal_call_out" value="1" onchange="onScoreChanged(1, 1)"><label for="p1_star1" title="1 Star - Critical Danger">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p1">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">Check Direction ➔ Line ➔ Station ➔ Signal Name ➔ Aspect with outstretched arm gesture.</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS (TAP TO SELECT):</small>
+                        <span class="remark-chip" onclick="setRemark(1, 'All signals called out correctly with proper hand gesture', 5)">All signals called correctly</span>
+                        <span class="remark-chip" onclick="setRemark(1, 'Call-out delayed while approaching signal', 3)">Call-out delayed</span>
+                        <span class="remark-chip" onclick="setRemark(1, 'Call-out inaudible inside locomotive cab', 3)">Call-out inaudible</span>
+                        <span class="remark-chip" onclick="setRemark(1, 'Hand gesture not given towards signal aspect', 3)">Hand gesture not given</span>
+                        <span class="remark-chip" onclick="setRemark(1, 'Incorrect call out sequence / missed station name', 3)">Incorrect call out</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(1, 'Signal call-out missed entirely', 1)">Signal call-out missed (Critical)</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(1, 'Aspect called incorrectly', 1)">Aspect called incorrectly (Critical)</span>
+                    </div>
+                    <input type="text" name="signal_call_out" id="remark_p1" class="form-control form-control-sm" placeholder="Observation remarks on signal call-out..." value="All signals called out correctly">
+                </div>
+
+                <!-- POINT 2 -->
+                <div class="point-card" id="card_p2">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 2</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">Braking Technique &amp; Train Handling</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">Train Handling Manual</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary-subtle text-secondary small">Never N/A</span>
+                            <div class="star-rating-group" data-point="2">
+                                <input type="radio" id="p2_star5" name="score_brake_technique" value="5" checked onchange="onScoreChanged(2, 5)"><label for="p2_star5">★</label>
+                                <input type="radio" id="p2_star4" name="score_brake_technique" value="4" onchange="onScoreChanged(2, 4)"><label for="p2_star4">★</label>
+                                <input type="radio" id="p2_star3" name="score_brake_technique" value="3" onchange="onScoreChanged(2, 3)"><label for="p2_star3">★</label>
+                                <input type="radio" id="p2_star2" name="score_brake_technique" value="2" onchange="onScoreChanged(2, 2)"><label for="p2_star2">★</label>
+                                <input type="radio" id="p2_star1" name="score_brake_technique" value="1" onchange="onScoreChanged(2, 1)"><label for="p2_star1">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p2">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">Check graduated BP reduction, smooth notch progression, and dynamic brake blending without jerks.</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS:</small>
+                        <span class="remark-chip" onclick="setRemark(2, 'Smooth and timely braking throughout the run', 5)">Smooth and timely braking</span>
+                        <span class="remark-chip" onclick="setRemark(2, 'Excessive brake application without graduation', 3)">Excessive brake application</span>
+                        <span class="remark-chip" onclick="setRemark(2, 'Repeated brake release and application observed', 3)">Repeated brake application</span>
+                        <span class="remark-chip" onclick="setRemark(2, 'Train handling needs improvement; slight jerks', 3)">Handling needs improvement</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(2, 'Late braking tendency observed; panic brake application', 1)">Late braking tendency (Critical)</span>
+                    </div>
+                    <input type="text" name="brake_technique" id="remark_p2" class="form-control form-control-sm" placeholder="Observation on braking & train handling..." value="Smooth and timely braking">
+                </div>
+
+                <!-- POINT 3 -->
+                <div class="point-card" id="card_p3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 3</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">Platform / Loop Line Entry Speed (&lt;40 km/h)</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">Station Rules</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="na_p3" name="na_p3" onchange="toggleNA(3)">
+                                <label class="form-check-label small text-muted" for="na_p3">N/A (Through Goods)</label>
+                            </div>
+                            <div class="star-rating-group" data-point="3" id="stars_p3">
+                                <input type="radio" id="p3_star5" name="score_pf_entry_speed" value="5" checked onchange="onScoreChanged(3, 5)"><label for="p3_star5">★</label>
+                                <input type="radio" id="p3_star4" name="score_pf_entry_speed" value="4" onchange="onScoreChanged(3, 4)"><label for="p3_star4">★</label>
+                                <input type="radio" id="p3_star3" name="score_pf_entry_speed" value="3" onchange="onScoreChanged(3, 3)"><label for="p3_star3">★</label>
+                                <input type="radio" id="p3_star2" name="score_pf_entry_speed" value="2" onchange="onScoreChanged(3, 2)"><label for="p3_star2">★</label>
+                                <input type="radio" id="p3_star1" name="score_pf_entry_speed" value="1" onchange="onScoreChanged(3, 1)"><label for="p3_star1">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p3">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">Platform entry speed at stoppage stations must strictly be &lt;40 km/h; loop turnout speeds &le;15 or 30 km/h.</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS:</small>
+                        <span class="remark-chip" onclick="setRemark(3, 'Entry within prescribed speed (<40 km/h)', 5)">Entry within prescribed speed</span>
+                        <span class="remark-chip" onclick="setRemark(3, 'Entry speed unnecessarily low; sluggish berthing', 3)">Entry speed unnecessarily low</span>
+                        <span class="remark-chip" onclick="setRemark(3, 'Stopping point not correctly judged; heavy stop', 3)">Stopping point not correctly judged</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(3, 'Entry speed above prescribed limit (>40 km/h)', 1)">Entry speed above limit (Critical)</span>
+                    </div>
+                    <input type="text" name="pf_entry_speed" id="remark_p3" class="form-control form-control-sm" placeholder="Remarks on PF / loop entry speed..." value="Entry within prescribed speed">
+                </div>
+
+                <!-- POINT 4 -->
+                <div class="point-card" id="card_p4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 4</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">Speed at Single Yellow (Caution) Aspect</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">G&amp;SR 3.07, 3.08</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="na_p4" name="na_p4" onchange="toggleNA(4)">
+                                <label class="form-check-label small text-muted" for="na_p4">N/A (No Yellow)</label>
+                            </div>
+                            <div class="star-rating-group" data-point="4" id="stars_p4">
+                                <input type="radio" id="p4_star5" name="score_high_speed_tendency" value="5" checked onchange="onScoreChanged(4, 5)"><label for="p4_star5">★</label>
+                                <input type="radio" id="p4_star4" name="score_high_speed_tendency" value="4" onchange="onScoreChanged(4, 4)"><label for="p4_star4">★</label>
+                                <input type="radio" id="p4_star3" name="score_high_speed_tendency" value="3" onchange="onScoreChanged(4, 3)"><label for="p4_star3">★</label>
+                                <input type="radio" id="p4_star2" name="score_high_speed_tendency" value="2" onchange="onScoreChanged(4, 2)"><label for="p4_star2">★</label>
+                                <input type="radio" id="p4_star1" name="score_high_speed_tendency" value="1" onchange="onScoreChanged(4, 1)"><label for="p4_star1">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p4">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">Passing speed ceilings: &lt;50 km/h (Pass/Mail) or &lt;30 km/h (Goods); prepared to stop at next Red.</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS:</small>
+                        <span class="remark-chip" onclick="setRemark(4, 'Speed controlled as prescribed upon seeing caution aspect', 5)">Speed controlled as prescribed</span>
+                        <span class="remark-chip" onclick="setRemark(4, 'Speed not controlled in time; late deceleration', 3)">Speed not controlled in time</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(4, 'Speed above prescribed ceiling at signal foot', 1)">Speed above prescribed limit</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(4, 'Not prepared to stop at next signal', 1)">Not prepared to stop (Critical)</span>
+                    </div>
+                    <input type="text" name="high_speed_tendency" id="remark_p4" class="form-control form-control-sm" placeholder="Observation on single yellow aspect..." value="Speed controlled as prescribed">
+                </div>
+
+                <!-- POINT 5 -->
+                <div class="point-card" id="card_p5">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 5</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">PSR / TSR Compliance &amp; Caution Order</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">Caution Order Rules</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="na_p5" name="na_p5" onchange="toggleNA(5)">
+                                <label class="form-check-label small text-muted" for="na_p5">N/A (Zero TSR)</label>
+                            </div>
+                            <div class="star-rating-group" data-point="5" id="stars_p5">
+                                <input type="radio" id="p5_star5" name="score_psr_tsr_observation" value="5" checked onchange="onScoreChanged(5, 5)"><label for="p5_star5">★</label>
+                                <input type="radio" id="p5_star4" name="score_psr_tsr_observation" value="4" onchange="onScoreChanged(5, 4)"><label for="p5_star4">★</label>
+                                <input type="radio" id="p5_star3" name="score_psr_tsr_observation" value="3" onchange="onScoreChanged(5, 3)"><label for="p5_star3">★</label>
+                                <input type="radio" id="p5_star2" name="score_psr_tsr_observation" value="2" onchange="onScoreChanged(5, 2)"><label for="p5_star2">★</label>
+                                <input type="radio" id="p5_star1" name="score_psr_tsr_observation" value="1" onchange="onScoreChanged(5, 1)"><label for="p5_star1">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p5">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">4-Point Reminder Protocol; verify speed kept below restriction until entire train clears T/P or T/G board.</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS:</small>
+                        <span class="remark-chip" onclick="setRemark(5, 'Restriction observed throughout; full train cleared', 5)">Restriction observed throughout</span>
+                        <span class="remark-chip" onclick="setRemark(5, 'Caution order details not properly marked/known', 3)">Caution order details not known</span>
+                        <span class="remark-chip" onclick="setRemark(5, 'Speed reduced late approaching caution board', 3)">Speed reduced late</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(5, 'Speed resumed before train cleared restricted length', 1)">Speed resumed early (Critical)</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(5, 'Speed restriction exceeded', 1)">Speed exceeded (Critical)</span>
+                    </div>
+                    <input type="text" name="psr_tsr_observation" id="remark_p5" class="form-control form-control-sm" placeholder="Observation on PSR/TSR adherence..." value="Restriction observed throughout">
+                </div>
+
+                <!-- POINT 6 -->
+                <div class="point-card" id="card_p6">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 6</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">Whistling at LC Gates, Curves &amp; W/L Boards</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">G&amp;SR 4.50</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="na_p6" name="na_p6" onchange="toggleNA(6)">
+                                <label class="form-check-label small text-muted" for="na_p6">N/A (No Gates/Curves)</label>
+                            </div>
+                            <div class="star-rating-group" data-point="6" id="stars_p6">
+                                <input type="radio" id="p6_star5" name="score_whistling_habit" value="5" checked onchange="onScoreChanged(6, 5)"><label for="p6_star5">★</label>
+                                <input type="radio" id="p6_star4" name="score_whistling_habit" value="4" onchange="onScoreChanged(6, 4)"><label for="p6_star4">★</label>
+                                <input type="radio" id="p6_star3" name="score_whistling_habit" value="3" onchange="onScoreChanged(6, 3)"><label for="p6_star3">★</label>
+                                <input type="radio" id="p6_star2" name="score_whistling_habit" value="2" onchange="onScoreChanged(6, 2)"><label for="p6_star2">★</label>
+                                <input type="radio" id="p6_star1" name="score_whistling_habit" value="1" onchange="onScoreChanged(6, 1)"><label for="p6_star1">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p6">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">Intermittent whistling from W/L board up to gates; continuous whistling at blind curves &amp; unmanned crossings.</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS:</small>
+                        <span class="remark-chip" onclick="setRemark(6, 'Whistle given correctly at all boards and curves', 5)">Whistle given correctly</span>
+                        <span class="remark-chip" onclick="setRemark(6, 'Whistle given late after passing board', 3)">Whistle given late</span>
+                        <span class="remark-chip" onclick="setRemark(6, 'Whistle duration inadequate; brief tap', 3)">Duration inadequate</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(6, 'Whistle missed at blind curve', 1)">Whistle missed at curve (Critical)</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(6, 'Whistle missed at level crossing gate', 1)">Whistle missed at LC gate (Critical)</span>
+                    </div>
+                    <input type="text" name="whistling_habit" id="remark_p6" class="form-control form-control-sm" placeholder="Observation on whistling habits..." value="Whistle given correctly">
+                </div>
+
+                <!-- POINT 7 -->
+                <div class="point-card" id="card_p7">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 7</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">Brake Feel (BFT) &amp; Brake Power (BPT) Test</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">Joint Safety Procedure</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="na_p7" name="na_p7" onchange="toggleNA(7)">
+                                <label class="form-check-label small text-muted" for="na_p7">N/A (Outside Section)</label>
+                            </div>
+                            <div class="star-rating-group" data-point="7" id="stars_p7">
+                                <input type="radio" id="p7_star5" name="score_bft_bpt_test" value="5" checked onchange="onScoreChanged(7, 5)"><label for="p7_star5">★</label>
+                                <input type="radio" id="p7_star4" name="score_bft_bpt_test" value="4" onchange="onScoreChanged(7, 4)"><label for="p7_star4">★</label>
+                                <input type="radio" id="p7_star3" name="score_bft_bpt_test" value="3" onchange="onScoreChanged(7, 3)"><label for="p7_star3">★</label>
+                                <input type="radio" id="p7_star2" name="score_bft_bpt_test" value="2" onchange="onScoreChanged(7, 2)"><label for="p7_star2">★</label>
+                                <input type="radio" id="p7_star1" name="score_bft_bpt_test" value="1" onchange="onScoreChanged(7, 1)"><label for="p7_star1">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p7">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">BFT conducted at 15 km/h (min 0.5 kg/cm² drop); BPT conducted at 40-50 km/h (goods) or 60-70 km/h (coaching).</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS:</small>
+                        <span class="remark-chip" onclick="setRemark(7, 'Both tests done as prescribed with proper BP drop', 5)">Both tests done as prescribed</span>
+                        <span class="remark-chip" onclick="setRemark(7, 'BFT done at incorrect location or speed', 3)">BFT at incorrect location</span>
+                        <span class="remark-chip" onclick="setRemark(7, 'BPT done at incorrect location or speed', 3)">BPT at incorrect location</span>
+                        <span class="remark-chip" onclick="setRemark(7, 'Test result not properly assessed / communicated', 3)">Test result not assessed</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(7, 'BFT not done after starting from originating station', 1)">BFT not done (Critical)</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(7, 'BPT not done in the section', 1)">BPT not done (Critical)</span>
+                    </div>
+                    <input type="text" name="bft_bpt_test" id="remark_p7" class="form-control form-control-sm" placeholder="Observation on BFT & BPT..." value="Both tests done as prescribed">
+                </div>
+
+                <!-- POINT 8 -->
+                <div class="point-card" id="card_p8">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 8</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">Performance of Assistant Loco Pilot (ALP)</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">Co-Driver Vigilance Rules</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="na_p8" name="na_p8" onchange="toggleNA(8)">
+                                <label class="form-check-label small text-muted" for="na_p8">N/A (Single-man EMU/MEMU)</label>
+                            </div>
+                            <div class="star-rating-group" data-point="8" id="stars_p8">
+                                <input type="radio" id="p8_star5" name="score_alp_performance" value="5" checked onchange="onScoreChanged(8, 5)"><label for="p8_star5">★</label>
+                                <input type="radio" id="p8_star4" name="score_alp_performance" value="4" onchange="onScoreChanged(8, 4)"><label for="p8_star4">★</label>
+                                <input type="radio" id="p8_star3" name="score_alp_performance" value="3" onchange="onScoreChanged(8, 3)"><label for="p8_star3">★</label>
+                                <input type="radio" id="p8_star2" name="score_alp_performance" value="2" onchange="onScoreChanged(8, 2)"><label for="p8_star2">★</label>
+                                <input type="radio" id="p8_star1" name="score_alp_performance" value="1" onchange="onScoreChanged(8, 1)"><label for="p8_star1">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p8">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">Signal aspect repeat, track lookout, gauge monitoring, hand on RS valve after single yellow aspect.</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS:</small>
+                        <span class="remark-chip" onclick="setRemark(8, 'ALP alert, vigilant and supportive throughout', 5)">Alert and vigilant throughout</span>
+                        <span class="remark-chip" onclick="setRemark(8, 'Not attentive to signals or cab gauges', 3)">Not attentive to signals</span>
+                        <span class="remark-chip" onclick="setRemark(8, 'Poor coordination and communication with LP', 3)">Poor coordination with LP</span>
+                        <span class="remark-chip" onclick="setRemark(8, 'Lookout not properly maintained on curves/crossings', 3)">Lookout not maintained</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(8, 'Signal call-out not repeated by ALP', 1)">Signal not repeated (Critical)</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(8, 'ALP hand not on RS valve after single yellow pass', 1)">Hand not on RS valve (Critical)</span>
+                    </div>
+                    <input type="text" name="alp_performance" id="remark_p8" class="form-control form-control-sm" placeholder="Observation on ALP performance..." value="ALP alert and vigilant throughout">
+                </div>
+
+                <!-- POINT 9 -->
+                <div class="point-card" id="card_p9">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <span class="badge bg-primary mb-1">Point 9</span>
+                            <h6 class="fw-bold text-dark mb-0 d-inline ms-1">Cab Discipline &amp; Miscellaneous Safety Aspects</h6>
+                            <span class="badge bg-light text-dark border ms-1 small">Railway Board Cab Policy</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary-subtle text-secondary small">Never N/A</span>
+                            <div class="star-rating-group" data-point="9">
+                                <input type="radio" id="p9_star5" name="score_other_observations" value="5" checked onchange="onScoreChanged(9, 5)"><label for="p9_star5">★</label>
+                                <input type="radio" id="p9_star4" name="score_other_observations" value="4" onchange="onScoreChanged(9, 4)"><label for="p9_star4">★</label>
+                                <input type="radio" id="p9_star3" name="score_other_observations" value="3" onchange="onScoreChanged(9, 3)"><label for="p9_star3">★</label>
+                                <input type="radio" id="p9_star2" name="score_other_observations" value="2" onchange="onScoreChanged(9, 2)"><label for="p9_star2">★</label>
+                                <input type="radio" id="p9_star1" name="score_other_observations" value="1" onchange="onScoreChanged(9, 1)"><label for="p9_star1">★</label>
+                            </div>
+                            <span class="rating-badge bg-success text-white" id="badge_p9">5 ★ Exemplary</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-2">Personal mobile phones switched off inside bag, uniform/documents in order, vigilance, absence of fatigue.</p>
+                    <div class="mb-2">
+                        <small class="text-muted fw-bold d-block" style="font-size: 0.68rem;">STANDARD REMARKS:</small>
+                        <span class="remark-chip" onclick="setRemark(9, 'No other adverse observation; exemplary cab discipline', 5)">No adverse observation</span>
+                        <span class="remark-chip" onclick="setRemark(9, 'Uniform / working time-table / documents not in order', 3)">Documents not in order</span>
+                        <span class="remark-chip" onclick="setRemark(9, 'Sectional speed / MPS not maintained or achieved', 3)">MPS not maintained</span>
+                        <span class="remark-chip" onclick="setRemark(9, 'Cab discipline issue; unauthorized discussion', 3)">Cab discipline issue</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(9, 'Signs of drowsiness / physical fatigue observed', 1)">Signs of fatigue (Critical)</span>
+                        <span class="remark-chip chip-critical" onclick="setRemark(9, 'Mobile phone in possession / distraction in cab', 1)">Mobile phone violation (Critical)</span>
+                    </div>
+                    <input type="text" name="other_observations" id="remark_p9" class="form-control form-control-sm" placeholder="Other observations on cab discipline..." value="No other adverse observation">
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 3. COUNSELLING & SUMMARY -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chalkboard-user me-2 text-success"></i>3. Operational Counselling &amp; Action Plan</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-dark">Overall Trip Grading</label>
+                        <select name="grading" id="gradingSelect" class="form-select fw-bold text-primary">
+                            <option value="A" selected>Grade A - Outstanding</option>
+                            <option value="B">Grade B - Satisfactory</option>
+                            <option value="C">Grade C - Needs Improvement</option>
+                            <option value="D">Grade D - Unsatisfactory</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-dark">Counselling Imparted <span class="text-danger">*</span></label>
+                        <select name="counselling_given" id="counsellingGivenSelect" class="form-select fw-bold">
+                            <option value="No">No - Not Required</option>
+                            <option value="Yes">Yes - Mandatory Counselling Imparted</option>
+                        </select>
+                        <div class="form-text small" id="counselRuleHelp">Automatically set to YES if lowest score &lt; 5 or any deficiency trips.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-dark">Corrective Counselling Topics Imparted</label>
+                        <textarea name="deficiencies" id="counsellingRemarks" rows="2" class="form-control" placeholder="Specific coaching given regarding signal calling, braking technique, safety circulars..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HIDDEN FIELDS FOR N/A TRACKING & JSON -->
+        <input type="hidden" name="na_points_json" id="na_points_json" value="[]">
+        <input type="hidden" name="deficiencies_json" id="deficiencies_json" value="[]">
+        <input type="hidden" name="average_score" id="average_score" value="5.0">
+        <input type="hidden" name="lowest_rating" id="lowest_rating" value="5">
+
+        <!-- LIVE SCORING STICKY BAR & SUBMIT -->
+        <div class="calc-sticky-bar">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-4 flex-wrap">
+                    <div>
+                        <small class="text-warning fw-bold text-uppercase d-block" style="font-size:0.7rem;">Average Score</small>
+                        <div class="fs-4 fw-bold text-white"><span id="liveAvgScore">5.0</span> <span style="font-size:0.9rem;" class="text-muted">/ 5.0</span></div>
+                    </div>
+                    <div class="border-start ps-3 border-secondary">
+                        <small class="text-warning fw-bold text-uppercase d-block" style="font-size:0.7rem;">Lowest Rating</small>
+                        <div class="fs-4 fw-bold" id="liveLowestScoreText"><span id="liveLowestScore">5</span> ★</div>
+                    </div>
+                    <div class="border-start ps-3 border-secondary">
+                        <small class="text-warning fw-bold text-uppercase d-block" style="font-size:0.7rem;">Deficiencies Tripped</small>
+                        <div class="fs-4 fw-bold" id="liveDeficiencyCountText"><span id="liveDeficiencyCount">0</span></div>
+                    </div>
+                    <div class="border-start ps-3 border-secondary d-none d-md-block">
+                        <small class="text-warning fw-bold text-uppercase d-block" style="font-size:0.7rem;">Rule 3-Clean-Runs</small>
+                        <small class="text-light" style="font-size: 0.75rem;">Deficiencies logged to ledger on save</small>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 align-items-center">
+                    <button type="submit" class="btn btn-warning btn-lg fw-bold shadow px-4 text-dark" id="submitFpoBtn">
+                        <i class="fa-solid fa-cloud-arrow-up me-1"></i> Submit Footplate Inspection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // State of all 9 points
+    const pointScores = {
+        1: { score: 5, is_na: false, name: "Signal Call-Out", key: "P1_Signal_Callout" },
+        2: { score: 5, is_na: false, name: "Braking Technique", key: "P2_Braking" },
+        3: { score: 5, is_na: false, name: "PF Entry Speed", key: "P3_Platform_Entry" },
+        4: { score: 5, is_na: false, name: "Speed at Single Yellow", key: "P4_Single_Yellow" },
+        5: { score: 5, is_na: false, name: "PSR / TSR Compliance", key: "P5_PSR_TSR" },
+        6: { score: 5, is_na: false, name: "Whistling at Gates/Curves", key: "P6_Whistle" },
+        7: { score: 5, is_na: false, name: "BFT & BPT Test", key: "P7_BFT_BPT" },
+        8: { score: 5, is_na: false, name: "ALP Performance", key: "P8_ALP_Performance" },
+        9: { score: 5, is_na: false, name: "Cab Discipline", key: "P9_Other" }
+    };
+
+    const ratingLabels = {
+        5: "5 ★ Exemplary",
+        4: "4 ★ Satisfactory",
+        3: "3 ★ Needs Improvement",
+        2: "2 ★ Serious Lapse",
+        1: "1 ★ Critical Danger"
+    };
+
+    function onScoreChanged(pNo, score) {
+        pointScores[pNo].score = score;
+        updatePointUI(pNo);
+        recalcTotals();
+    }
+
+    function setRemark(pNo, text, score) {
+        document.getElementById('remark_p' + pNo).value = text;
+        if (score) {
+            var rad = document.getElementById('p' + pNo + '_star' + score);
+            if (rad) rad.checked = true;
+            pointScores[pNo].score = score;
+            updatePointUI(pNo);
+            recalcTotals();
+        }
+    }
+
+    function toggleNA(pNo) {
+        var chk = document.getElementById('na_p' + pNo);
+        var isNa = chk ? chk.checked : false;
+        pointScores[pNo].is_na = isNa;
+
+        var card = document.getElementById('card_p' + pNo);
+        var stars = document.getElementById('stars_p' + pNo);
+        var badge = document.getElementById('badge_p' + pNo);
+
+        if (isNa) {
+            card.classList.add('point-na');
+            if (stars) stars.style.pointerEvents = 'none';
+            if (badge) {
+                badge.className = 'rating-badge bg-secondary text-white';
+                badge.innerText = 'N/A';
+            }
+        } else {
+            card.classList.remove('point-na');
+            if (stars) stars.style.pointerEvents = 'auto';
+            updatePointUI(pNo);
+        }
+        recalcTotals();
+    }
+
+    function updatePointUI(pNo) {
+        var p = pointScores[pNo];
+        if (p.is_na) return;
+
+        var badge = document.getElementById('badge_p' + pNo);
+        var card = document.getElementById('card_p' + pNo);
+
+        if (badge) {
+            badge.innerText = ratingLabels[p.score] || (p.score + " ★");
+            if (p.score >= 4) {
+                badge.className = 'rating-badge bg-success text-white';
+            } else if (p.score === 3) {
+                badge.className = 'rating-badge bg-warning text-dark';
+            } else {
+                badge.className = 'rating-badge bg-danger text-white';
+            }
+        }
+
+        if (card) {
+            if (p.score <= 3) {
+                card.classList.add('point-deficient');
+            } else {
+                card.classList.remove('point-deficient');
+            }
+        }
+    }
+
+    function recalcTotals() {
+        var sum = 0;
+        var count = 0;
+        var minScore = 5;
+        var defCount = 0;
+        var naList = [];
+        var defDetails = [];
+
+        for (var i = 1; i <= 9; i++) {
+            var p = pointScores[i];
+            if (p.is_na) {
+                naList.push(i);
+            } else {
+                sum += p.score;
+                count++;
+                if (p.score < minScore) minScore = p.score;
+                if (p.score <= 3) {
+                    defCount++;
+                    var rem = document.getElementById('remark_p' + i).value || ('Point ' + i + ' lapse');
+                    defDetails.push({ point_no: i, name: p.name, score: p.score, remark: rem });
+                }
+            }
+        }
+
+        var avg = count > 0 ? (sum / count).toFixed(1) : "5.0";
+        document.getElementById('liveAvgScore').innerText = avg;
+        document.getElementById('average_score').value = avg;
+
+        var lowestEl = document.getElementById('liveLowestScore');
+        var lowestText = document.getElementById('liveLowestScoreText');
+        lowestEl.innerText = minScore;
+        document.getElementById('lowest_rating').value = minScore;
+
+        if (minScore <= 2) {
+            lowestText.className = 'fs-4 fw-bold text-danger';
+        } else if (minScore === 3) {
+            lowestText.className = 'fs-4 fw-bold text-warning';
+        } else {
+            lowestText.className = 'fs-4 fw-bold text-success';
+        }
+
+        var defEl = document.getElementById('liveDeficiencyCount');
+        var defText = document.getElementById('liveDeficiencyCountText');
+        defEl.innerText = defCount;
+        if (defCount > 0) {
+            defText.className = 'fs-4 fw-bold text-danger';
+        } else {
+            defText.className = 'fs-4 fw-bold text-success';
+        }
+
+        // Mandatory Counselling Rule: Lowest Rating < 5 or Deficiencies > 0 => Counselling = Yes
+        var counselSelect = document.getElementById('counsellingGivenSelect');
+        var counselHelp = document.getElementById('counselRuleHelp');
+        if (minScore < 5 || defCount > 0) {
+            counselSelect.value = 'Yes';
+            counselHelp.innerHTML = '<span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>Mandatory counselling required due to score &le; 4</span>';
+        } else {
+            counselHelp.innerText = 'Satisfactory run with 5★ across all points';
+        }
+
+        // Automatic grading recommendation
+        var gradingSelect = document.getElementById('gradingSelect');
+        if (minScore === 1) gradingSelect.value = 'D';
+        else if (minScore <= 2 || avg < 3.5) gradingSelect.value = 'C';
+        else if (minScore === 3 || avg < 4.5) gradingSelect.value = 'B';
+        else gradingSelect.value = 'A';
+
+        // Update hidden inputs
+        document.getElementById('na_points_json').value = JSON.stringify(naList);
+        document.getElementById('deficiencies_json').value = JSON.stringify(defDetails);
+    }
+
+    function toggleAlpSection() {
+        var onBoard = document.getElementById('alpOnBoardSwitch').checked;
+        var alpSelect = document.getElementById('alpSelect');
+        var naChk = document.getElementById('na_p8');
+
+        if (!onBoard) {
+            alpSelect.disabled = true;
+            alpSelect.value = "";
+            if (naChk) {
+                naChk.checked = true;
+                toggleNA(8);
+            }
+        } else {
+            alpSelect.disabled = false;
+            if (naChk) {
+                naChk.checked = false;
+                toggleNA(8);
+            }
+        }
+    }
+
+    function onTrainTypeChange() {
+        var type = document.getElementById('trainTypeSelect').value;
+        var alpSwitch = document.getElementById('alpOnBoardSwitch');
+        if (type === 'EMU' || type === 'MEMU') {
+            alpSwitch.checked = false;
+            toggleAlpSection();
+        } else {
+            if (!alpSwitch.checked) {
+                alpSwitch.checked = true;
+                toggleAlpSection();
+            }
+        }
+    }
+
+    function onCrewSelected(crewId) {
+        if (!crewId) {
+            document.getElementById('safetyAlertBanner').classList.add('d-none');
+            return;
+        }
+
+        // Fetch safety status from backend
+        fetch('/supervisor/crew-safety-status/' + crewId)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                var banner = document.getElementById('safetyAlertBanner');
+                banner.classList.remove('d-none');
+
+                // FPO Cycle
+                var fpoPill = document.getElementById('fpoStatusPill');
+                var fpoDays = document.getElementById('fpoDaysText');
+                if (data.fp_status === 'overdue') {
+                    fpoPill.className = 'badge bg-danger text-white';
+                    fpoPill.innerText = 'OVERDUE (>90 Days)';
+                    fpoDays.innerText = (data.days_since_fp ? '(' + data.days_since_fp + ' days ago)' : '(Never inspected)');
+                    fpoDays.className = 'text-danger fw-bold ms-1 small';
+                } else if (data.fp_status === 'due_soon') {
+                    fpoPill.className = 'badge bg-warning text-dark';
+                    fpoPill.innerText = 'DUE SOON (75-90 Days)';
+                    fpoDays.innerText = '(' + data.days_since_fp + ' days ago)';
+                    fpoDays.className = 'text-warning fw-bold ms-1 small';
+                } else {
+                    fpoPill.className = 'badge bg-success text-white';
+                    fpoPill.innerText = 'COMPLIANT (<75 Days)';
+                    fpoDays.innerText = '(' + data.days_since_fp + ' days ago)';
+                    fpoDays.className = 'text-success ms-1 small';
+                }
+
+                // PME
+                var pmePill = document.getElementById('pmeStatusPill');
+                var reftText = document.getElementById('reftStatusText');
+                pmePill.innerText = 'PME: ' + (data.pme_due || 'N/A');
+                if (data.pme_status === 'overdue') {
+                    pmePill.className = 'badge bg-danger text-white';
+                } else if (data.pme_status === 'due_soon') {
+                    pmePill.className = 'badge bg-warning text-dark';
+                } else {
+                    pmePill.className = 'badge bg-light text-dark border';
+                }
+                reftText.innerText = data.reft_due ? 'REFT: ' + data.reft_due : '';
+
+                // Active Weaknesses
+                var wkCountPill = document.getElementById('weaknessCountPill');
+                var wkCount = (data.active_weaknesses && data.active_weaknesses.length) || 0;
+                wkCountPill.innerText = wkCount + ' Active Deficiencies';
+                if (wkCount > 0) {
+                    wkCountPill.className = 'badge bg-danger text-white';
+                } else {
+                    wkCountPill.className = 'badge bg-success text-white';
+                }
+
+                var repeatBadge = document.getElementById('repeatOffenderBadge');
+                if (data.repeat_offender) {
+                    repeatBadge.classList.remove('d-none');
+                } else {
+                    repeatBadge.classList.add('d-none');
+                }
+
+                var wkList = document.getElementById('activeWeaknessesList');
+                var wkUl = document.getElementById('weaknessUl');
+                wkUl.innerHTML = '';
+                if (wkCount > 0) {
+                    wkList.classList.remove('d-none');
+                    data.active_weaknesses.forEach(function(w) {
+                        var li = document.createElement('li');
+                        li.className = 'mb-1';
+                        li.innerHTML = '<strong>Point ' + w.point_no + ' (' + w.point_name + '):</strong> ' + 
+                                       w.deficiency_details + ' <span class="badge bg-secondary ms-1">[' + 
+                                       w.clean_runs_count + '/3 Clean Runs]</span>';
+                        wkUl.appendChild(li);
+                    });
+                } else {
+                    wkList.classList.add('d-none');
+                }
+            })
+            .catch(function(err) {
+                console.log('Error fetching crew safety status:', err);
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var sel = document.getElementById('crewSelect');
+        if (sel && sel.value) {
+            onCrewSelected(sel.value);
+        }
+        recalcTotals();
+    });
+</script>
 {% endblock %}

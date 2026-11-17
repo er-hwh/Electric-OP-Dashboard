@@ -1,0 +1,232 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Edit Excel Sheet: {{ sheet.filename }} — Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-md-4">
+
+  <!-- Breadcrumbs & Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+          <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Console</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('admin.upload_excel') }}">Excel Upload Centre</a></li>
+          <li class="breadcrumb-item active text-truncate" style="max-width: 300px;">{{ sheet.filename }}</li>
+        </ol>
+      </nav>
+      <h3 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <i class="fas fa-table text-success"></i>
+        <span>{{ sheet.filename }}</span>
+        <span class="badge bg-primary fs-6">{{ sheet.upload_type.replace('_', ' ').upper() }}</span>
+        <span class="badge bg-danger fs-6"><i class="fas fa-shield-halved me-1"></i>Admin Edit Only</span>
+      </h3>
+      <p class="text-muted small mb-0">
+        Original Tabular Format &bull; Uploaded on {{ sheet.created_at.strftime('%d-%b-%Y %H:%M') }} &bull; 
+        <span id="rowCountBadge" class="fw-bold text-dark">{{ rows|length }}</span> rows, {{ headers|length }} columns
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('admin.excel_sheet_export', sheet_id=sheet.id) }}" class="btn btn-outline-success fw-bold shadow-sm">
+        <i class="fas fa-file-excel me-1"></i> Download .xlsx
+      </a>
+      <a href="{{ url_for('admin.upload_excel') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Upload Centre
+      </a>
+      <button type="button" class="btn btn-success fw-bold px-4 shadow-sm" onclick="saveTableChanges()">
+        <i class="fas fa-save me-1"></i> Save Table Changes
+      </button>
+    </div>
+  </div>
+
+  <!-- Action Bar & Search Filter -->
+  <div class="card shadow-sm border-0 mb-3 bg-light">
+    <div class="card-body p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 450px;">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+          <input type="text" id="tableSearchInput" class="form-control" placeholder="Search rows across any column..." oninput="filterTable()">
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="syncToDbCheck" checked>
+          <label class="form-check-label small fw-bold text-dark" for="syncToDbCheck">
+            Sync changes to portal database
+          </label>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm fw-bold shadow-sm" onclick="addNewRow()">
+          <i class="fas fa-plus me-1"></i> Add Row
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Spreadsheet Grid -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive" style="max-height: 70vh; overflow: auto;" id="tableContainer">
+        <table class="table table-bordered table-hover align-middle mb-0 text-nowrap" id="sheetTable" style="font-size: 0.85rem;">
+          <thead class="table-dark sticky-top" style="z-index: 10;">
+            <tr>
+              <th class="text-center" style="width: 50px; background-color: #002244;">#</th>
+              {% for h in headers %}
+                <th style="min-width: 140px; background-color: #002244;" class="text-uppercase">{{ h }}</th>
+              {% endfor %}
+              <th class="text-center" style="width: 50px; background-color: #002244;">Del</th>
+            </tr>
+          </thead>
+          <tbody id="sheetTableBody">
+            {% for r in rows %}
+            <tr data-row-idx="{{ loop.index0 }}">
+              <td class="text-center text-muted fw-bold row-num">{{ loop.index }}</td>
+              {% for h in headers %}
+                <td class="p-1">
+                  <input type="text" class="form-control form-control-sm border-0 cell-input px-2"
+                         data-header="{{ h }}" value="{{ r.get(h, '') }}" style="background: transparent;">
+                </td>
+              {% endfor %}
+              <td class="text-center p-1">
+                <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="deleteRow(this)" title="Delete Row">
+                  <i class="fas fa-times"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+      <small class="text-muted">
+        <i class="fas fa-info-circle me-1 text-primary"></i>
+        Click on any cell to edit text directly. Use <strong>Save Table Changes</strong> to commit. Only Administrators have edit permissions.
+      </small>
+      <button type="button" class="btn btn-success fw-bold px-4 shadow-sm" onclick="saveTableChanges()">
+        <i class="fas fa-save me-1"></i> Save Table Changes
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Spinner Modal -->
+<div class="modal fade" id="saveSpinnerModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content text-center p-4">
+      <div class="spinner-border text-primary mx-auto mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+      <h6 class="fw-bold mb-0">Saving Sheet & Syncing Database...</h6>
+    </div>
+  </div>
+</div>
+
+<script>
+const HEADERS = {{ headers|tojson }};
+const SHEET_ID = {{ sheet.id }};
+
+function filterTable() {
+  const query = document.getElementById('tableSearchInput').value.toLowerCase().trim();
+  const trs = document.querySelectorAll('#sheetTableBody tr');
+  let visibleCount = 0;
+  trs.forEach(tr => {
+    let text = tr.innerText.toLowerCase();
+    const inputs = tr.querySelectorAll('input.cell-input');
+    inputs.forEach(inp => text += ' ' + inp.value.toLowerCase());
+    if (!query || text.includes(query)) {
+      tr.style.display = '';
+      visibleCount++;
+    } else {
+      tr.style.display = 'none';
+    }
+  });
+  document.getElementById('rowCountBadge').textContent = visibleCount;
+}
+
+function addNewRow() {
+  const tbody = document.getElementById('sheetTableBody');
+  const count = tbody.querySelectorAll('tr').length + 1;
+  const tr = document.createElement('tr');
+  tr.setAttribute('data-row-idx', count - 1);
+  
+  let html = `<td class="text-center text-muted fw-bold row-num">${count}</td>`;
+  HEADERS.forEach(h => {
+    html += `<td class="p-1"><input type="text" class="form-control form-control-sm border-0 cell-input px-2" data-header="${h}" value="" style="background: transparent;"></td>`;
+  });
+  html += `<td class="text-center p-1"><button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="deleteRow(this)" title="Delete Row"><i class="fas fa-times"></i></button></td>`;
+  tr.innerHTML = html;
+  tbody.insertBefore(tr, tbody.firstChild);
+  renumberRows();
+  tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const firstInput = tr.querySelector('input.cell-input');
+  if (firstInput) firstInput.focus();
+}
+
+function deleteRow(btn) {
+  if (confirm('Delete this row?')) {
+    const tr = btn.closest('tr');
+    tr.remove();
+    renumberRows();
+  }
+}
+
+function renumberRows() {
+  const trs = document.querySelectorAll('#sheetTableBody tr');
+  trs.forEach((tr, idx) => {
+    const numCell = tr.querySelector('.row-num');
+    if (numCell) numCell.textContent = idx + 1;
+    tr.setAttribute('data-row-idx', idx);
+  });
+  document.getElementById('rowCountBadge').textContent = trs.length;
+}
+
+function saveTableChanges() {
+  const trs = document.querySelectorAll('#sheetTableBody tr');
+  const rows = [];
+  trs.forEach(tr => {
+    const row = {};
+    const inputs = tr.querySelectorAll('input.cell-input');
+    inputs.forEach(inp => {
+      const h = inp.getAttribute('data-header');
+      row[h] = inp.value;
+    });
+    rows.push(row);
+  });
+
+  const syncToDb = document.getElementById('syncToDbCheck').checked;
+  const spinner = new bootstrap.Modal(document.getElementById('saveSpinnerModal'));
+  spinner.show();
+
+  fetch(`/admin/excel-sheets/${SHEET_ID}/update`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      headers: HEADERS,
+      rows: rows,
+      sync_to_db: syncToDb
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    spinner.hide();
+    if (data.success) {
+      alert("✅ " + data.message);
+    } else {
+      alert("❌ Save failed: " + (data.message || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    spinner.hide();
+    alert("❌ Error: " + err);
+  });
+}
+</script>
+
+<style>
+.cell-input:focus {
+  background: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(0, 34, 68, 0.25) !important;
+  border-radius: 4px;
+}
+</style>
+{% endblock %}

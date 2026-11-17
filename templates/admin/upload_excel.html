@@ -1,20 +1,26 @@
-{% extends 'base.html' %}
-{% block title %}Excel Upload Centre — Admin{% endblock %}
+{% extends "admin/base_admin.html" %}
+{% block title %}Excel Upload Centre &amp; Tabular Editor — Admin{% endblock %}
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 px-md-4">
 
   <!-- Page Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="d-flex align-items-center gap-3">
-        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:56px;height:56px;font-size:1.5rem;">
-          <i class="fas fa-file-excel"></i>
-        </div>
-        <div>
-          <h2 class="mb-0 fw-bold text-primary">Excel Upload Centre</h2>
-          <p class="mb-0 text-muted">Bulk import Crew, CLI and Counselling data from CMS / Master Excel sheets</p>
-        </div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom gap-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width:56px;height:56px;font-size:1.5rem;">
+        <i class="fas fa-file-excel"></i>
       </div>
+      <div>
+        <h2 class="mb-0 fw-bold text-primary">Excel Upload Centre &amp; Tabular Editor</h2>
+        <p class="mb-0 text-muted">Upload, inspect in tabular format, edit values, and save to system database &bull; Admin Exclusive</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('admin.excel_sheets_list') }}" class="btn btn-outline-primary fw-bold shadow-sm">
+        <i class="fas fa-table-list me-1"></i> All Uploaded Sheets ({{ saved_sheets|length if saved_sheets else 0 }})
+      </a>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Admin Portal
+      </a>
     </div>
   </div>
 
@@ -30,113 +36,311 @@
     {% endif %}
   {% endwith %}
 
-  <!-- Info Box -->
-  <div class="alert alert-info border-0 rounded-3 mb-4">
-    <i class="fas fa-info-circle me-2"></i>
-    <strong>How it works:</strong> Select the correct upload type, then choose one or more <code>.xlsx</code> / <code>.xls</code> files.
-    The system automatically detects CMS report header rows and imports data.
-    All imported crew and CLI accounts are <strong>pre-activated</strong> with default password <code>12345</code>.
-    You can select <strong>multiple files</strong> for the same upload type in one submission.
-  </div>
+  <!-- Navigation Tabs -->
+  <ul class="nav nav-pills mb-4 gap-2" id="uploadTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active fw-bold px-4 py-2 shadow-sm" id="tabular-tab" data-bs-toggle="pill" data-bs-target="#tabularPane" type="button" role="tab">
+        <i class="fas fa-table me-2"></i>1. Tabular Upload &amp; Interactive Editor
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link fw-bold px-4 py-2 shadow-sm" id="repository-tab" data-bs-toggle="pill" data-bs-target="#repositoryPane" type="button" role="tab">
+        <i class="fas fa-folder-open me-2"></i>2. Uploaded Sheets Repository ({{ saved_sheets|length if saved_sheets else 0 }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link fw-bold px-4 py-2 shadow-sm" id="batch-tab" data-bs-toggle="pill" data-bs-target="#batchPane" type="button" role="tab">
+        <i class="fas fa-layer-group me-2"></i>3. Direct Batch Multi-File Upload
+      </button>
+    </li>
+  </ul>
 
-  <!-- Upload Form -->
-  <div class="card shadow-sm border-0 mb-5">
-    <div class="card-header bg-primary text-white py-3">
-      <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Excel File(s)</h5>
-    </div>
-    <div class="card-body p-4">
-      <form method="POST" enctype="multipart/form-data" id="uploadForm">
+  <div class="tab-content" id="uploadTabContent">
 
-        <!-- Upload Type Selector -->
-        <div class="mb-4">
-          <label class="form-label fw-semibold fs-6">Step 1 — Select Upload Type</label>
-          <div class="row g-3">
+    <!-- TAB 1: TABULAR UPLOAD & INTERACTIVE EDITOR -->
+    <div class="tab-pane fade show active" id="tabularPane" role="tabpanel">
 
-                        {% set types = [
-              ('auto_detect',          'fas fa-wand-magic-sparkles', 'bg-dark',      '⚡ Auto-Detect (Smart Batch)',      'Drop any CMS report — system inspects headers and chooses the right parser automatically'),
-              ('crew_data',            'fas fa-map-location-dot',    'bg-primary',   '1. Call Serve Address (Division)',   'CMS Call Serve Details (Division-wide)
-Cols: CREW ID · CREW NAME · DESIGNATION · MOBILE · EMAIL · CALL SERVE & PERMANENT ADDRESS'),
-              ('service_particulars',  'fas fa-file-invoice-dollar', 'bg-success',   '2. Service Particulars (Division)',  'CMS Service Particulars (Division-wide)
-Cols: CREW ID · CREW DESG · LEVEL · CADRE · EMP NO · PRESENT PAY · DOB · DOA · PROMOTION · RETIREMENT'),
-              ('crew_summary',         'fas fa-users-viewfinder',    'bg-info',      '3. Crew Bio Summary (Lobbywise)',    'CMS Biodata Summary (Lobbywise)
-Cols: CREWID · FATHER · GENDER · HRMS · CADRE · EDU/TECH · PME · VISION · T.MARK · CLI · GRADE'),
-              ('other_details',        'fas fa-calendar-check',      'bg-warning',   '4. Other Details (Lobbywise)',       'CMS Biodata Other Details (Lobbywise)
-Cols: CREW BASEID · CREWID · REFT/REFD/REFE DUE · PME DUE · SIMULATOR · SALP/SHR/LPG/LPP/LPM'),
-              ('cli_biodata',          'fas fa-user-tie',            'bg-secondary', '5. CLI / TI Bio Data',               'CMS CLI/TI Biodata
-Cols: LI ID · NAME · HQ · DOB · DOA · DOP · EMP NO · MOBILE'),
-              ('counselling',          'fas fa-clipboard-list',      'bg-danger',    '6. Counselling Master Sheet',        'Division Counselling Sheet
-Cols: CLI · CREW ID · GRADE · FOOTPLATE · SPM · CVVRS · BA FAIL · SPAD · REMARKS'),
-              ('training',             'fas fa-graduation-cap',      'bg-primary',   '7. Training & Refresher Records',    'Training Sheet
-Cols: MOBILE · TRAINING TYPE · INSTITUTE · LAST DONE · DUE DATE'),
-            ] %}
-
-            {% for val, icon, color, title, desc in types %}
-            <div class="col-12 col-md-6 col-xl-4">
-              <label class="upload-type-card w-100 h-100" for="type_{{ val }}">
-                <input type="radio" name="upload_type" id="type_{{ val }}" value="{{ val }}"
-                       class="d-none upload-type-radio"
-                       {% if loop.first %}checked{% endif %}>
-                <div class="card border-2 h-100 type-card-inner" data-color="{{ color }}">
-                  <div class="card-body d-flex align-items-start gap-3 py-3">
-                    <div class="rounded-circle {{ color }} text-white d-flex align-items-center justify-content-center flex-shrink-0"
-                         style="width:44px;height:44px;font-size:1.1rem;">
-                      <i class="{{ icon }}"></i>
-                    </div>
-                    <div>
-                      <div class="fw-semibold">{{ title }}</div>
-                      <small class="text-muted" style="white-space:pre-line;line-height:1.4;">{{ desc }}</small>
-                    </div>
-                  </div>
-                </div>
-              </label>
-            </div>
-            {% endfor %}
-
-          </div>
+      <!-- Step 1 Card: Select Excel File -->
+      <div class="card shadow-sm border-0 mb-4" id="selectCard">
+        <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold"><i class="fas fa-cloud-upload-alt me-2"></i>Select Excel File for Tabular Review &amp; Edit</h5>
+          <span class="badge bg-danger"><i class="fas fa-lock me-1"></i>Admin Only Editable</span>
         </div>
+        <div class="card-body p-4">
+          <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+              <div class="border-2 border-dashed rounded-3 p-5 text-center bg-light" id="previewDropZone"
+                   style="border-color:#002244; cursor:pointer; transition:background .2s;">
+                <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
+                <h5 class="fw-bold text-dark mb-1">Choose or Drag &amp; Drop Excel File</h5>
+                <p class="text-muted small mb-3">Supports .xlsx, .xls, and .csv files &bull; System will open the file in the exact same tabular view</p>
+                <input type="file" id="previewFileInput" accept=".xlsx,.xls,.csv" class="d-none">
+                <button type="button" class="btn btn-primary btn-lg px-4 fw-bold" onclick="document.getElementById('previewFileInput').click()">
+                  <i class="fas fa-folder-open me-2"></i>Browse Computer
+                </button>
+                <div id="selectedFileNameDisplay" class="mt-3 fw-bold text-dark fs-6"></div>
+              </div>
+            </div>
+            <div class="col-lg-4">
+              <div class="alert alert-info border-0 shadow-sm h-100 mb-0">
+                <h6 class="fw-bold mb-2"><i class="fas fa-info-circle me-1"></i>How Tabular Editing Works:</h6>
+                <ol class="small ps-3 mb-0 text-muted" style="line-height: 1.6;">
+                  <li>Upload any CMS report or operational Excel sheet.</li>
+                  <li>The sheet opens in the <strong>exact same tabular format</strong> with all rows and columns preserved.</li>
+                  <li><strong>Only Administrators</strong> can edit cell contents, add new rows, or remove rows.</li>
+                  <li>Click <strong>Save &amp; Import</strong> to update the database records instantly.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
 
-        <!-- File Picker -->
-        <div class="mb-4">
-          <label class="form-label fw-semibold fs-6">Step 2 — Choose File(s)</label>
-          <div class="border-2 border-dashed rounded-3 p-4 text-center" id="dropZone"
-               style="border-color:#002244;cursor:pointer;transition:background .2s;">
-            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
-            <p class="mb-2 fw-semibold">Drag & Drop Excel files here or click to browse</p>
-            <p class="text-muted small mb-3">Supports .xlsx, .xls and .csv — select multiple files at once (hold Ctrl)</p>
-            <input type="file" name="files" id="fileInput" multiple accept=".xlsx,.xls,.csv"
-                   class="d-none">
-            <button type="button" class="btn btn-outline-primary px-4"
-                    onclick="document.getElementById('fileInput').click()">
-              <i class="fas fa-folder-open me-2"></i>Browse Files
+          <div class="mt-4 text-end d-none" id="inspectBtnRow">
+            <button type="button" class="btn btn-success btn-lg px-5 fw-bold shadow-sm" onclick="loadTabularPreview()">
+              <i class="fas fa-table me-2"></i>Inspect &amp; Load into Tabular Table &rarr;
             </button>
           </div>
-          <!-- File list preview -->
-          <div id="fileList" class="mt-2"></div>
+        </div>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div id="previewLoadingBox" class="text-center py-5 d-none">
+        <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+        <h4 class="fw-bold text-dark">Reading Excel Sheet...</h4>
+        <p class="text-muted">Extracting headers, preserving cell data and formatting...</p>
+      </div>
+
+      <!-- Step 2: Interactive Spreadsheet Table -->
+      <div id="tabularEditorContainer" class="d-none">
+
+        <!-- Control Bar -->
+        <div class="card shadow-sm border-0 mb-3 bg-white">
+          <div class="card-body p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="fw-bold mb-0 text-dark" id="loadedFileTitle">
+                  <i class="fas fa-table text-success me-2"></i>Loaded Spreadsheet
+                </h5>
+                <span class="badge bg-primary" id="detectedTypeBadge">CMS Report</span>
+              </div>
+              <small class="text-muted" id="tabularSummaryText">Loaded 0 rows</small>
+            </div>
+
+            <!-- Import Type Override Selector -->
+            <div class="d-flex align-items-center gap-2">
+              <label class="small fw-bold text-muted mb-0">Import Type:</label>
+              <select id="importTypeSelect" class="form-select form-select-sm" style="min-width: 200px;">
+                <option value="auto_detect">⚡ Auto-Detect</option>
+                <option value="crew_data">Call Serve Address (Crew Data)</option>
+                <option value="service_particulars">Service Particulars</option>
+                <option value="crew_summary">Crew Bio Summary</option>
+                <option value="other_details">Crew Bio Other Details</option>
+                <option value="cli_biodata">CLI Bio Data</option>
+                <option value="counselling">Counselling Master Sheet</option>
+                <option value="training">Training Records</option>
+                <option value="general">General Spreadsheet Only</option>
+              </select>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-primary btn-sm fw-bold" onclick="addTabularRow()">
+                <i class="fas fa-plus me-1"></i> Add Row
+              </button>
+              <button type="button" class="btn btn-outline-danger btn-sm fw-bold" onclick="resetTabularView()">
+                <i class="fas fa-rotate-left me-1"></i> Choose Another File
+              </button>
+              <button type="button" class="btn btn-success btn-sm fw-bold px-3 shadow-sm" onclick="saveTabularBatch()">
+                <i class="fas fa-cloud-arrow-up me-1"></i> Save &amp; Import to Database
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Submit -->
-        <div class="d-flex gap-3 flex-wrap">
-          <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
-            <i class="fas fa-upload me-2"></i>Upload & Import
-          </button>
-          <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-lg px-4">
-            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-          </a>
+        <!-- Filter Bar -->
+        <div class="card shadow-sm border-0 mb-3 bg-light">
+          <div class="card-body p-2 d-flex justify-content-between align-items-center gap-2">
+            <div class="input-group input-group-sm" style="max-width: 400px;">
+              <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+              <input type="text" id="liveSearchInput" class="form-control" placeholder="Search rows..." oninput="filterLiveTable()">
+            </div>
+            <small class="text-muted"><i class="fas fa-pen text-primary me-1"></i>Each cell is editable by Admin</small>
+          </div>
         </div>
 
-      </form>
+        <!-- Table Display -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 65vh; overflow: auto;">
+              <table class="table table-bordered table-hover align-middle mb-0 text-nowrap" id="interactiveTable" style="font-size: 0.85rem;">
+                <thead class="table-dark sticky-top" style="z-index: 10;">
+                  <tr id="interactiveTableHead">
+                    <!-- Populated dynamically via JS -->
+                  </tr>
+                </thead>
+                <tbody id="interactiveTableBody">
+                  <!-- Populated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+            <small class="text-muted">
+              <i class="fas fa-circle-check text-success me-1"></i>
+              Data above is editable. Click <strong>Save &amp; Import</strong> to write directly to the database.
+            </small>
+            <button type="button" class="btn btn-success fw-bold px-4 shadow-sm" onclick="saveTabularBatch()">
+              <i class="fas fa-floppy-disk me-1"></i> Confirm &amp; Save Records
+            </button>
+          </div>
+        </div>
+
+      </div>
+
     </div>
+
+    <!-- TAB 2: UPLOADED SHEETS REPOSITORY -->
+    <div class="tab-pane fade" id="repositoryPane" role="tabpanel">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold text-dark">
+            <i class="fas fa-table-list me-2 text-primary"></i>Archived Spreadsheets
+          </h5>
+          <span class="badge bg-danger"><i class="fas fa-lock me-1"></i>Admin Editable Only</span>
+        </div>
+        <div class="card-body p-0">
+          {% if saved_sheets %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3" style="width: 50px;">#</th>
+                  <th>File Name</th>
+                  <th>Report Category</th>
+                  <th>Rows</th>
+                  <th>Upload Date</th>
+                  <th class="text-end pe-3" style="min-width: 220px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in saved_sheets %}
+                <tr>
+                  <td class="ps-3 fw-bold text-muted">{{ loop.index }}</td>
+                  <td>
+                    <div class="fw-bold text-dark">
+                      <i class="fas fa-file-excel text-success me-1"></i>{{ s.filename }}
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-primary text-white">
+                      {{ s.upload_type.replace('_', ' ').upper() }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-dark border fw-bold">{{ s.row_count }} Rows</span>
+                  </td>
+                  <td>
+                    <small class="text-muted">{{ s.created_at.strftime('%d-%b-%Y %H:%M') }}</small>
+                  </td>
+                  <td class="text-end pe-3">
+                    <a href="{{ url_for('admin.excel_sheet_view_edit', sheet_id=s.id) }}" class="btn btn-primary btn-sm fw-bold me-1">
+                      <i class="fas fa-table me-1"></i> View &amp; Edit Table
+                    </a>
+                    <a href="{{ url_for('admin.excel_sheet_export', sheet_id=s.id) }}" class="btn btn-outline-success btn-sm me-1" title="Download Excel">
+                      <i class="fas fa-download"></i>
+                    </a>
+                    <form method="POST" action="{{ url_for('admin.excel_sheet_delete', sheet_id=s.id) }}" class="d-inline" onsubmit="return confirm('Delete this spreadsheet?');">
+                      <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="fas fa-file-excel fa-3x text-secondary mb-3 d-block opacity-50"></i>
+            <h6>No Excel sheets archived yet.</h6>
+            <p class="small mb-0">Sheets uploaded through Tabular Upload or Batch Upload will appear here.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DIRECT BATCH MULTI-FILE UPLOAD -->
+    <div class="tab-pane fade" id="batchPane" role="tabpanel">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-secondary text-white py-3">
+          <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Direct Batch Multi-File Upload</h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            <!-- Upload Type Selector -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold fs-6">Select Upload Type</label>
+              <div class="row g-3">
+                {% set types = [
+                  ('auto_detect',          'fas fa-wand-magic-sparkles', 'bg-dark',      '⚡ Auto-Detect (Smart Batch)',      'Drop any CMS report — system inspects headers and chooses the right parser automatically'),
+                  ('crew_data',            'fas fa-map-location-dot',    'bg-primary',   '1. Call Serve Address (Division)',   'CMS Call Serve Details (Division-wide)'),
+                  ('service_particulars',  'fas fa-file-invoice-dollar', 'bg-success',   '2. Service Particulars (Division)',  'CMS Service Particulars (Division-wide)'),
+                  ('crew_summary',         'fas fa-users-viewfinder',    'bg-info',      '3. Crew Bio Summary (Lobbywise)',    'CMS Biodata Summary (Lobbywise)'),
+                  ('other_details',        'fas fa-calendar-check',      'bg-warning',   '4. Other Details (Lobbywise)',       'CMS Biodata Other Details (Lobbywise)'),
+                  ('cli_biodata',          'fas fa-user-tie',            'bg-secondary', '5. CLI / TI Bio Data',               'CMS CLI/TI Biodata'),
+                  ('counselling',          'fas fa-clipboard-list',      'bg-danger',    '6. Counselling Master Sheet',        'Division Counselling Sheet'),
+                  ('training',             'fas fa-graduation-cap',      'bg-primary',   '7. Training & Refresher Records',    'Training Sheet'),
+                ] %}
+
+                {% for val, icon, color, title, desc in types %}
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label class="upload-type-card w-100 h-100" for="type_{{ val }}">
+                    <input type="radio" name="upload_type" id="type_{{ val }}" value="{{ val }}"
+                           class="d-none upload-type-radio"
+                           {% if loop.first %}checked{% endif %}>
+                    <div class="card border-2 h-100 type-card-inner p-2" data-color="{{ color }}">
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle {{ color }} text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width:36px;height:36px;font-size:0.9rem;">
+                          <i class="{{ icon }}"></i>
+                        </div>
+                        <div>
+                          <div class="fw-semibold small">{{ title }}</div>
+                          <small class="text-muted d-block" style="font-size:0.75rem;">{{ desc }}</small>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Multi File Picker -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold fs-6">Choose Files (.xlsx / .xls / .csv)</label>
+              <input type="file" name="files" id="multiFileInput" multiple accept=".xlsx,.xls,.csv" class="form-control">
+              <small class="text-muted">Hold Ctrl to select multiple files at once.</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg px-5 fw-bold">
+              <i class="fas fa-upload me-2"></i>Upload &amp; Process All
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Template Downloads -->
-  <div class="card shadow-sm border-0 mb-5">
-    <div class="card-header bg-secondary text-white py-3">
-      <h5 class="mb-0"><i class="fas fa-download me-2"></i>Download Sample Templates</h5>
+  <!-- Template Downloads Section -->
+  <div class="card shadow-sm border-0 mb-4 mt-4">
+    <div class="card-header bg-light py-3">
+      <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-download me-2 text-primary"></i>Download Sample Templates</h6>
     </div>
     <div class="card-body">
-      <p class="text-muted mb-3">Download pre-filled sample templates to understand the expected column format for each upload type.</p>
-      <div class="row g-3">
-                {% for val, icon, color, title in [
+      <div class="row g-2">
+        {% for val, icon, color, title in [
           ('crew_data',            'fas fa-map-location-dot',    'btn-primary',   'Call Serve Template'),
           ('service_particulars',  'fas fa-file-invoice-dollar', 'btn-success',   'Service Particulars Template'),
           ('crew_summary',         'fas fa-users-viewfinder',    'btn-info',      'Crew Summary Template'),
@@ -145,11 +349,10 @@ Cols: MOBILE · TRAINING TYPE · INSTITUTE · LAST DONE · DUE DATE'),
           ('counselling',          'fas fa-clipboard-list',      'btn-danger',    'Counselling Template'),
           ('training',             'fas fa-graduation-cap',      'btn-dark',      'Training Records Template'),
         ] %}
-        <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+        <div class="col-6 col-md-4 col-lg-3 col-xl-auto">
           <a href="{{ url_for('admin.download_template', template_type=val) }}"
-             class="btn {{ icon.split()[0]|replace('fas','btn-outline-secondary') }} w-100 {{ color }} text-white border-0 py-2">
-            <i class="{{ icon }} me-1"></i><br>
-            <small>{{ title }}</small>
+             class="btn btn-sm btn-outline-secondary w-100 py-2">
+            <i class="{{ icon }} me-1 text-primary"></i> {{ title }}
           </a>
         </div>
         {% endfor %}
@@ -157,98 +360,254 @@ Cols: MOBILE · TRAINING TYPE · INSTITUTE · LAST DONE · DUE DATE'),
     </div>
   </div>
 
-  <!-- Counselling Records Quick View -->
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center">
-      <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Counselling Records</h5>
-      <a href="{{ url_for('admin.counselling_records') }}" class="btn btn-light btn-sm">
-        <i class="fas fa-external-link-alt me-1"></i>View All
-      </a>
-    </div>
-    <div class="card-body">
-      <p class="text-muted">After uploading the Crew Counselling Master Sheet, click "View All" to browse, filter by HQ / CLI / Grade, and search crew counselling records.</p>
-    </div>
-  </div>
-
 </div>
 
-<!-- Styles -->
+<!-- Spinner Modal -->
+<div class="modal fade" id="saveProgressModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content text-center p-4">
+      <div class="spinner-border text-primary mx-auto mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+      <h6 class="fw-bold mb-0">Committing &amp; Importing Records...</h6>
+      <small class="text-muted">Updating system database...</small>
+    </div>
+  </div>
+</div>
+
+<script>
+let g_headers = [];
+let g_filename = '';
+
+const previewFileInput = document.getElementById('previewFileInput');
+const selectedFileNameDisplay = document.getElementById('selectedFileNameDisplay');
+const inspectBtnRow = document.getElementById('inspectBtnRow');
+const dropZone = document.getElementById('previewDropZone');
+
+// Drag and drop handlers
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = '#e8f0fe'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.background = '#f8f9fa'; });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.style.background = '#f8f9fa';
+  if (e.dataTransfer.files.length > 0) {
+    previewFileInput.files = e.dataTransfer.files;
+    handleFileSelected();
+  }
+});
+
+previewFileInput.addEventListener('change', handleFileSelected);
+
+function handleFileSelected() {
+  if (previewFileInput.files.length > 0) {
+    const f = previewFileInput.files[0];
+    selectedFileNameDisplay.innerHTML = `<span class="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6"><i class="fas fa-file-excel me-1"></i>${f.name} (${(f.size/1024).toFixed(1)} KB)</span>`;
+    inspectBtnRow.classList.remove('d-none');
+  } else {
+    selectedFileNameDisplay.innerHTML = '';
+    inspectBtnRow.classList.add('d-none');
+  }
+}
+
+function loadTabularPreview() {
+  if (!previewFileInput.files.length) return;
+  const file = previewFileInput.files[0];
+  g_filename = file.name;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  document.getElementById('selectCard').classList.add('d-none');
+  document.getElementById('previewLoadingBox').classList.remove('d-none');
+
+  fetch("{{ url_for('admin.upload_excel_preview') }}", {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById('previewLoadingBox').classList.add('d-none');
+    if (data.success) {
+      g_headers = data.headers || [];
+      renderInteractiveTable(data);
+    } else {
+      alert("❌ Parsing Failed: " + (data.message || 'Unknown error'));
+      resetTabularView();
+    }
+  })
+  .catch(err => {
+    document.getElementById('previewLoadingBox').classList.add('d-none');
+    alert("❌ Error: " + err);
+    resetTabularView();
+  });
+}
+
+function renderInteractiveTable(data) {
+  g_headers = data.headers;
+  document.getElementById('loadedFileTitle').innerHTML = `<i class="fas fa-file-excel text-success me-2"></i>${data.filename}`;
+  document.getElementById('detectedTypeBadge').textContent = data.upload_type_label || data.upload_type;
+  document.getElementById('importTypeSelect').value = data.upload_type || 'auto_detect';
+  document.getElementById('tabularSummaryText').textContent = `Loaded ${data.rows.length} rows &bull; ${data.headers.length} columns`;
+
+  // Render Table Headers
+  const thead = document.getElementById('interactiveTableHead');
+  thead.innerHTML = '<th class="text-center" style="width: 50px; background-color: #002244;">#</th>';
+  data.headers.forEach(h => {
+    const th = document.createElement('th');
+    th.style.minWidth = '140px';
+    th.style.backgroundColor = '#002244';
+    th.className = 'text-uppercase';
+    th.textContent = h;
+    thead.appendChild(th);
+  });
+  thead.innerHTML += '<th class="text-center" style="width: 50px; background-color: #002244;">Del</th>';
+
+  // Render Table Rows
+  const tbody = document.getElementById('interactiveTableBody');
+  tbody.innerHTML = '';
+  data.rows.forEach((r, idx) => {
+    appendInteractiveRow(r, idx + 1);
+  });
+
+  document.getElementById('tabularEditorContainer').classList.remove('d-none');
+}
+
+function appendInteractiveRow(r, num) {
+  const tbody = document.getElementById('interactiveTableBody');
+  const tr = document.createElement('tr');
+  tr.setAttribute('data-row-num', num);
+
+  let html = `<td class="text-center text-muted fw-bold row-num">${num}</td>`;
+  g_headers.forEach(h => {
+    const val = r[h] !== undefined && r[h] !== null ? r[h] : '';
+    html += `<td class="p-1"><input type="text" class="form-control form-control-sm border-0 cell-val px-2" data-header="${h}" value="${escapeHtml(String(val))}" style="background: transparent;"></td>`;
+  });
+  html += `<td class="text-center p-1"><button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="deleteInteractiveRow(this)" title="Delete Row"><i class="fas fa-times"></i></button></td>`;
+  tr.innerHTML = html;
+  tbody.appendChild(tr);
+}
+
+function addTabularRow() {
+  const tbody = document.getElementById('interactiveTableBody');
+  const count = tbody.querySelectorAll('tr').length + 1;
+  const emptyRow = {};
+  g_headers.forEach(h => emptyRow[h] = '');
+  appendInteractiveRow(emptyRow, count);
+  renumberInteractiveRows();
+  const lastRow = tbody.lastElementChild;
+  if (lastRow) {
+    lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const inp = lastRow.querySelector('input.cell-val');
+    if (inp) inp.focus();
+  }
+}
+
+function deleteInteractiveRow(btn) {
+  const tr = btn.closest('tr');
+  tr.remove();
+  renumberInteractiveRows();
+}
+
+function renumberInteractiveRows() {
+  const trs = document.querySelectorAll('#interactiveTableBody tr');
+  trs.forEach((tr, idx) => {
+    const numEl = tr.querySelector('.row-num');
+    if (numEl) numEl.textContent = idx + 1;
+  });
+  document.getElementById('tabularSummaryText').textContent = `Showing ${trs.length} rows &bull; ${g_headers.length} columns`;
+}
+
+function filterLiveTable() {
+  const q = document.getElementById('liveSearchInput').value.toLowerCase().trim();
+  const trs = document.querySelectorAll('#interactiveTableBody tr');
+  trs.forEach(tr => {
+    let match = false;
+    const inputs = tr.querySelectorAll('input.cell-val');
+    inputs.forEach(inp => {
+      if (inp.value.toLowerCase().includes(q)) match = true;
+    });
+    tr.style.display = match || !q ? '' : 'none';
+  });
+}
+
+function resetTabularView() {
+  document.getElementById('tabularEditorContainer').classList.add('d-none');
+  document.getElementById('previewLoadingBox').classList.add('d-none');
+  document.getElementById('selectCard').classList.remove('d-none');
+  previewFileInput.value = '';
+  selectedFileNameDisplay.innerHTML = '';
+  inspectBtnRow.classList.add('d-none');
+}
+
+function saveTabularBatch() {
+  const trs = document.querySelectorAll('#interactiveTableBody tr');
+  const rows = [];
+  trs.forEach(tr => {
+    const r = {};
+    const inputs = tr.querySelectorAll('input.cell-val');
+    inputs.forEach(inp => {
+      const h = inp.getAttribute('data-header');
+      r[h] = inp.value;
+    });
+    rows.push(r);
+  });
+
+  if (!rows.length) {
+    alert("No records to save.");
+    return;
+  }
+
+  const uploadType = document.getElementById('importTypeSelect').value;
+  const spinner = new bootstrap.Modal(document.getElementById('saveProgressModal'));
+  spinner.show();
+
+  fetch("{{ url_for('admin.upload_excel_save') }}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      filename: g_filename,
+      upload_type: uploadType,
+      headers: g_headers,
+      rows: rows
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    spinner.hide();
+    if (data.success) {
+      alert("✅ " + data.message);
+      window.location.reload();
+    } else {
+      alert("❌ Save Error: " + (data.message || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    spinner.hide();
+    alert("❌ Error: " + err);
+  });
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+}
+</script>
+
 <style>
+.cell-val:focus {
+  background: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(0, 34, 68, 0.25) !important;
+  border-radius: 4px;
+}
 .upload-type-card { cursor: pointer; }
 .type-card-inner  { border-color: #dee2e6 !important; transition: all .2s; }
 .upload-type-radio:checked + .type-card-inner {
   border-color: #002244 !important;
   background: #f0f4ff;
-  box-shadow: 0 0 0 3px rgba(0,34,68,.15);
+  box-shadow: 0 0 0 2px rgba(0,34,68,.15);
 }
-.type-card-inner:hover { border-color: #002244 !important; }
-#dropZone.dragover { background: #e8f0fe !important; }
-.file-chip {
-  display:inline-flex; align-items:center; gap:.4rem;
-  background:#e9ecef; border-radius:2rem; padding:.2rem .75rem;
-  font-size:.82rem; margin:.2rem;
-}
-.file-chip .rm { cursor:pointer; color:#dc3545; }
 </style>
-
-<!-- Scripts -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-  // Drag-and-drop
-  const zone = document.getElementById('dropZone');
-  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('dragover');
-    mergeFiles(e.dataTransfer.files);
-  });
-
-  // File input change
-  const input = document.getElementById('fileInput');
-  input.addEventListener('change', () => mergeFiles(input.files));
-
-  let selectedFiles = [];
-
-  function mergeFiles(newFiles) {
-    for (let f of newFiles) {
-      if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
-    }
-    renderChips();
-  }
-
-  function renderChips() {
-    const list = document.getElementById('fileList');
-    if (selectedFiles.length === 0) { list.innerHTML = ''; return; }
-    let html = '<div class="mt-2">';
-    selectedFiles.forEach((f, i) => {
-      const size = (f.size / 1024).toFixed(1);
-      html += `<span class="file-chip"><i class="fas fa-file-excel text-success"></i>${f.name} <small class="text-muted">(${size} KB)</small><span class="rm" onclick="removeFile(${i})">✕</span></span>`;
-    });
-    html += `</div><div class="mt-1 text-muted small"><i class="fas fa-info-circle"></i> ${selectedFiles.length} file(s) selected</div>`;
-    list.innerHTML = html;
-    syncInputFiles();
-  }
-
-  window.removeFile = function(idx) {
-    selectedFiles.splice(idx, 1);
-    renderChips();
-  };
-
-  function syncInputFiles() {
-    const dt = new DataTransfer();
-    selectedFiles.forEach(f => dt.items.add(f));
-    input.files = dt.files;
-  }
-
-  // Submit validation
-  document.getElementById('uploadForm').addEventListener('submit', function (e) {
-    if (selectedFiles.length === 0) {
-      e.preventDefault();
-      alert('Please select at least one Excel file before uploading.');
-    }
-  });
-});
-</script>
 {% endblock %}

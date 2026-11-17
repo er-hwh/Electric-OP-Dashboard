@@ -1,138 +1,659 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Electric OP ERP Portal | Howrah Division</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --app-bg: #0b1528;
+            --app-card-bg: #132238;
+            --app-card-border: rgba(255, 255, 255, 0.1);
+            --app-accent: #0d6efd;
+            --app-gold: #f59e0b;
+            --app-text: #f1f5f9;
+            --app-text-muted: #94a3b8;
+            --app-input-bg: #1c2e4a;
+        }
 
-{% block title %}Sign In | Electric Operation Howrah{% endblock %}
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-5 col-md-7">
-            <div class="rail-card shadow-lg p-4">
-                <div class="text-center mb-4">
-                    <div class="d-inline-block p-3 rounded-circle bg-primary text-warning fs-1 mb-2 shadow-sm">
-                        <i class="fa-solid fa-train-subway"></i>
-                    </div>
-                    <h4 class="fw-bold text-primary mb-0">Electric Operation Portal</h4>
-                    <small class="text-muted">Howrah Division &bull; Eastern Railway</small>
-                </div>
+        body {
+            background: linear-gradient(145deg, #070d18 0%, #0f1d32 50%, #081120 100%);
+            color: var(--app-text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            margin: 0;
+        }
 
-                <form method="POST" action="{{ url_for('auth.login') }}">
-                    <div class="mb-3">
-                        <label for="username" class="form-label fw-bold small text-dark">
-                            <i class="fa-solid fa-user me-1 text-primary"></i> Login Identifier (CLI ID / CMS ID / Username / Mobile):
-                        </label>
-                        <input type="text" class="form-control form-control-lg fs-6" id="username" name="username" placeholder="e.g. HWH0095, admin, Sr. DEE(OP)/HWH, TLC, PCNL, 9876543210" required autofocus>
-                        <div class="form-text small">
-                            <strong class="text-primary">CLIs:</strong> Enter your designated <strong>CLI ID (e.g. HWH0095, HWH0097)</strong> &bull; <strong class="text-success">Crew:</strong> CMS ID or Mobile &bull; <strong class="text-danger">Admin:</strong> admin.
-                        </div>
-                    </div>
+        .erp-login-wrapper {
+            width: 100%;
+            max-width: 460px;
+            margin: auto;
+        }
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label fw-bold small text-dark">
-                            <i class="fa-solid fa-lock me-1 text-primary"></i> Password:
-                        </label>
-                        <input type="password" class="form-control form-control-lg fs-6" id="password" name="password" placeholder="Default: 12345" required>
-                    </div>
+        /* APP HEADER */
+        .app-brand-card {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-                    <div class="d-grid gap-2 mb-3">
-                        <button type="submit" class="btn btn-primary btn-lg fs-6 fw-bold">
-                            <i class="fa-solid fa-right-to-bracket me-1"></i> Sign In to Portal
-                        </button>
-                    </div>
+        .app-logo-badge {
+            width: 68px;
+            height: 68px;
+            background: linear-gradient(135deg, #1e3a8a, #0284c7);
+            border: 2px solid var(--app-gold);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #ffffff;
+            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.35);
+            margin-bottom: 12px;
+        }
 
-                    <div class="text-center border-top pt-3">
-                        <span class="small text-muted">New Running Staff (LP / Motorman / ALP)?</span>
-                        <a href="{{ url_for('auth.register') }}" class="small fw-bold text-primary text-decoration-none ms-1">
-                            Register Here &rarr;
-                        </a>
-                    </div>
-                </form>
+        .app-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            margin: 0;
+            text-transform: uppercase;
+        }
 
-                <!-- HIERARCHY OF POWER & DEFAULT SYSTEM CREDENTIALS -->
-                <div class="mt-4 p-3 bg-light rounded border small">
-                    <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-2">
-                        <h6 class="fw-bold text-dark mb-0">
-                            <i class="fa-solid fa-sitemap me-1 text-primary"></i> Hierarchy of Power & Credentials
-                        </h6>
-                        <span class="badge bg-primary">5-Tier Power Structure</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered align-middle mb-2">
-                            <thead class="table-light">
-                                <tr class="text-muted small">
-                                    <th>Level</th>
-                                    <th>Power / Role</th>
-                                    <th>Login Identifier</th>
-                                    <th>Default Pass</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="table-danger border-start border-3 border-danger">
-                                    <td><span class="badge bg-danger">Level 5</span></td>
-                                    <td>
-                                        <strong class="text-danger">Admin Login</strong><br>
-                                        <small class="text-muted"><i class="fa-solid fa-gear me-1"></i>Only Admin can do System Edit</small>
-                                    </td>
-                                    <td><code>admin</code></td>
-                                    <td><code>12345</code></td>
-                                </tr>
-                                <tr class="table-warning border-start border-3 border-warning">
-                                    <td><span class="badge bg-warning text-dark">Level 4</span></td>
-                                    <td>
-                                        <strong>Officer Login</strong><br>
-                                        <small class="text-muted">
-                                            1. <strong>Sr. DEE(OP)/HWH</strong> (Branch Officer)<br>
-                                            2. <strong>DEE(OP)/HWH</strong> (Divisional Officer)<br>
-                                            3. <strong>AEE(OP)/HWH</strong> & <strong>AME(P)/HWH</strong>
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <code>Sr. DEE(OP)/HWH</code><br>
-                                        <code>DEE(OP)/HWH</code><br>
-                                        <code>AEE(OP)/HWH</code><br>
-                                        <code>AME(P)/HWH</code>
-                                    </td>
-                                    <td><code>12345</code></td>
-                                </tr>
-                                <tr class="table-info border-start border-3 border-info">
-                                    <td><span class="badge bg-info text-dark">Level 3</span></td>
-                                    <td>
-                                        <strong>CNL Login</strong><br>
-                                        <small class="text-muted">Divisional Control / Power Controller</small>
-                                    </td>
-                                    <td><code>CNL_HWH</code></td>
-                                    <td><code>12345</code></td>
-                                </tr>
-                                <tr class="table-primary border-start border-3 border-primary">
-                                    <td><span class="badge bg-primary">Level 2</span></td>
-                                    <td>
-                                        <strong>CLI Login</strong><br>
-                                        <small class="text-muted">Chief Loco Inspector & CCC</small>
-                                    </td>
-                                    <td><code>HWH0095</code> (CLI ID)<br><code>CLI_HWH_01</code> / <code>CCC_HWH</code></td>
-                                    <td><code>12345</code></td>
-                                </tr>
-                                <tr class="table-secondary border-start border-3 border-secondary">
-                                    <td><span class="badge bg-secondary">Level 1</span></td>
-                                    <td>
-                                        <strong>Crew Login</strong><br>
-                                        <small class="text-muted">LPM / LPP / LPG / LPS / ALP</small>
-                                    </td>
-                                    <td><code>9876543210</code> (Mobile / PF)</td>
-                                    <td><code>12345</code></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="alert alert-warning py-1 px-2 small mb-1">
-                        <i class="fa-solid fa-shield-halved me-1"></i><strong>System Rule:</strong> Any system configuration, master upload, or settings edit can <strong>only be performed by Admin</strong>.
-                    </div>
-                    <small class="text-muted d-block mt-1">
-                        <i class="fa-solid fa-circle-info me-1"></i> Users with default password <code>12345</code> will be prompted to choose a secure password upon initial login.
-                    </small>
-                </div>
+        .app-sub {
+            font-size: 0.82rem;
+            color: var(--app-gold);
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            margin-top: 2px;
+        }
 
-            </div>
+        .app-div-tag {
+            font-size: 0.75rem;
+            color: var(--app-text-muted);
+            margin-top: 2px;
+        }
+
+        /* MAIN APP CARD */
+        .erp-card {
+            background: var(--app-card-bg);
+            border: 1px solid var(--app-card-border);
+            border-radius: 20px;
+            padding: 24px 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        /* SEGMENTED ROLE CONTROLLER */
+        .role-segment {
+            display: flex;
+            background: rgba(7, 13, 24, 0.7);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 4px;
+        }
+
+        .role-tab-btn {
+            flex: 1;
+            padding: 10px 4px;
+            border: none;
+            background: transparent;
+            color: var(--app-text-muted);
+            font-weight: 700;
+            font-size: 0.82rem;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            min-height: 48px;
+        }
+
+        .role-tab-btn i {
+            font-size: 1rem;
+        }
+
+        .role-tab-btn.active {
+            background: #ffffff;
+            color: #0b1528;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .role-tab-btn.active[data-role="cli"] {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff;
+        }
+
+        .role-tab-btn.active[data-role="officer"] {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            color: #ffffff;
+        }
+
+        .role-tab-btn.active[data-role="admin"] {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: #ffffff;
+        }
+
+        .role-tab-btn.active[data-role="crew"] {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: #ffffff;
+        }
+
+        /* ROLE BADGE BANNER */
+        .role-indicator-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 20px;
+        }
+
+        .role-indicator-badge .badge-icon {
+            font-size: 1.25rem;
+            margin-right: 10px;
+        }
+
+        .role-indicator-title {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .role-indicator-sub {
+            font-size: 0.74rem;
+            color: var(--app-text-muted);
+            margin: 0;
+        }
+
+        /* FORM CONTROLS */
+        .form-group-erp {
+            margin-bottom: 18px;
+        }
+
+        .form-label-erp {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .input-group-erp {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon-prefix {
+            position: absolute;
+            left: 14px;
+            color: #64748b;
+            font-size: 1rem;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .form-control-erp {
+            width: 100%;
+            height: 50px;
+            background: var(--app-input-bg);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            padding: 0 46px 0 42px;
+            transition: all 0.2s ease;
+        }
+
+        .form-control-erp:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+            background: #223759;
+            color: #ffffff;
+        }
+
+        .form-control-erp::placeholder {
+            color: #64748b;
+            font-size: 0.86rem;
+        }
+
+        .pwd-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 1rem;
+            z-index: 5;
+        }
+
+        /* QUICK SUGGESTIONS FOR OFFICERS */
+        .quick-alias-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .alias-chip {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 9px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .alias-chip:hover, .alias-chip:active {
+            background: var(--app-gold);
+            color: #0b1528;
+            border-color: var(--app-gold);
+        }
+
+        /* SUBMIT BUTTON */
+        .btn-erp-submit {
+            width: 100%;
+            height: 52px;
+            border: none;
+            border-radius: 14px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-top: 22px;
+        }
+
+        .btn-erp-submit:active {
+            transform: scale(0.98);
+        }
+
+        .btn-erp-submit.btn-officer {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            box-shadow: 0 6px 18px rgba(217, 119, 6, 0.4);
+        }
+
+        .btn-erp-submit.btn-admin {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-erp-submit.btn-crew {
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 6px 18px rgba(5, 150, 105, 0.4);
+        }
+
+        /* BACK TO PORTAL LINK */
+        .back-portal-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #94a3b8;
+            font-size: 0.82rem;
+            text-decoration: none;
+            margin-top: 18px;
+            transition: color 0.15s;
+        }
+
+        .back-portal-link:hover {
+            color: #38bdf8;
+        }
+
+        /* ALERT NOTIFICATION */
+        .app-alert {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            color: #fca5a5;
+            font-size: 0.82rem;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .app-alert.success {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        /* APP FOOTER */
+        .app-footer-note {
+            text-align: center;
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="erp-login-wrapper">
+
+    <!-- APP HEADER -->
+    <div class="app-brand-card">
+        <div class="app-logo-badge">
+            <i class="fa-solid fa-train-subway"></i>
         </div>
+        <h1 class="app-title">Electric OP ERP</h1>
+        <div class="app-sub"><i class="fa-solid fa-bolt me-1"></i>Operational Management Portal</div>
+        <div class="app-div-tag">Howrah Division &bull; Eastern Railway</div>
     </div>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="app-alert {% if category == 'success' %}success{% endif %}">
+                    <i class="fa-solid {% if category == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- MAIN ERP LOGIN CARD -->
+    <div class="erp-card">
+
+        <!-- SEGMENTED ROLE PICKER (SAME PAGE APPLICATION CONTROLLER) -->
+        <div class="role-segment" id="roleSegment">
+            <button type="button" class="role-tab-btn active" data-role="cli" onclick="setRole('cli')">
+                <i class="fa-solid fa-clipboard-user"></i>
+                <span>CLI</span>
+            </button>
+            <button type="button" class="role-tab-btn" data-role="officer" onclick="setRole('officer')">
+                <i class="fa-solid fa-user-shield"></i>
+                <span>Officer</span>
+            </button>
+            <button type="button" class="role-tab-btn" data-role="admin" onclick="setRole('admin')">
+                <i class="fa-solid fa-gears"></i>
+                <span>Admin</span>
+            </button>
+            <button type="button" class="role-tab-btn" data-role="crew" onclick="setRole('crew')">
+                <i class="fa-solid fa-id-badge"></i>
+                <span>Crew</span>
+            </button>
+        </div>
+
+        <!-- ACTIVE ROLE INDICATOR -->
+        <div class="role-indicator-badge" id="roleBadge">
+            <div class="d-flex align-items-center">
+                <div class="badge-icon text-info" id="roleBadgeIcon">
+                    <i class="fa-solid fa-clipboard-user"></i>
+                </div>
+                <div>
+                    <h6 class="role-indicator-title" id="roleTitle">Chief Loco Inspector (CLI)</h6>
+                    <p class="role-indicator-sub" id="roleSub">Duty update, counselling &amp; movement log</p>
+                </div>
+            </div>
+            <span class="badge bg-info text-dark fw-bold" id="roleTag">L-2</span>
+        </div>
+
+        <!-- UNIFIED LOGIN FORM -->
+        <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm" autocomplete="on">
+            <input type="hidden" name="selected_role" id="selectedRoleInput" value="cli">
+
+            <!-- IDENTIFIER INPUT -->
+            <div class="form-group-erp">
+                <label class="form-label-erp" for="username">
+                    <span id="labelIdentifier"><i class="fa-solid fa-id-card me-1 text-info"></i> CLI ID or Mobile Number</span>
+                    <span class="text-muted" style="font-size:0.7rem;" id="hintIdentifier">e.g. HWH0095</span>
+                </label>
+                <div class="input-group-erp">
+                    <i class="fa-solid fa-user input-icon-prefix" id="inputPrefixIcon"></i>
+                    <input type="text"
+                           class="form-control-erp"
+                           id="username"
+                           name="username"
+                           placeholder="Enter CLI ID (e.g. HWH0095) or Mobile"
+                           required
+                           autofocus
+                           inputmode="text">
+                </div>
+
+                <!-- OFFICER FAST PRESETS (SHOWN WHEN OFFICER TAB IS ACTIVE) -->
+                <div id="officerPresets" class="quick-alias-chips d-none">
+                    <span class="alias-chip" onclick="fillUsername('Sr. DEE(OP)/HWH')">Sr. DEE(OP)</span>
+                    <span class="alias-chip" onclick="fillUsername('AEE(OP)/HWH')">AEE(OP)</span>
+                    <span class="alias-chip" onclick="fillUsername('AME(P)/HWH')">AME(P)</span>
+                    <span class="alias-chip" onclick="fillUsername('TLC')">TLC Control</span>
+                    <span class="alias-chip" onclick="fillUsername('PCNL')">PCNL Control</span>
+                </div>
+            </div>
+
+            <!-- PASSWORD INPUT -->
+            <div class="form-group-erp">
+                <label class="form-label-erp" for="password">
+                    <span><i class="fa-solid fa-lock me-1 text-info"></i> Password</span>
+                    <span class="text-muted" style="font-size:0.7rem;">Default: 12345</span>
+                </label>
+                <div class="input-group-erp">
+                    <i class="fa-solid fa-key input-icon-prefix"></i>
+                    <input type="password"
+                           class="form-control-erp"
+                           id="password"
+                           name="password"
+                           placeholder="Enter password"
+                           required>
+                    <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility()" title="Show/Hide Password">
+                        <i class="fa-solid fa-eye" id="pwdEyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <button type="submit" class="btn-erp-submit" id="btnSubmit">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                <span id="btnSubmitText">Open CLI Console</span>
+            </button>
+
+            <!-- EXTRA BOTTOM ACTION -->
+            <div class="text-center">
+                <a href="{{ url_for('public.index') }}" class="back-portal-link">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Division Home Portal</span>
+                </a>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- APP FOOTER -->
+    <div class="app-footer-note">
+        <i class="fa-solid fa-shield-halved me-1 text-warning"></i> Internal Electric Operation Application &bull; ER Howrah
+    </div>
+
 </div>
-{% endblock %}
+
+<script>
+    const roleConfig = {
+        cli: {
+            title: "Chief Loco Inspector (CLI)",
+            sub: "Daily duty update, movements & counselling",
+            tag: "Level 2",
+            tagClass: "bg-info text-dark",
+            icon: "fa-clipboard-user",
+            iconClass: "text-info",
+            label: '<i class="fa-solid fa-id-card me-1 text-info"></i> CLI ID or Mobile Number',
+            hint: 'e.g. HWH0095 / CUG Mobile',
+            placeholder: 'Enter CLI ID (e.g. HWH0095) or Mobile',
+            inputmode: 'text',
+            btnText: 'Open CLI Console',
+            btnClass: '',
+            defaultValue: '',
+            showPresets: false
+        },
+        officer: {
+            title: "Divisional Officer & Control",
+            sub: "Division oversight, inspection reports & directives",
+            tag: "Level 4",
+            tagClass: "bg-warning text-dark",
+            icon: "fa-user-shield",
+            iconClass: "text-warning",
+            label: '<i class="fa-solid fa-user-tie me-1 text-warning"></i> Officer Designation / User',
+            hint: 'Tap preset below or enter user',
+            placeholder: 'Sr. DEE(OP)/HWH, AEE(OP), AME(P), TLC, PCNL',
+            inputmode: 'text',
+            btnText: 'Access Officer Desk',
+            btnClass: 'btn-officer',
+            defaultValue: '',
+            showPresets: true
+        },
+        admin: {
+            title: "System Administrator",
+            sub: "ERP management, Crew master & System setup",
+            tag: "Level 5",
+            tagClass: "bg-danger text-white",
+            icon: "fa-gears",
+            iconClass: "text-danger",
+            label: '<i class="fa-solid fa-user-gear me-1 text-danger"></i> Administrator Username',
+            hint: 'System Admin Account',
+            placeholder: 'admin',
+            inputmode: 'text',
+            btnText: 'Launch Admin ERP Console',
+            btnClass: 'btn-admin',
+            defaultValue: 'admin',
+            showPresets: false
+        },
+        crew: {
+            title: "Running Staff (Loco Crew)",
+            sub: "Bio-data, training status & running history",
+            tag: "Level 1",
+            tagClass: "bg-success text-white",
+            icon: "fa-id-badge",
+            iconClass: "text-success",
+            label: '<i class="fa-solid fa-mobile-screen-button me-1 text-success"></i> Registered Mobile / CMS ID',
+            hint: '10-digit CUG / Personal Mobile',
+            placeholder: 'Enter 10-digit Mobile or CMS ID',
+            inputmode: 'numeric',
+            btnText: 'Open Crew Running Desk',
+            btnClass: 'btn-crew',
+            defaultValue: '',
+            showPresets: false
+        }
+    };
+
+    function setRole(role) {
+        const cfg = roleConfig[role];
+        if (!cfg) return;
+
+        // Update tabs active state
+        document.querySelectorAll('.role-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.role === role);
+        });
+
+        // Update hidden field
+        document.getElementById('selectedRoleInput').value = role;
+
+        // Update indicator
+        document.getElementById('roleTitle').textContent = cfg.title;
+        document.getElementById('roleSub').textContent = cfg.sub;
+        const tagElem = document.getElementById('roleTag');
+        tagElem.textContent = cfg.tag;
+        tagElem.className = 'badge fw-bold ' + cfg.tagClass;
+
+        const iconElem = document.getElementById('roleBadgeIcon');
+        iconElem.innerHTML = `<i class="fa-solid ${cfg.icon}"></i>`;
+        iconElem.className = 'badge-icon ' + cfg.iconClass;
+
+        // Update form fields
+        document.getElementById('labelIdentifier').innerHTML = cfg.label;
+        document.getElementById('hintIdentifier').textContent = cfg.hint;
+        const userInput = document.getElementById('username');
+        userInput.placeholder = cfg.placeholder;
+        userInput.setAttribute('inputmode', cfg.inputmode);
+
+        if (cfg.defaultValue) {
+            userInput.value = cfg.defaultValue;
+        } else if (userInput.value === 'admin') {
+            userInput.value = '';
+        }
+
+        // Officer Presets
+        const presets = document.getElementById('officerPresets');
+        if (cfg.showPresets) {
+            presets.classList.remove('d-none');
+        } else {
+            presets.classList.add('d-none');
+        }
+
+        // Submit Button
+        const btn = document.getElementById('btnSubmit');
+        document.getElementById('btnSubmitText').textContent = cfg.btnText;
+        btn.className = 'btn-erp-submit ' + cfg.btnClass;
+    }
+
+    function fillUsername(val) {
+        const input = document.getElementById('username');
+        input.value = val;
+        document.getElementById('password').focus();
+    }
+
+    function togglePasswordVisibility() {
+        const pwd = document.getElementById('password');
+        const eye = document.getElementById('pwdEyeIcon');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            eye.classList.remove('fa-eye');
+            eye.classList.add('fa-eye-slash');
+        } else {
+            pwd.type = 'password';
+            eye.classList.remove('fa-eye-slash');
+            eye.classList.add('fa-eye');
+        }
+    }
+
+    // Check URL parameters for preset role (e.g. /login?role=admin)
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const r = params.get('role');
+        if (r && roleConfig[r]) {
+            setRole(r);
+        } else {
+            setRole('cli'); // Default to CLI as requested (main function)
+        }
+    });
+</script>
+
+</body>
+</html>

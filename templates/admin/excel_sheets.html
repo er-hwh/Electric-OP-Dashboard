@@ -1,0 +1,108 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Uploaded Excel Sheets Repository — Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-md-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom gap-2">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+          <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Console</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('admin.upload_excel') }}">Excel Upload Centre</a></li>
+          <li class="breadcrumb-item active">Uploaded Excel Sheets</li>
+        </ol>
+      </nav>
+      <h3 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <i class="fas fa-file-excel text-success"></i>
+        <span>Uploaded Excel Sheets Repository</span>
+        <span class="badge bg-danger fs-6"><i class="fas fa-lock me-1"></i>Admin Editable Only</span>
+      </h3>
+      <p class="text-muted small mb-0">Every uploaded spreadsheet is viewable, searchable, and editable in its original tabular format.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('admin.upload_excel') }}" class="btn btn-primary fw-bold shadow-sm">
+        <i class="fas fa-upload me-1"></i> Upload New Excel
+      </a>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  {% if sheets %}
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+      <h6 class="fw-bold mb-0 text-dark">
+        <i class="fas fa-table-list me-2 text-primary"></i>Archived Spreadsheets ({{ sheets|length }})
+      </h6>
+      <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 rounded-pill">
+        Active Spreadsheets
+      </span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 datatable" style="font-size: 0.9rem;">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3" style="width: 50px;">#</th>
+            <th>File Name</th>
+            <th>Report Category</th>
+            <th>Rows</th>
+            <th>Upload Date</th>
+            <th>Uploaded By</th>
+            <th class="text-end pe-3" style="min-width: 220px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sheets %}
+          <tr>
+            <td class="ps-3 fw-bold text-muted">{{ loop.index }}</td>
+            <td>
+              <div class="fw-bold text-dark">
+                <i class="fas fa-file-excel text-success me-1"></i>{{ s.filename }}
+              </div>
+            </td>
+            <td>
+              <span class="badge bg-primary text-white">
+                {{ s.upload_type.replace('_', ' ').upper() }}
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border fw-bold">{{ s.row_count }} Rows</span>
+            </td>
+            <td>
+              <small class="text-muted">{{ s.created_at.strftime('%d-%b-%Y %H:%M') }}</small>
+            </td>
+            <td>
+              <small>{{ s.uploader.full_name if s.uploader else 'Admin' }}</small>
+            </td>
+            <td class="text-end pe-3">
+              <a href="{{ url_for('admin.excel_sheet_view_edit', sheet_id=s.id) }}" class="btn btn-primary btn-sm fw-bold me-1">
+                <i class="fas fa-table me-1"></i> View &amp; Edit Table
+              </a>
+              <a href="{{ url_for('admin.excel_sheet_export', sheet_id=s.id) }}" class="btn btn-outline-success btn-sm me-1" title="Download Excel">
+                <i class="fas fa-download"></i>
+              </a>
+              <form method="POST" action="{{ url_for('admin.excel_sheet_delete', sheet_id=s.id) }}" class="d-inline" onsubmit="return confirm('Delete this spreadsheet?');">
+                <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-light border text-center py-5 shadow-sm">
+    <i class="fas fa-file-excel fa-3x text-muted mb-3 d-block opacity-50"></i>
+    <h5 class="fw-bold text-dark">No Excel Sheets Uploaded Yet</h5>
+    <p class="text-muted mb-3">Upload your first CMS report or division spreadsheet to inspect and edit it in tabular view.</p>
+    <a href="{{ url_for('admin.upload_excel') }}" class="btn btn-primary fw-bold px-4">
+      <i class="fas fa-upload me-1"></i> Go to Excel Upload Centre
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

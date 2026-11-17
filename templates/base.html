@@ -36,6 +36,77 @@
             font-size: 0.85rem;
             margin-top: 8px;
         }
+
+        /* MOBILE BOTTOM NAVIGATION BAR FOR 99% MOBILE USERS */
+        .mobile-bottom-nav {
+            display: none;
+        }
+
+        @media (max-width: 991.98px) {
+            body {
+                padding-bottom: 70px; /* Space for fixed bottom bar */
+            }
+
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 62px;
+                background: #001f3f;
+                border-top: 2px solid #c59b27;
+                z-index: 1040;
+                box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+                justify-content: space-around;
+                align-items: center;
+                padding: 0 4px;
+            }
+
+            .mobile-bottom-nav a {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: #cbd5e1;
+                text-decoration: none;
+                font-size: 0.68rem;
+                font-weight: 600;
+                height: 100%;
+                gap: 3px;
+                transition: color 0.15s;
+            }
+
+            .mobile-bottom-nav a i {
+                font-size: 1.15rem;
+            }
+
+            .mobile-bottom-nav a.active, .mobile-bottom-nav a:active {
+                color: #f59e0b;
+                font-weight: 700;
+            }
+
+            /* Touch targets */
+            .btn, .nav-link, .dropdown-item {
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            .top-header-bar {
+                padding: 6px 0;
+            }
+
+            .top-header-title h4 {
+                font-size: 1rem;
+            }
+
+            .digital-clock-box {
+                font-size: 0.8rem;
+                padding: 3px 8px;
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -134,11 +205,8 @@
                             </ul>
                         </div>
                     {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-warning btn-sm fw-bold me-2 px-3 shadow-sm">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-warning btn-sm fw-bold px-3 shadow-sm">
                             <i class="fa-solid fa-right-to-bracket me-1"></i> Sign In
-                        </a>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-sm fw-bold px-3">
-                            <i class="fa-solid fa-user-plus me-1"></i> Crew Register
                         </a>
                     {% endif %}
                 </div>
@@ -146,67 +214,92 @@
         </div>
     </header>
 
-    <!-- MAIN NAVIGATION MENU -->
+    <!-- MAIN NAVIGATION MENU (Strict 5 Menu Structure) -->
     <nav class="navbar navbar-expand-xl main-navbar sticky-top">
-        <div class="container-fluid px-4">
+        <div class="container-fluid px-3 px-md-4">
             <button class="navbar-toggler my-2" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbarMenu" aria-controls="mainNavbarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="mainNavbarMenu">
                 <ul class="navbar-nav me-auto mb-2 mb-xl-0">
+                    <!-- 1. HOME -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}" href="{{ url_for('public.index') }}">
                             <i class="fa-solid fa-house-chimney me-1 text-primary"></i> Home
                         </a>
                     </li>
+
+                    <!-- 2. LEARNING -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'learning' in request.endpoint or 'instructions' in request.endpoint %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-book-open-reader me-1 text-info"></i> Learning Materials
+                        <a class="nav-link dropdown-toggle {% if 'learning' in request.endpoint or 'trouble' in request.endpoint or 'quiz' in request.endpoint or 'gallery' in request.endpoint or 'instructions' in request.endpoint %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-graduation-cap me-1 text-info"></i> Learning
                         </a>
                         <ul class="dropdown-menu shadow">
-                            <li><a class="dropdown-item fw-bold" href="{{ url_for('public.learning_materials') }}"><i class="fa-solid fa-layer-group me-2 text-primary"></i>All Learning Materials</a></li>
+                            <li class="dropdown-header text-uppercase text-primary fw-bold small"><i class="fa-solid fa-book-open me-1"></i> 1. Learning Materials</li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('public.learning_materials') }}#electric"><i class="fa-solid fa-bolt me-2 text-warning"></i>Electric Traction (ELEC)</a></li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('public.learning_materials') }}#diesel"><i class="fa-solid fa-gas-pump me-2 text-danger"></i>Diesel Traction (DSL)</a></li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('public.instructions') }}"><i class="fa-solid fa-shield-halved me-2 text-info"></i>Safety Directives &amp; Instructions</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('public.learning_materials') }}#electric"><i class="fa-solid fa-bolt me-2 text-warning"></i>Electric Traction (3-Phase &amp; Conventional)</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('public.learning_materials') }}#diesel"><i class="fa-solid fa-gas-pump me-2 text-danger"></i>Diesel Traction (EMD HHP &amp; ALCO)</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('public.instructions') }}"><i class="fa-solid fa-shield-halved me-2 text-info"></i>Safety Instructions &amp; Circulars</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('elearning.forms_manual') }}"><i class="fa-solid fa-file-lines me-2 text-secondary"></i>Technical Manuals &amp; Operating Forms</a></li>
+                            <li class="dropdown-header text-uppercase text-danger fw-bold small"><i class="fa-solid fa-wrench me-1"></i> 2. Trouble Shooting</li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('elearning.troubleshooting') }}#electric"><i class="fa-solid fa-bolt me-2 text-warning"></i>Electric Loco Troubleshooting</a></li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('elearning.troubleshooting') }}#diesel"><i class="fa-solid fa-gas-pump me-2 text-danger"></i>Diesel Loco Troubleshooting</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item fw-bold text-success" href="https://elearninghwh.in/home_page.html" target="_blank"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Official Division E-Learning Portal <i class="fa-solid fa-arrow-up-right-from-square ms-1 small"></i></a></li>
+                            <li class="dropdown-header text-uppercase text-warning fw-bold small"><i class="fa-solid fa-award me-1"></i> 3. Quiz (Category Wise)</li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('elearning.quiz') }}"><i class="fa-solid fa-list-check me-2 text-primary"></i>Knowledge Assessment by Category</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header text-uppercase text-secondary fw-bold small"><i class="fa-solid fa-camera-retro me-1"></i> 4. Photo Gallery</li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('public.gallery') }}"><i class="fa-solid fa-images me-2 text-success"></i>Division Event &amp; Safety Gallery</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'loco' in request.endpoint or 'haulage' in request.endpoint %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-train me-1 text-primary"></i> Loco Info &amp; Haulage
-                        </a>
-                        <ul class="dropdown-menu shadow">
-                            <li><a class="dropdown-item fw-bold" href="{{ url_for('public.loco_info') }}"><i class="fa-solid fa-circle-info me-2 text-primary"></i>Locomotive Specifications &amp; Technical Directory</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item fw-bold text-primary" href="{{ url_for('public.haulage_capacity') }}"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>⚡ Electric Hauling Capacity Calculator (RDSO 2016)</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('public.haulage_capacity') }}#tab-wag12"><i class="fa-solid fa-train-subway me-2 text-warning"></i>WAG-12B (12000 HP) Heavy Haul &amp; Momentum Tables</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('public.loco_info') }}#electric-locos"><i class="fa-solid fa-bolt me-2 text-warning"></i>Electric Locos (WAG-12B, WAG-9, WAP-7, WAG-7)</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('public.loco_info') }}#diesel-locos"><i class="fa-solid fa-gas-pump me-2 text-danger"></i>Diesel Locos (WDP-4D, WDG-4, WDM-3D)</a></li>
-                        </ul>
-                    </li>
+
+                    <!-- 3. NOTICES & BULLETINS -->
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'elearning.index' %}active{% endif %}" href="{{ url_for('elearning.index') }}">
-                            <i class="fa-solid fa-scale-balanced me-1 text-success"></i> Rules &amp; Regulations
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'trouble' in request.endpoint or 'quiz' in request.endpoint or 'gallery' in request.endpoint %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-toolbox me-1 text-warning"></i> Operations &amp; Safety
-                        </a>
-                        <ul class="dropdown-menu shadow">
-                            <li><a class="dropdown-item fw-bold" href="{{ url_for('elearning.troubleshooting') }}"><i class="fa-solid fa-wrench me-2 text-danger"></i>Trouble Shooting Guide &amp; Fault Directory</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('elearning.quiz') }}"><i class="fa-solid fa-award me-2 text-warning"></i>Safety Quiz &amp; Knowledge Assessment</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('public.gallery') }}"><i class="fa-solid fa-camera-retro me-2 text-secondary"></i>Division Photo &amp; Event Gallery</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'public.notices' %}active{% endif %}" href="{{ url_for('public.notices') }}">
+                        <a class="nav-link {% if request.endpoint in ['public.notices', 'public.bulletins'] %}active{% endif %}" href="{{ url_for('public.notices') }}">
                             <i class="fa-solid fa-bell me-1 text-danger"></i> Notices &amp; Bulletins
                         </a>
+                    </li>
+
+                    <!-- 4. CONTROL APPLICATIONS -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'control' in request.endpoint or 'haulage' in request.endpoint or 'loco' in request.endpoint %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-headset me-1 text-warning"></i> Control Applications
+                        </a>
+                        <ul class="dropdown-menu shadow">
+                            <li class="dropdown-header text-uppercase text-primary fw-bold small"><i class="fa-solid fa-screwdriver-wrench me-1"></i> Important Tools</li>
+                            <li><a class="dropdown-item ps-4 fw-bold text-primary" href="{{ url_for('public.haulage_capacity') }}"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>⚡ Loco Haulage Engine (RDSO)</a></li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('public.loco_info') }}"><i class="fa-solid fa-train me-2 text-primary"></i>Locomotive Specifications &amp; Directory</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header text-uppercase text-warning fw-bold small"><i class="fa-solid fa-sliders me-1"></i> Operational Tools under CNL</li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('control.dashboard') }}"><i class="fa-solid fa-desktop me-2 text-warning"></i>TLC / PCNL Control Console</a></li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('control.pf_entry_speed') }}"><i class="fa-solid fa-stopwatch me-2 text-danger"></i>Platform Entry Speed Checking</a></li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('control.bulk_analysis') }}"><i class="fa-solid fa-chart-line me-2 text-info"></i>Bulk Operational Analysis Tool</a></li>
+                            <li><a class="dropdown-item ps-4" href="{{ url_for('control.incidents') }}"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Unusual Incidents &amp; Punctuality</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- 5. CREW MONITORING -->
+                    <li class="nav-item">
+                        {% if current_user and current_user.is_supervisor() %}
+                            <a class="nav-link fw-bold text-primary {% if 'supervisor' in request.endpoint %}active{% endif %}" href="{{ url_for('supervisor.dashboard') }}">
+                                <i class="fa-solid fa-users-viewfinder me-1 text-primary"></i> Crew Monitoring
+                            </a>
+                        {% elif current_user and current_user.is_officer() %}
+                            <a class="nav-link fw-bold text-primary {% if 'officer' in request.endpoint %}active{% endif %}" href="{{ url_for('officer.crew_performance') }}">
+                                <i class="fa-solid fa-users-viewfinder me-1 text-primary"></i> Crew Monitoring
+                            </a>
+                        {% elif current_user and current_user.is_admin() %}
+                            <a class="nav-link fw-bold text-primary {% if 'crew_master' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.crew_master') }}">
+                                <i class="fa-solid fa-users-viewfinder me-1 text-primary"></i> Crew Monitoring
+                            </a>
+                        {% elif current_user and current_user.is_crew() %}
+                            <a class="nav-link fw-bold text-primary {% if 'crew' in request.endpoint %}active{% endif %}" href="{{ url_for('crew.dashboard') }}">
+                                <i class="fa-solid fa-users-viewfinder me-1 text-primary"></i> Crew Monitoring
+                            </a>
+                        {% else %}
+                            <a class="nav-link fw-bold text-primary" href="{{ url_for('auth.login', role='cli') }}">
+                                <i class="fa-solid fa-users-viewfinder me-1 text-primary"></i> Crew Monitoring
+                            </a>
+                        {% endif %}
                     </li>
                 </ul>
 
@@ -328,6 +421,54 @@
             </div>
         </div>
     </footer>
+
+    <!-- MOBILE BOTTOM NAVIGATION (Quick thumb-zone access for 99% mobile users) -->
+    <nav class="mobile-bottom-nav">
+        <a href="{{ url_for('public.index') }}" class="{% if request.endpoint == 'public.index' %}active{% endif %}">
+            <i class="fa-solid fa-house-chimney"></i>
+            <span>Home</span>
+        </a>
+        <a href="{{ url_for('public.learning_materials') }}" class="{% if 'learning' in request.endpoint or 'trouble' in request.endpoint %}active{% endif %}">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Learning</span>
+        </a>
+        <a href="{{ url_for('public.notices') }}" class="{% if 'notices' in request.endpoint or 'bulletin' in request.endpoint %}active{% endif %}">
+            <i class="fa-solid fa-bell"></i>
+            <span>Bulletins</span>
+        </a>
+        <a href="{{ url_for('public.haulage_capacity') }}" class="{% if 'haulage' in request.endpoint or 'control' in request.endpoint %}active{% endif %}">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>Control/Tools</span>
+        </a>
+        {% if current_user %}
+            {% if current_user.is_supervisor() %}
+                <a href="{{ url_for('supervisor.dashboard') }}" class="{% if 'supervisor' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-clipboard-user text-warning"></i>
+                    <span>CLI App</span>
+                </a>
+            {% elif current_user.is_officer() %}
+                <a href="{{ url_for('officer.dashboard') }}" class="{% if 'officer' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-user-shield text-warning"></i>
+                    <span>Officer</span>
+                </a>
+            {% elif current_user.is_admin() %}
+                <a href="{{ url_for('admin.dashboard') }}" class="{% if 'admin' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-gear text-danger"></i>
+                    <span>Admin ERP</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('crew.dashboard') }}" class="{% if 'crew' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-id-card text-success"></i>
+                    <span>My Desk</span>
+                </a>
+            {% endif %}
+        {% else %}
+            <a href="{{ url_for('auth.login') }}">
+                <i class="fa-solid fa-arrow-right-to-bracket text-warning"></i>
+                <span>Sign In</span>
+            </a>
+        {% endif %}
+    </nav>
 
     <!-- jQuery 3.7.1 -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

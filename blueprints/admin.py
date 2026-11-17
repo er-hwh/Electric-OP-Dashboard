@@ -25,9 +25,10 @@ from models import (
     User, Lobby, Notice, NoticeAcknowledgement, CounsellingTopic, CounsellingAcknowledgement, 
     CrewCounsellingLog, TrainingRecord, MedicalRecord, FootplateInspection, 
     Message, OfficerSay, CrewCounsellingRecord, PhotoGallery, CustomField, CLIMovement,
-    GoogleSheetLink, UnusualIncident, CarouselSlide, SafetyBulletin, RuleDocument, LearningMaterial, PageContent
+    GoogleSheetLink, UnusualIncident, CarouselSlide, SafetyBulletin, RuleDocument, LearningMaterial, PageContent,
+    UploadedExcelSheet
 )
-from blueprints.auth import role_required
+from blueprints.auth import role_required, admin_required
 from blueprints.excel_helper import (
     read_excel_to_dicts, map_crew_record, export_crew_master_to_excel, clean_mobile_10,
     generate_training_medical_template, parse_training_medical_excel
@@ -41,6 +42,7 @@ def admin_protection():
     pass
 
 @admin_bp.route('/')
+@admin_bp.route('/dashboard')
 def dashboard():
     crew_count = User.query.filter_by(role='crew').count()
     cli_count = User.query.filter_by(role='supervisor', sub_role='CLI').count()
@@ -229,6 +231,7 @@ def add_custom_field():
     label = request.form.get('field_label', '').strip()
     f_name = request.form.get('field_name', '').strip()
     f_type = request.form.get('field_type', 'text').strip()
+    entity_type = request.form.get('entity_type', 'crew').strip()
     is_req = bool(request.form.get('is_required'))
     options_raw = request.form.get('options', '').strip()
 
@@ -241,9 +244,9 @@ def add_custom_field():
     else:
         f_name = re.sub(r'[^a-zA-Z0-9_]', '_', f_name.lower()).strip('_')
 
-    existing = CustomField.query.filter_by(field_name=f_name).first()
+    existing = CustomField.query.filter_by(field_name=f_name, entity_type=entity_type).first()
     if existing:
-        flash(f"A custom field with identifier '{f_name}' already exists.", "warning")
+        flash(f"A custom field with identifier '{f_name}' already exists for {entity_type}.", "warning")
         return redirect(url_for('admin.custom_fields'))
 
     options_json = None
@@ -253,7 +256,7 @@ def add_custom_field():
         options_json = json.dumps(opts)
 
     new_field = CustomField(
-        entity_type='crew',
+        entity_type=entity_type,
         field_name=f_name,
         field_label=label,
         field_type=f_type,
@@ -263,7 +266,8 @@ def add_custom_field():
     )
     db.session.add(new_field)
     db.session.commit()
-    flash(f"Custom field '{label}' added to crew master schema.", "success")
+    target_name = "CLI Daily Movement & Duty Log" if entity_type == 'cli_log' else "Crew Master Database"
+    flash(f"Custom field '{label}' added to {target_name} schema.", "success")
     return redirect(url_for('admin.custom_fields'))
 
 
@@ -351,6 +355,7 @@ def export_crew_master():
 
 
 @admin_bp.route('/crew-master/<int:crew_id>/quick-update', methods=['POST'])
+@admin_required
 def quick_update_crew(crew_id):
     crew = User.query.get_or_404(crew_id)
     crew.full_name = request.form.get('full_name', crew.full_name).strip()
@@ -367,6 +372,8 @@ def quick_update_crew(crew_id):
     cli_id = request.form.get('cli_id')
     if cli_id and cli_id.isdigit():
         crew.cli_id = int(cli_id)
+    elif cli_id == '':
+        crew.cli_id = None
     
     # Custom fields update
     cfields = CustomField.query.filter_by(is_active=True).all()
@@ -744,6 +751,7 @@ def detect_cms_upload_type(df):
 
 
 @admin_bp.route('/upload-excel', methods=['GET', 'POST'])
+@admin_required
 def upload_excel():
     lobbies = Lobby.query.order_by(Lobby.code).all()
 
@@ -776,6 +784,24 @@ def upload_excel():
                 curr_type = upload_type
                 if curr_type == 'auto_detect' or not curr_type:
                     curr_type = detect_cms_upload_type(df)
+
+                # Archive sheet into UploadedExcelSheet repository for tabular view and editing
+                last_sheet_id = None
+                try:
+                    h_list = list(df.columns)
+                    r_list = [{h: str(row.get(h, '') or '') for h in h_list} for row in df]
+                    stored_sheet = UploadedExcelSheet(
+                        filename=filename,
+                        sheet_name=filename,
+                        upload_type=curr_type,
+                        uploaded_by_id=session.get('user_id')
+                    )
+                    stored_sheet.set_data(h_list, r_list)
+                    db.session.add(stored_sheet)
+                    db.session.commit()
+                    last_sheet_id = stored_sheet.id
+                except Exception as ex:
+                    print("Sheet archiving warning:", ex)
 
                 if curr_type in ('crew_data', 'call_serve'):
                     count = process_crew_data_excel(df)
@@ -828,9 +854,235 @@ def upload_excel():
         if total_processed == 0 and not errors:
             flash("No valid data rows found in the uploaded file(s). Check the format.", "warning")
 
+        if last_sheet_id and total_files == 1:
+            flash(f"Sheet loaded into DataTable. You can inspect, edit cells, and save updates below.", "info")
+            return redirect(url_for('admin.excel_sheet_view_edit', sheet_id=last_sheet_id))
+
         return redirect(url_for('admin.upload_excel'))
 
-    return render_template('admin/upload_excel.html', lobbies=lobbies)
+    saved_sheets = UploadedExcelSheet.query.order_by(UploadedExcelSheet.created_at.desc()).all()
+    return render_template('admin/upload_excel.html', lobbies=lobbies, saved_sheets=saved_sheets)
+
+
+# ─────────────────────────────────────────────────────────────────
+#  INTERACTIVE EDITABLE TABULAR EXCEL WORKFLOW (ADMIN ONLY)
+# ─────────────────────────────────────────────────────────────────
+
+@admin_bp.route('/upload-excel/preview', methods=['POST'])
+@admin_required
+def upload_excel_preview():
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'success': False, 'message': 'No Excel file was selected.'}), 400
+
+    filename = secure_filename(file.filename)
+    if not _allowed_file(filename):
+        return jsonify({'success': False, 'message': 'Invalid file format. Please upload .xlsx, .xls, or .csv.'}), 400
+
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f"preview_general_{filename}")
+    file.save(file_path)
+
+    try:
+        df = _load_cms_excel(file_path)
+        if not df or len(df) == 0:
+            return jsonify({'success': False, 'message': 'No data rows found in the uploaded file.'}), 400
+
+        detected_type = detect_cms_upload_type(df)
+        label_map = {
+            'crew_data': 'Call Serve Address (Division Data)',
+            'service_particulars': 'Service Particulars (Division Data)',
+            'crew_summary': 'Crew Bio Summary (Lobbywise)',
+            'other_details': 'Crew Bio Other Details (Lobbywise)',
+            'cli_biodata': 'CLI Bio Data',
+            'counselling': 'Crew Counselling Records',
+            'training': 'Training Records',
+        }
+        type_label = label_map.get(detected_type, 'General Excel Sheet')
+
+        headers = list(df.columns)
+        rows = []
+        for r in df:
+            clean_r = {}
+            for h in headers:
+                clean_r[h] = str(r.get(h, '') if r.get(h) is not None else '')
+            rows.append(clean_r)
+
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'upload_type': detected_type,
+            'upload_type_label': type_label,
+            'headers': headers,
+            'rows': rows,
+            'row_count': len(rows)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': f"Error parsing Excel file: {str(e)}"}), 500
+    finally:
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
+
+
+@admin_bp.route('/upload-excel/save', methods=['POST'])
+@admin_required
+def upload_excel_save():
+    data = request.get_json() or {}
+    filename = data.get('filename', 'uploaded_sheet.xlsx').strip()
+    upload_type = data.get('upload_type', 'auto_detect').strip()
+    headers = data.get('headers', [])
+    rows = data.get('rows', [])
+
+    if not rows:
+        return jsonify({'success': False, 'message': 'No records to save.'}), 400
+
+    if not headers and rows:
+        headers = list(rows[0].keys())
+
+    try:
+        # 1. Save to UploadedExcelSheet repository
+        sheet = UploadedExcelSheet(
+            filename=filename,
+            sheet_name=filename,
+            upload_type=upload_type,
+            uploaded_by_id=session.get('user_id')
+        )
+        sheet.set_data(headers, rows)
+        db.session.add(sheet)
+        db.session.commit()
+
+        # 2. Run CMS Processors on the edited rows
+        df = RecordList(rows, headers)
+        processed_count = 0
+        curr_type = upload_type
+        if curr_type in ('auto_detect', '', 'general'):
+            curr_type = detect_cms_upload_type(df)
+
+        if curr_type in ('crew_data', 'call_serve'):
+            processed_count = process_crew_data_excel(df)
+        elif curr_type == 'service_particulars':
+            processed_count = process_service_particulars_excel(df)
+        elif curr_type == 'crew_summary':
+            processed_count = process_crew_summary_excel(df)
+        elif curr_type in ('other_details', 'crew_other_details'):
+            processed_count = process_other_details_excel(df)
+        elif curr_type == 'cli_biodata':
+            processed_count = process_cli_biodata_excel(df)
+        elif curr_type == 'counselling':
+            processed_count = process_counselling_excel(df)
+        elif curr_type == 'training':
+            processed_count = process_training_excel(df)
+
+        return jsonify({
+            'success': True,
+            'message': f"Successfully saved and imported {len(rows)} records into system database ({processed_count} entities updated).",
+            'processed_count': processed_count,
+            'sheet_id': sheet.id
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': f"Error saving data: {str(e)}"}), 500
+
+
+@admin_bp.route('/excel-sheets')
+@admin_required
+def excel_sheets_list():
+    sheets = UploadedExcelSheet.query.order_by(UploadedExcelSheet.created_at.desc()).all()
+    return render_template('admin/excel_sheets.html', sheets=sheets)
+
+
+@admin_bp.route('/excel-sheets/<int:sheet_id>')
+@admin_required
+def excel_sheet_view_edit(sheet_id):
+    sheet = UploadedExcelSheet.query.get_or_404(sheet_id)
+    headers = sheet.get_headers()
+    rows = sheet.get_rows()
+    return render_template('admin/excel_sheet_edit.html', sheet=sheet, headers=headers, rows=rows)
+
+
+@admin_bp.route('/excel-sheets/<int:sheet_id>/update', methods=['POST'])
+@admin_required
+def excel_sheet_update(sheet_id):
+    sheet = UploadedExcelSheet.query.get_or_404(sheet_id)
+    data = request.get_json() or {}
+    headers = data.get('headers', sheet.get_headers())
+    rows = data.get('rows', [])
+    sheet.set_data(headers, rows)
+    sheet.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    # Optional re-sync to database if requested
+    sync_to_db = data.get('sync_to_db', False)
+    processed_count = 0
+    if sync_to_db and rows:
+        df = RecordList(rows, headers)
+        curr_type = sheet.upload_type
+        if curr_type in ('crew_data', 'call_serve'):
+            processed_count = process_crew_data_excel(df)
+        elif curr_type == 'service_particulars':
+            processed_count = process_service_particulars_excel(df)
+        elif curr_type == 'crew_summary':
+            processed_count = process_crew_summary_excel(df)
+        elif curr_type in ('other_details', 'crew_other_details'):
+            processed_count = process_other_details_excel(df)
+        elif curr_type == 'cli_biodata':
+            processed_count = process_cli_biodata_excel(df)
+        elif curr_type == 'counselling':
+            processed_count = process_counselling_excel(df)
+        elif curr_type == 'training':
+            processed_count = process_training_excel(df)
+
+    return jsonify({
+        'success': True,
+        'message': f"Sheet '{sheet.filename}' updated successfully ({len(rows)} rows saved).",
+        'processed_count': processed_count
+    })
+
+
+@admin_bp.route('/excel-sheets/<int:sheet_id>/export')
+@admin_required
+def excel_sheet_export(sheet_id):
+    sheet = UploadedExcelSheet.query.get_or_404(sheet_id)
+    headers = sheet.get_headers()
+    rows = sheet.get_rows()
+
+    import openpyxl
+    from io import BytesIO
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = (sheet.sheet_name or 'Sheet1')[:31]
+
+    if headers:
+        ws.append(headers)
+        for r in rows:
+            ws.append([r.get(h, '') for h in headers])
+
+    out = BytesIO()
+    wb.save(out)
+    out.seek(0)
+    export_fname = f"Export_{secure_filename(sheet.filename)}"
+    if not export_fname.endswith('.xlsx'):
+        export_fname += '.xlsx'
+
+    return send_file(
+        out,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=export_fname
+    )
+
+
+@admin_bp.route('/excel-sheets/<int:sheet_id>/delete', methods=['POST'])
+@admin_required
+def excel_sheet_delete(sheet_id):
+    sheet = UploadedExcelSheet.query.get_or_404(sheet_id)
+    fname = sheet.filename
+    db.session.delete(sheet)
+    db.session.commit()
+    flash(f"Uploaded sheet '{fname}' deleted.", "info")
+    return redirect(url_for('admin.upload_excel'))
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -992,7 +1244,26 @@ def process_crew_summary_excel(df):
 
         hrms_id = _safe_str(row.get('HRMS ID', row.get('HRMS', '')))
         crew_type = _safe_str(row.get('CREW TYPE', '')).upper()
-        cli_name = _safe_str(row.get('CLI NAME', '')).upper()
+        cli_name = _safe_str(row.get('CLI NAME', row.get('CLI Name', ''))).upper()
+
+        father = _safe_str(row.get('FATHER', ''))
+        gender = _safe_str(row.get('GENDER', ''))
+        traction = _safe_str(row.get('TRACTION', ''))
+        cadre = _safe_str(row.get('CADRE', ''))
+        basic_pay = _safe_str(row.get('BASIC PAY', ''))
+        avail_date = _safe_str(row.get('AVAIL DATE', ''))
+        emp_code = _safe_str(row.get('EMP CODE', ''))
+        au_code = _safe_str(row.get('AU CODE', ''))
+        edu_qual = _safe_str(row.get('Edu. Qual.', row.get('EDU. QUAL.', '')))
+        tech_qual = _safe_str(row.get('Tech. Qual.', row.get('TECH. QUAL.', '')))
+        dob = _parse_cms_date(row.get('DOB', ''))
+        app_date = _parse_cms_date(row.get('APP.DATE', row.get('APP DATE', '')))
+        initial_pme = _safe_str(row.get('I. PME', row.get('I.PME', '')))
+        last_prom = _safe_str(row.get('LASTPROM.', row.get('LAST PROM', '')))
+        blood_grp = _safe_str(row.get('B.Grp.', row.get('B.GRP.', '')))
+        vision = _safe_str(row.get('VISION', ''))
+        ident_mark = _safe_str(row.get('T. MARK', row.get('T.MARK', '')))
+        crew_grade = _safe_str(row.get('Crew Grade', row.get('CREW GRADE', '')))
 
         desig = TYPE_TO_DESIG.get(crew_type, crew_type or 'ALP')
 
@@ -1020,6 +1291,8 @@ def process_crew_summary_excel(df):
                 pf_number=crew_id,
                 lobby_id=lobby_id,
                 cli_id=cli_user_id,
+                date_of_birth=dob,
+                date_of_appointment=app_date,
                 is_active=True,
                 password_must_change=True
             )
@@ -1039,7 +1312,47 @@ def process_crew_summary_excel(df):
                 user.cli_id = cli_user_id
             if not user.pf_number:
                 user.pf_number = crew_id
+            if dob:
+                user.date_of_birth = dob
+            if app_date:
+                user.date_of_appointment = app_date
             user.is_active = True
+
+        # Save all Biodata Summary fields to Crew Master custom store
+        if father:
+            user.set_custom_field('father_name', father)
+        if gender:
+            user.set_custom_field('gender', gender)
+        if traction:
+            user.set_custom_field('traction_type', traction)
+        if cadre:
+            user.set_custom_field('cadre_stream', cadre)
+        if basic_pay:
+            user.set_custom_field('basic_pay', basic_pay)
+        if avail_date:
+            user.set_custom_field('avail_date', avail_date)
+        if emp_code:
+            user.set_custom_field('emp_code', emp_code)
+        if au_code:
+            user.set_custom_field('au_code', au_code)
+        if edu_qual:
+            user.set_custom_field('educational_qualification', edu_qual)
+        if tech_qual:
+            user.set_custom_field('technical_qualification', tech_qual)
+        if initial_pme:
+            user.set_custom_field('initial_pme', initial_pme)
+        if last_prom:
+            user.set_custom_field('last_promotion', last_prom)
+        if blood_grp:
+            user.set_custom_field('blood_group', blood_grp)
+        if vision:
+            user.set_custom_field('vision', vision)
+        if ident_mark:
+            user.set_custom_field('identification_mark', ident_mark)
+        if crew_grade:
+            user.set_custom_field('safety_grading', crew_grade)
+        if cli_name:
+            user.set_custom_field('cli_name_str', cli_name)
 
         success_count += 1
         if success_count % 500 == 0:
@@ -1216,6 +1529,10 @@ def process_other_details_excel(df):
         lpg_date = _safe_str(row.get('LPG', ''))
         lpp_date = _safe_str(row.get('LPP', ''))
         lpm_date = _safe_str(row.get('LPM', ''))
+        pdthone = _safe_str(row.get('PDthONE', ''))
+        drgpddone = _safe_str(row.get('DRGPDDONE', ''))
+        wdg4 = _safe_str(row.get('WDG4', ''))
+        wdp4 = _safe_str(row.get('WDP4', ''))
 
         lobby_id = None
         for check_id in (base_id, crew_id_str):
@@ -1285,6 +1602,14 @@ def process_other_details_excel(df):
             user.set_custom_field('lpp_date', lpp_date)
         if lpm_date and lpm_date != '-':
             user.set_custom_field('lpm_date', lpm_date)
+        if pdthone and pdthone != '-':
+            user.set_custom_field('pdthone', pdthone)
+        if drgpddone and drgpddone != '-':
+            user.set_custom_field('drgpddone', drgpddone)
+        if wdg4 and wdg4 != '-':
+            user.set_custom_field('wdg4_competency', wdg4)
+        if wdp4 and wdp4 != '-':
+            user.set_custom_field('wdp4_competency', wdp4)
 
         success_count += 1
         if success_count % 500 == 0:
@@ -1587,6 +1912,29 @@ def counselling_records():
         search_q=search_q,
         total=len(records)
     )
+
+
+@admin_bp.route('/counselling-records/<int:rec_id>/edit', methods=['POST'])
+@admin_required
+def edit_counselling_record(rec_id):
+    rec = CrewCounsellingRecord.query.get_or_404(rec_id)
+    rec.grade = request.form.get('grade', rec.grade).strip()
+    rec.cli_name = request.form.get('cli_name', rec.cli_name).strip()
+    rec.crew_hq = request.form.get('crew_hq', rec.crew_hq).strip()
+    rec.designation = request.form.get('designation', rec.designation).strip()
+    rec.last_footplate = request.form.get('last_footplate', rec.last_footplate).strip()
+    rec.technical_counselling = request.form.get('technical_counselling', rec.technical_counselling).strip()
+    rec.safety_counselling = request.form.get('safety_counselling', rec.safety_counselling).strip()
+    rec.counselling_verified_by = request.form.get('counselling_verified_by', rec.counselling_verified_by).strip()
+    rec.ba_fail_history = request.form.get('ba_fail_history', rec.ba_fail_history).strip()
+    rec.spad_history = request.form.get('spad_history', rec.spad_history).strip()
+    rec.da_case = request.form.get('da_case', rec.da_case).strip()
+    rec.family_issue = request.form.get('family_issue', rec.family_issue).strip()
+    rec.health_issue = request.form.get('health_issue', rec.health_issue).strip()
+    rec.remarks = request.form.get('remarks', rec.remarks).strip()
+    db.session.commit()
+    flash(f"Updated counselling record for {rec.crew_name} ({rec.crew_id_str}).", "success")
+    return redirect(request.referrer or url_for('admin.counselling_records'))
 
 
 # ─────────────────────────────────────────────────────────────────

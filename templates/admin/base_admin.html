@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Electric OP ERP Admin Console{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- DataTables Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+    <style>
+        :root {
+            --erp-sidebar-width: 260px;
+            --erp-navy: #001f3f;
+            --erp-navy-dark: #00152b;
+            --erp-navy-light: #0d3868;
+            --erp-gold: #c59b27;
+            --erp-gold-hover: #e0ab2d;
+            --erp-bg: #f4f6f9;
+            --erp-border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--erp-bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+        }
+
+        /* ERP SHELL LAYOUT */
+        .erp-layout-wrapper {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* LEFT SIDEBAR (ERP DESKTOP) */
+        .erp-sidebar {
+            width: var(--erp-sidebar-width);
+            background: linear-gradient(180deg, var(--erp-navy-dark) 0%, var(--erp-navy) 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1030;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.15);
+            transition: all 0.25s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .erp-sidebar-brand {
+            padding: 20px 18px;
+            background: rgba(0, 0, 0, 0.25);
+            border-bottom: 2px solid var(--erp-gold);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .erp-brand-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border: 2px solid var(--erp-gold);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #ffffff;
+        }
+
+        .erp-brand-text h5 {
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin: 0;
+            color: #ffffff;
+        }
+
+        .erp-brand-text small {
+            font-size: 0.72rem;
+            color: var(--erp-gold);
+            font-weight: 600;
+            display: block;
+        }
+
+        /* ADMIN USER BADGE */
+        .erp-user-badge-box {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .erp-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: #dc2626;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .erp-user-info h6 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .erp-user-info span {
+            font-size: 0.7rem;
+            color: #38bdf8;
+            font-weight: 600;
+        }
+
+        /* ERP NAVIGATION MENU */
+        .erp-menu {
+            list-style: none;
+            padding: 14px 10px;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .erp-menu-header {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #64748b;
+            padding: 12px 14px 4px;
+        }
+
+        .erp-menu-item {
+            margin-bottom: 3px;
+        }
+
+        .erp-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .erp-menu-link i {
+            font-size: 1rem;
+            width: 22px;
+            text-align: center;
+            color: #94a3b8;
+            transition: color 0.15s ease;
+        }
+
+        .erp-menu-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .erp-menu-link:hover i {
+            color: var(--erp-gold);
+        }
+
+        .erp-menu-link.active {
+            background: linear-gradient(135deg, rgba(197, 155, 39, 0.25), rgba(197, 155, 39, 0.1));
+            color: #ffffff;
+            border-left: 3px solid var(--erp-gold);
+            font-weight: 700;
+        }
+
+        .erp-menu-link.active i {
+            color: var(--erp-gold);
+        }
+
+        /* MAIN CONTENT AREA */
+        .erp-main-content {
+            margin-left: var(--erp-sidebar-width);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: calc(100% - var(--erp-sidebar-width));
+        }
+
+        /* ERP TOP APP BAR */
+        .erp-top-bar {
+            height: 60px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--erp-border);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .erp-content-body {
+            padding: 24px;
+            flex-grow: 1;
+        }
+
+        /* ERP FOOTER */
+        .erp-admin-footer {
+            background: #ffffff;
+            border-top: 1px solid var(--erp-border);
+            padding: 12px 24px;
+            font-size: 0.8rem;
+            color: #64748b;
+            text-align: center;
+        }
+
+        /* MOBILE ADJUSTMENTS (< 992px) */
+        @media (max-width: 991.98px) {
+            .erp-sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .erp-sidebar.show-mobile {
+                transform: translateX(0);
+            }
+
+            .erp-main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .erp-content-body {
+                padding: 16px;
+            }
+
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 1025;
+            }
+
+            .sidebar-backdrop.show {
+                display: block;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="erp-layout-wrapper">
+
+    <!-- MOBILE SIDEBAR BACKDROP -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <!-- ERP LEFT SIDEBAR -->
+    <aside class="erp-sidebar" id="erpSidebar">
+        <!-- BRAND HEADER -->
+        <div class="erp-sidebar-brand">
+            <div class="erp-brand-icon">
+                <i class="fa-solid fa-train-subway"></i>
+            </div>
+            <div class="erp-brand-text">
+                <h5>ELECTRIC OP ERP</h5>
+                <small><i class="fa-solid fa-code-branch me-1"></i>HWH &bull; Admin Console</small>
+            </div>
+        </div>
+
+        <!-- LOGGED-IN ADMIN BADGE -->
+        <div class="erp-user-badge-box">
+            <div class="erp-avatar">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="erp-user-info">
+                <h6>{{ current_user.full_name or 'System Admin' }}</h6>
+                <span><i class="fa-solid fa-circle-check text-success me-1"></i>Level 5 &bull; System Edit</span>
+            </div>
+        </div>
+
+        <!-- ERP NAVIGATION MENU -->
+        <ul class="erp-menu">
+            <li class="erp-menu-header">Core Operations</li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.dashboard') }}" class="erp-menu-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>ERP Dashboard</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.crew_master') }}" class="erp-menu-link {% if request.endpoint == 'admin.crew_master' %}active{% endif %}">
+                    <i class="fa-solid fa-users-gear text-primary"></i>
+                    <span>Crew Master (All 4 Excels)</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.upload_excel') }}" class="erp-menu-link {% if request.endpoint == 'admin.upload_excel' %}active{% endif %}">
+                    <i class="fa-solid fa-file-excel text-success"></i>
+                    <span>CMS 4-Sheet Upload Hub</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.excel_sheets_list') }}" class="erp-menu-link {% if request.endpoint == 'admin.excel_sheets_list' %}active{% endif %}">
+                    <i class="fa-solid fa-table-list text-info"></i>
+                    <span>Sheet Datatables &amp; Edit</span>
+                </a>
+            </li>
+
+            <li class="erp-menu-header">Supervision &amp; Dynamic Logs</li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.custom_fields') }}" class="erp-menu-link {% if request.endpoint == 'admin.custom_fields' %}active{% endif %}">
+                    <i class="fa-solid fa-sliders text-warning"></i>
+                    <span>CLI Log Dynamic Fields</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('officer.cli_movements') }}" class="erp-menu-link {% if request.endpoint == 'officer.cli_movements' %}active{% endif %}">
+                    <i class="fa-solid fa-person-walking text-primary"></i>
+                    <span>CLI Movements &amp; Duty</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.training_medical') }}" class="erp-menu-link {% if request.endpoint == 'admin.training_medical' %}active{% endif %}">
+                    <i class="fa-solid fa-heart-pulse text-danger"></i>
+                    <span>PME &amp; Training Register</span>
+                </a>
+            </li>
+
+            <li class="erp-menu-header">System &amp; Administration</li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.users') }}" class="erp-menu-link {% if request.endpoint == 'admin.users' %}active{% endif %}">
+                    <i class="fa-solid fa-user-lock text-warning"></i>
+                    <span>User Accounts &amp; Roles</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.notices') }}" class="erp-menu-link {% if request.endpoint == 'admin.notices' %}active{% endif %}">
+                    <i class="fa-solid fa-bell text-danger"></i>
+                    <span>Notices &amp; Safety Circulars</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.retention_policy') }}" class="erp-menu-link {% if request.endpoint == 'admin.retention_policy' %}active{% endif %}">
+                    <i class="fa-solid fa-clock-rotate-left text-secondary"></i>
+                    <span>Retention Policy (90-Day)</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('admin.important_tools') }}" class="erp-menu-link {% if request.endpoint == 'admin.important_tools' %}active{% endif %}">
+                    <i class="fa-solid fa-wrench text-info"></i>
+                    <span>Loco Tools &amp; Engines</span>
+                </a>
+            </li>
+
+            <li class="erp-menu-header">Exit</li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('public.index') }}" class="erp-menu-link">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>Public Portal</span>
+                </a>
+            </li>
+            <li class="erp-menu-item">
+                <a href="{{ url_for('auth.logout') }}" class="erp-menu-link text-danger">
+                    <i class="fa-solid fa-right-from-bracket text-danger"></i>
+                    <span>Sign Out</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- ERP MAIN CONTENT CONTAINER -->
+    <div class="erp-main-content">
+
+        <!-- TOP BAR -->
+        <header class="erp-top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-dark btn-sm d-lg-none" onclick="toggleSidebar()" type="button" aria-label="Toggle menu">
+                    <i class="fa-solid fa-bars fa-lg"></i>
+                </button>
+                <div class="fw-bold text-dark d-none d-sm-block">
+                    <i class="fa-solid fa-shield-halved text-danger me-1"></i> Admin Central ERP
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 small">
+                    <i class="fa-solid fa-lock me-1"></i> Level 5
+                </span>
+                <a href="{{ url_for('public.index') }}" class="btn btn-outline-primary btn-sm fw-bold">
+                    <i class="fa-solid fa-globe me-1"></i> View Site
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger btn-sm fw-bold">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+                </a>
+            </div>
+        </header>
+
+        <!-- FLASH NOTIFICATIONS -->
+        <div class="container-fluid px-4 pt-3">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- DYNAMIC PAGE BODY -->
+        <main class="erp-content-body">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- ERP FOOTER -->
+        <footer class="erp-admin-footer">
+            Electric Operation ERP System &bull; Howrah Division, Eastern Railway &bull; Internal Enterprise Platform
+        </footer>
+
+    </div>
+
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('erpSidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        sidebar.classList.toggle('show-mobile');
+        backdrop.classList.toggle('show');
+    }
+</script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

@@ -10,6 +10,10 @@ from models import (
     CLIMovement, CrewCounsellingRecord, OfficerDirective
 )
 from blueprints.auth import role_required
+from blueprints.reporting_helper import (
+    get_crew_overview_stats, get_cli_crew_matrix, get_lobby_crew_matrix,
+    filter_crews_query
+)
 
 officer_bp = Blueprint('officer', __name__)
 
@@ -541,6 +545,56 @@ def instruct_cli(crew_user_id):
 
     flash(f"Directive dispatched to CLI {target_cli.full_name} for targeted monitoring of {crew.full_name} (Focus: {parameter_focus}). Target Date: {deadline_date.strftime('%d-%m-%Y')}.", 'success')
     return redirect(request.referrer or url_for('officer.crew_performance'))
+
+
+@officer_bp.route('/reports')
+def reports():
+    officer = User.query.get(session['user_id'])
+    overview = get_crew_overview_stats()
+    cli_matrix = get_cli_crew_matrix()
+    lobby_matrix = get_lobby_crew_matrix()
+
+    active_tab = request.args.get('tab', 'overview')
+    selected_lobby = request.args.get('lobby', 'ALL')
+    selected_cli = request.args.get('cli', 'ALL')
+    selected_category = request.args.get('category', 'ALL')
+    selected_traction = request.args.get('traction', 'ALL')
+    selected_grading = request.args.get('grading', 'ALL')
+    search = request.args.get('q', '').strip()
+
+    query = filter_crews_query(
+        lobby_id=selected_lobby,
+        cli_id=selected_cli,
+        category=selected_category,
+        traction=selected_traction,
+        grading=selected_grading,
+        search=search
+    )
+    filtered_count = query.count()
+    crews = query.limit(100).all()
+
+    lobbies = Lobby.query.order_by(Lobby.code.asc()).all()
+    clis = User.query.filter_by(role='supervisor').order_by(User.full_name.asc()).all()
+
+    return render_template(
+        'officer/reports.html',
+        overview=overview,
+        cli_matrix=cli_matrix,
+        lobby_matrix=lobby_matrix,
+        crews=crews,
+        filtered_count=filtered_count,
+        lobbies=lobbies,
+        clis=clis,
+        active_tab=active_tab,
+        selected_lobby=selected_lobby,
+        selected_cli=selected_cli,
+        selected_category=selected_category,
+        selected_traction=selected_traction,
+        selected_grading=selected_grading,
+        search=search,
+        export_base_url=url_for('officer.reports'),
+        is_admin_view=False
+    )
 
 
 @officer_bp.route('/crew-performance/report')

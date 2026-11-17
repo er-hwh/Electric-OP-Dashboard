@@ -10,7 +10,8 @@ from werkzeug.utils import secure_filename
 from database import db
 from models import (
     User, Lobby, FootplateInspection, Message, TrainingRecord, 
-    CounsellingTopic, Notice, CrewCounsellingRecord, CLIMovement, OfficerDirective
+    CounsellingTopic, Notice, CrewCounsellingRecord, CLIMovement, OfficerDirective, CustomField,
+    WeaknessLedger
 )
 from blueprints.auth import role_required
 
@@ -856,25 +857,153 @@ def export_roster_excel():
 
 
 
+@supervisor_bp.route('/crew-safety-status/<int:crew_id>')
+def crew_safety_status(crew_id):
+    """Returns real-time pre-inspection safety banner metrics: FPO cycle, PME/Refresher, and Active Weaknesses."""
+    crew = User.query.get_or_404(crew_id)
+    c_rec = CrewCounsellingRecord.query.filter(
+        (CrewCounsellingRecord.crew_user_id == crew.id) |
+        (CrewCounsellingRecord.pf_no == crew.pf_number) |
+        (CrewCounsellingRecord.crew_id_str == crew.username)
+    ).first()
+
+    last_fp = FootplateInspection.query.filter_by(crew_id=crew.id).order_by(
+        FootplateInspection.inspection_date.desc(),
+        FootplateInspection.id.desc()
+    ).first()
+
+    today = date.today()
+    days_since_fp = None
+    fp_status = "overdue"
+
+    if last_fp and last_fp.inspection_date:
+        days_since_fp = (today - last_fp.inspection_date).days
+    elif c_rec and c_rec.last_footplate:
+        parsed_d = parse_date_value(c_rec.last_footplate)
+        if parsed_d:
+            days_since_fp = (today - parsed_d).days
+
+    if days_since_fp is None:
+        fp_status = "overdue"
+    elif days_since_fp > 90:
+        fp_status = "overdue"
+    elif days_since_fp >= 75:
+        fp_status = "due_soon"
+    else:
+        fp_status = "compliant"
+
+    # PME & Refresher
+    pme_due_str = None
+    pme_status = "compliant"
+    reft_due_str = None
+
+    if crew.pme_due_date:
+        pme_due_str = crew.pme_due_date.strftime('%d-%b-%Y')
+        days_rem = (crew.pme_due_date - today).days
+        if days_rem < 0:
+            pme_status = "overdue"
+        elif days_rem <= 30:
+            pme_status = "due_soon"
+    elif hasattr(crew, 'initial_pme') and crew.initial_pme:
+        pme_due_str = str(crew.initial_pme)
+
+    if hasattr(crew, 'competency') and crew.competency:
+        comp = crew.competency
+        if comp.reft_due_date:
+            reft_due_str = comp.reft_due_date.strftime('%d-%b-%Y')
+
+    # Active Weaknesses
+    active_wks = WeaknessLedger.get_crew_active_weaknesses(crew.id)
+    active_list = [{
+        'id': w.id,
+        'point_no': w.point_no,
+        'point_key': w.point_key,
+        'point_name': w.point_name,
+        'deficiency_details': w.deficiency_details,
+        'clean_runs_count': w.clean_runs_count,
+        'date_identified': w.date_identified.strftime('%d-%b-%Y') if w.date_identified else ''
+    } for w in active_wks]
+
+    return jsonify({
+        'crew_id': crew.id,
+        'crew_name': crew.full_name,
+        'fp_status': fp_status,
+        'days_since_fp': days_since_fp,
+        'pme_due': pme_due_str,
+        'pme_status': pme_status,
+        'reft_due': reft_due_str,
+        'active_weaknesses': active_list,
+        'repeat_offender': len(active_list) >= 2
+    })
+
+
+@supervisor_bp.route('/weaknesses')
+def weaknesses():
+    """Longitudinal Deficiencies & Weaknesses Ledger (3-Clean-Run Resolution Engine)"""
+    cli = User.query.get(session['user_id'])
+    status_filter = request.args.get('status', 'ACTIVE').upper()
+
+    if cli.sub_role == 'CLI':
+        my_crews = User.query.filter_by(cli_id=cli.id, is_active=True).all()
+        my_crew_ids = [c.id for c in my_crews]
+        q = WeaknessLedger.query.filter(WeaknessLedger.crew_id.in_(my_crew_ids))
+    else:
+        q = WeaknessLedger.query
+
+    total_active = q.filter_by(status='ACTIVE').count()
+    total_resolved = q.filter_by(status='RESOLVED').count()
+    in_progress_count = q.filter(WeaknessLedger.status == 'ACTIVE', WeaknessLedger.clean_runs_count > 0).count()
+
+    from sqlalchemy import func
+    multi_lapse_sub = db.session.query(WeaknessLedger.crew_id).filter(
+        WeaknessLedger.status == 'ACTIVE'
+    ).group_by(WeaknessLedger.crew_id).having(func.count(WeaknessLedger.id) >= 2).all()
+    multi_lapse_count = len(multi_lapse_sub)
+
+    if status_filter in ('ACTIVE', 'RESOLVED'):
+        items = q.filter_by(status=status_filter).order_by(WeaknessLedger.date_identified.desc()).all()
+    else:
+        items = q.order_by(WeaknessLedger.date_identified.desc()).all()
+
+    return render_template(
+        'supervisor/weaknesses.html',
+        items=items,
+        current_status=status_filter,
+        active_count=total_active,
+        resolved_count=total_resolved,
+        in_progress_count=in_progress_count,
+        multi_lapse_count=multi_lapse_count
+    )
+
+
 @supervisor_bp.route('/footplate/new', methods=['GET', 'POST'])
 def new_footplate():
     cli = User.query.get(session['user_id'])
     my_crews = User.query.filter_by(cli_id=cli.id, is_active=True).all() if cli.sub_role == 'CLI' else User.query.filter_by(lobby_id=cli.lobby_id, role='crew', is_active=True).all()
+    all_crews = User.query.filter(User.role.in_(['crew', 'supervisor'])).order_by(User.full_name).all()
 
     if request.method == 'POST':
         crew_id = request.form.get('crew_id')
         inspection_date_str = request.form.get('inspection_date')
         train_no = request.form.get('train_no', '').strip()
         loco_no = request.form.get('loco_no', '').strip()
+        train_type = request.form.get('train_type', 'Mail/Express')
+        alp_on_board = request.form.get('alp_on_board') in ('1', 'true', 'on', True)
+        alp_user_id = request.form.get('alp_user_id')
         from_stn = request.form.get('from_station', '').strip()
         to_stn = request.form.get('to_station', '').strip()
         departure_time = request.form.get('departure_time', '').strip()
         arrival_time = request.form.get('arrival_time', '').strip()
         grading = request.form.get('grading', 'A')
         footplate_km_str = request.form.get('footplate_km', '0').strip()
-        aspects = request.form.get('aspects_covered', '').strip()
         deficiencies = request.form.get('deficiencies', '').strip()
-        counselling_given = request.form.get('counselling_given', '').strip()
+        counselling_given = request.form.get('counselling_given', 'No').strip()
+
+        na_points_raw = request.form.get('na_points_json', '[]')
+        try:
+            na_list = json.loads(na_points_raw) if na_points_raw else []
+        except Exception:
+            na_list = []
 
         try:
             footplate_km = float(footplate_km_str) if footplate_km_str else 0.0
@@ -887,7 +1016,7 @@ def new_footplate():
 
         try:
             insp_date = datetime.strptime(inspection_date_str, '%Y-%m-%d').date() if inspection_date_str else date.today()
-        except:
+        except Exception:
             insp_date = date.today()
 
         score_signal_call_out = parse_int_score(request.form.get('score_signal_call_out', 5))
@@ -900,23 +1029,39 @@ def new_footplate():
         score_bft_bpt_test = parse_int_score(request.form.get('score_bft_bpt_test', 5))
         score_other_observations = parse_int_score(request.form.get('score_other_observations', 5))
 
-        signal_call_out = request.form.get('signal_call_out', aspects).strip()
-        brake_technique = request.form.get('brake_technique', '').strip()
-        high_speed_tendency = request.form.get('high_speed_tendency', '').strip()
-        pf_entry_speed = request.form.get('pf_entry_speed', '').strip()
-        psr_tsr_observation = request.form.get('psr_tsr_observation', '').strip()
-        alp_performance = request.form.get('alp_performance', '').strip()
-        whistling_habit = request.form.get('whistling_habit', '').strip()
-        bft_bpt_test = request.form.get('bft_bpt_test', '').strip()
-        other_observations = request.form.get('other_observations', deficiencies).strip()
+        signal_call_out = request.form.get('signal_call_out', 'All signals called out correctly').strip()
+        brake_technique = request.form.get('brake_technique', 'Smooth and timely braking').strip()
+        high_speed_tendency = request.form.get('high_speed_tendency', 'Speed controlled as prescribed').strip()
+        pf_entry_speed = request.form.get('pf_entry_speed', 'Entry within prescribed speed').strip()
+        psr_tsr_observation = request.form.get('psr_tsr_observation', 'Restriction observed throughout').strip()
+        alp_performance = request.form.get('alp_performance', 'ALP alert and vigilant throughout').strip()
+        whistling_habit = request.form.get('whistling_habit', 'Whistle given correctly').strip()
+        bft_bpt_test = request.form.get('bft_bpt_test', 'Both tests done as prescribed').strip()
+        other_observations = request.form.get('other_observations', 'No other adverse observation').strip()
 
-        scores_list = [
-            score_signal_call_out, score_brake_technique, score_high_speed_tendency,
-            score_pf_entry_speed, score_psr_tsr_observation, score_alp_performance,
-            score_whistling_habit, score_bft_bpt_test, score_other_observations
+        # Build point evaluations for 3-Clean-Run engine
+        point_evals = [
+            {'point_no': 1, 'point_key': 'P1_Signal_Callout', 'point_name': 'Signal Call-Out & Hand Gestures', 'rating': score_signal_call_out, 'is_na': False, 'remark': signal_call_out},
+            {'point_no': 2, 'point_key': 'P2_Braking', 'point_name': 'Braking Technique & Handling', 'rating': score_brake_technique, 'is_na': False, 'remark': brake_technique},
+            {'point_no': 3, 'point_key': 'P3_Platform_Entry', 'point_name': 'Platform / Loop Entry Speed', 'rating': score_pf_entry_speed, 'is_na': (3 in na_list), 'remark': pf_entry_speed},
+            {'point_no': 4, 'point_key': 'P4_Single_Yellow', 'point_name': 'Speed at Single Yellow Aspect', 'rating': score_high_speed_tendency, 'is_na': (4 in na_list), 'remark': high_speed_tendency},
+            {'point_no': 5, 'point_key': 'P5_PSR_TSR', 'point_name': 'PSR / TSR Compliance', 'rating': score_psr_tsr_observation, 'is_na': (5 in na_list), 'remark': psr_tsr_observation},
+            {'point_no': 6, 'point_key': 'P6_Whistle', 'point_name': 'Whistling at LC Gates / Curves', 'rating': score_whistling_habit, 'is_na': (6 in na_list), 'remark': whistling_habit},
+            {'point_no': 7, 'point_key': 'P7_BFT_BPT', 'point_name': 'Brake Feel & Power Test', 'rating': score_bft_bpt_test, 'is_na': (7 in na_list), 'remark': bft_bpt_test},
+            {'point_no': 8, 'point_key': 'P8_ALP_Performance', 'point_name': 'Performance of ALP', 'rating': score_alp_performance, 'is_na': (8 in na_list or not alp_on_board), 'remark': alp_performance},
+            {'point_no': 9, 'point_key': 'P9_Other', 'point_name': 'Cab Discipline & Fatigue', 'rating': score_other_observations, 'is_na': False, 'remark': other_observations}
         ]
-        calc_rating = round(sum(scores_list) / len(scores_list))
-        safety_rating = parse_int_score(request.form.get('safety_rating'), default=calc_rating)
+
+        valid_ratings = [p['rating'] for p in point_evals if not p['is_na']]
+        avg_score = round(sum(valid_ratings) / len(valid_ratings), 1) if valid_ratings else 5.0
+        lowest_rating = min(valid_ratings) if valid_ratings else 5
+
+        alp_id_int = None
+        if alp_on_board and alp_user_id:
+            try:
+                alp_id_int = int(alp_user_id)
+            except (ValueError, TypeError):
+                alp_id_int = None
 
         inspection = FootplateInspection(
             cli_id=cli.id,
@@ -924,13 +1069,16 @@ def new_footplate():
             inspection_date=insp_date,
             train_no=train_no,
             loco_no=loco_no,
+            train_type=train_type,
+            alp_on_board=alp_on_board,
+            alp_user_id=alp_id_int,
             from_station=from_stn,
             to_station=to_stn,
             departure_time=departure_time,
             arrival_time=arrival_time,
             grading=grading,
             footplate_km=footplate_km,
-            aspects_covered=aspects,
+            aspects_covered=signal_call_out,
             deficiencies=deficiencies,
             counselling_given=counselling_given,
             signal_call_out=signal_call_out,
@@ -951,9 +1099,19 @@ def new_footplate():
             score_whistling_habit=score_whistling_habit,
             score_bft_bpt_test=score_bft_bpt_test,
             score_other_observations=score_other_observations,
-            safety_rating=safety_rating
+            safety_rating=round(avg_score),
+            average_score=avg_score,
+            lowest_rating=lowest_rating,
+            na_points_json=na_points_raw,
+            deficiencies_json=request.form.get('deficiencies_json', '[]')
         )
         db.session.add(inspection)
+        db.session.flush()
+
+        # Execute 3-Clean-Run engine
+        ledger_results = WeaknessLedger.record_fpo_evaluations(
+            int(crew_id), cli.id, inspection.id, point_evals
+        )
 
         # Sync to CLIMovement
         crew_obj = User.query.get(int(crew_id)) if crew_id else None
@@ -975,7 +1133,7 @@ def new_footplate():
             crew_id_str=crew_obj.pf_number or crew_obj.username if crew_obj else '',
             crew_category=crew_obj.sub_role if crew_obj else '',
             grading=grading,
-            observations_irregularities=f"Rating: {safety_rating}/5 | Signal: {score_signal_call_out}/5 | Brake: {score_brake_technique}/5 | Speed: {score_high_speed_tendency}/5 | {aspects}",
+            observations_irregularities=f"Avg Score: {avg_score}/5 | Lowest: {lowest_rating}/5 | {signal_call_out}",
             corrective_action=counselling_given,
             remarks=deficiencies
         )
@@ -992,14 +1150,26 @@ def new_footplate():
             if c_rec:
                 c_rec.last_footplate = formatted_date
                 c_rec.grade = grading
-                if counselling_given:
+                if counselling_given == 'Yes':
                     c_rec.safety_counselling = formatted_date
 
         db.session.commit()
-        flash(f'Footplate inspection and 9-point safety assessment logged for crew (Overall: {safety_rating}/5)!', 'success')
+
+        flash_msg = f"Footplate Inspection logged! Average Score: {avg_score}/5.0 (Lowest: {lowest_rating}★)."
+        if ledger_results.get('resolved'):
+            flash_msg += f" Resolved Deficiencies: {', '.join(ledger_results['resolved'])}."
+        if ledger_results.get('new_deficiencies'):
+            flash_msg += f" Active Deficiencies: {', '.join(ledger_results['new_deficiencies'])}."
+        flash(flash_msg, 'success')
         return redirect(url_for('supervisor.dashboard'))
 
-    return render_template('supervisor/footplate.html', my_crews=my_crews)
+    return render_template(
+        'supervisor/footplate.html', 
+        my_crews=my_crews,
+        all_crews=all_crews,
+        now_date=date.today().strftime('%Y-%m-%d'),
+        preselect_crew_id=request.args.get('crew_id', '')
+    )
 
 
 @supervisor_bp.route('/messages/<int:message_id>/action', methods=['POST'])
@@ -1040,38 +1210,247 @@ def handle_message(message_id):
 @supervisor_bp.route('/movements')
 def movements():
     cli = User.query.get(session['user_id'])
+    if not cli:
+        flash("Please log in as CLI / Supervisor.", "warning")
+        return redirect(url_for('auth.login', role='cli'))
+
     cutoff = date.today() - timedelta(days=90)
-    movements_list = CLIMovement.query.filter(CLIMovement.cli_id == cli.id, CLIMovement.activity_date >= cutoff).order_by(CLIMovement.activity_date.desc()).all()
+    query = CLIMovement.query.filter(CLIMovement.cli_id == cli.id, CLIMovement.activity_date >= cutoff)
+
+    act_filter = request.args.get('activity_type', 'ALL')
+    if act_filter and act_filter != 'ALL':
+        query = query.filter_by(activity_type=act_filter)
+
+    search_q = request.args.get('q', '').strip()
+    if search_q:
+        query = query.filter(
+            (CLIMovement.crew_name_manual.ilike(f'%{search_q}%')) |
+            (CLIMovement.crew_id_str.ilike(f'%{search_q}%')) |
+            (CLIMovement.train_no.ilike(f'%{search_q}%')) |
+            (CLIMovement.loco_no.ilike(f'%{search_q}%')) |
+            (CLIMovement.location.ilike(f'%{search_q}%'))
+        )
+
+    all_90d = CLIMovement.query.filter(CLIMovement.cli_id == cli.id, CLIMovement.activity_date >= cutoff).all()
+    movements_list = query.order_by(CLIMovement.activity_date.desc()).all()
+
+    total_movements = len(all_90d)
+    total_fp_km = round(sum(m.footplate_km or 0.0 for m in all_90d if m.activity_type == 'Footplate Inspection'), 1)
+    spm_count = sum(1 for m in all_90d if 'SPM' in (m.activity_type or ''))
+    cvvrs_count = sum(1 for m in all_90d if 'CVVRS' in (m.activity_type or ''))
+    failure_count = sum(1 for m in all_90d if 'Failure' in (m.activity_type or ''))
+    problem_count = sum(1 for m in all_90d if 'Problem' in (m.activity_type or ''))
+
     return render_template(
-        'officer/cli_movements.html',
-        officer=cli,
+        'supervisor/movements.html',
+        cli=cli,
         movements=movements_list,
-        all_clis=[cli],
-        lobbies=Lobby.query.all(),
-        activity_types=['Footplate Inspection', 'Crew Counselling', 'SPM Analysis', 'CVVRS Inspection', 'Safety Drive', 'Station Inspection', 'Running Room Inspection', 'Accident Inquiry', 'Other Duty'],
-        current_cli=str(cli.id),
-        current_activity='ALL',
-        current_lobby='ALL',
-        current_date='',
-        retention_cutoff=cutoff,
-        total_activities=len(movements_list)
+        total_movements=total_movements,
+        total_fp_km=total_fp_km,
+        spm_count=spm_count,
+        cvvrs_count=cvvrs_count,
+        failure_count=failure_count,
+        problem_count=problem_count,
+        cutoff_date=cutoff,
+        current_activity_type=act_filter,
+        search_q=search_q,
+        today_date=date.today().strftime('%Y-%m-%d')
     )
 
 @supervisor_bp.route('/movements/new', methods=['GET', 'POST'])
+@supervisor_bp.route('/duty-update', methods=['GET', 'POST'])
 def new_movement():
-    return redirect(url_for('supervisor.movements'))
+    cli = User.query.get(session['user_id'])
+    if not cli:
+        flash("Please log in as CLI / Supervisor.", "warning")
+        return redirect(url_for('auth.login', role='cli'))
+
+    custom_cli_fields = CustomField.query.filter_by(entity_type='cli_log', is_active=True).all()
+
+    if request.method == 'POST':
+        activity_type = request.form.get('activity_type', 'Other Supervisory Duties')
+        act_date_str = request.form.get('activity_date', '')
+        try:
+            act_date = datetime.strptime(act_date_str, '%Y-%m-%d').date() if act_date_str else date.today()
+        except Exception:
+            act_date = date.today()
+
+        lobby_id = request.form.get('lobby_id', type=int) or cli.lobby_id
+        train_no = request.form.get('train_no', '').strip()
+        loco_no = request.form.get('loco_no', '').strip()
+        section_from = request.form.get('section_from', '').strip()
+        section_to = request.form.get('section_to', '').strip()
+        departure_time = request.form.get('departure_time', '').strip()
+        arrival_time = request.form.get('arrival_time', '').strip()
+        footplate_km = request.form.get('footplate_km', type=float) or 0.0
+        location = request.form.get('location', '').strip()
+
+        crew_id = request.form.get('crew_id', type=int)
+        crew_name_manual = request.form.get('crew_name_manual', '').strip()
+        crew_id_str = request.form.get('crew_id_str', '').strip()
+        crew_category = request.form.get('crew_category', '').strip()
+        grading = request.form.get('grading', 'A')
+        observations = request.form.get('observations_irregularities', '').strip()
+        corrective_action = request.form.get('corrective_action', '').strip()
+        remarks = request.form.get('remarks', '').strip()
+
+        cli_mov = CLIMovement(
+            cli_id=cli.id,
+            activity_date=act_date,
+            activity_type=activity_type,
+            lobby_id=lobby_id,
+            location=location or (f"{section_from} to {section_to}" if section_from and section_to else cli.operational_jurisdiction or 'Section'),
+            section_from=section_from,
+            section_to=section_to,
+            train_no=train_no,
+            loco_no=loco_no,
+            footplate_km=footplate_km,
+            departure_time=departure_time,
+            arrival_time=arrival_time,
+            crew_id=crew_id,
+            crew_name_manual=crew_name_manual,
+            crew_id_str=crew_id_str,
+            crew_category=crew_category,
+            grading=grading,
+            observations_irregularities=observations,
+            corrective_action=corrective_action,
+            remarks=remarks
+        )
+
+        # Save dynamic custom fields configured by Admin
+        for cf in custom_cli_fields:
+            val = request.form.get(f"cf_{cf.field_name}", '').strip()
+            if val:
+                cli_mov.set_custom_field(cf.field_name, val)
+
+        db.session.add(cli_mov)
+        db.session.commit()
+
+        flash(f"✅ Daily Duty ({activity_type}) recorded successfully and synced with Movement Log.", "success")
+        return redirect(url_for('supervisor.movements'))
+
+    lobbies = Lobby.query.order_by(Lobby.code).all()
+    assigned_crews = User.query.filter_by(role='crew', cli_id=cli.id, is_active=True).order_by(User.full_name).all()
+    if not assigned_crews:
+        assigned_crews = User.query.filter_by(role='crew', is_active=True).limit(50).all()
+
+    prefill_type = request.args.get('type', 'Footplate Inspection')
+    return render_template(
+        'supervisor/movement_form.html',
+        cli=cli,
+        lobbies=lobbies,
+        crews=assigned_crews,
+        today_date=date.today().strftime('%Y-%m-%d'),
+        prefill_type=prefill_type,
+        custom_fields=custom_cli_fields
+    )
 
 @supervisor_bp.route('/counselling')
 def counselling():
-    return redirect(url_for('supervisor.dashboard'))
+    cli = User.query.get(session['user_id'])
+    if not cli:
+        flash("Please log in as CLI / Supervisor.", "warning")
+        return redirect(url_for('auth.login', role='cli'))
+
+    search_q = request.args.get('q', '').strip()
+    grade_filter = request.args.get('grade', 'ALL')
+    hq_filter = request.args.get('hq', 'ALL')
+
+    # Priority: Crews nominated under this CLI, or all crews if admin/divisional view
+    query = CrewCounsellingRecord.query
+    if not (cli.is_admin() or cli.is_officer()):
+        # Filter to this CLI's squad or matching cli_name
+        query = query.filter(
+            (CrewCounsellingRecord.cli_name.ilike(f'%{cli.full_name}%')) |
+            (CrewCounsellingRecord.counselling_verified_by.ilike(f'%{cli.full_name}%'))
+        )
+
+    if search_q:
+        query = query.filter(
+            (CrewCounsellingRecord.crew_name.ilike(f'%{search_q}%')) |
+            (CrewCounsellingRecord.crew_id_str.ilike(f'%{search_q}%')) |
+            (CrewCounsellingRecord.cug.ilike(f'%{search_q}%')) |
+            (CrewCounsellingRecord.pf_no.ilike(f'%{search_q}%'))
+        )
+
+    if grade_filter != 'ALL':
+        query = query.filter_by(grade=grade_filter)
+
+    if hq_filter != 'ALL':
+        query = query.filter_by(crew_hq=hq_filter)
+
+    records = query.order_by(CrewCounsellingRecord.crew_name.asc()).all()
+
+    return render_template(
+        'supervisor/counselling.html',
+        records=records,
+        total=len(records),
+        search_q=search_q,
+        grade_filter=grade_filter,
+        hq_filter=hq_filter,
+        cli=cli
+    )
 
 @supervisor_bp.route('/counselling/new-topic', methods=['GET', 'POST'])
 def new_counselling_topic():
-    return redirect(url_for('supervisor.dashboard'))
+    cli = User.query.get(session['user_id'])
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        category = request.form.get('category', 'Safety Directive').strip()
+        content = request.form.get('content', '').strip()
+        topic_date_str = request.form.get('topic_date', '')
+        try:
+            topic_date = datetime.strptime(topic_date_str, '%Y-%m-%d').date() if topic_date_str else date.today()
+        except Exception:
+            topic_date = date.today()
+
+        if title and content:
+            new_topic = CounsellingTopic(
+                title=title,
+                category=category,
+                content=content,
+                topic_date=topic_date,
+                created_by_id=cli.id,
+                status='PENDING' if not (cli.is_admin() or cli.is_officer()) else 'APPROVED'
+            )
+            db.session.add(new_topic)
+            db.session.commit()
+            flash("Counselling topic submitted successfully.", "success")
+            return redirect(url_for('supervisor.dashboard'))
+        else:
+            flash("Title and Content are required.", "warning")
+
+    return render_template('supervisor/new_counselling_topic.html', cli=cli, today_date=date.today().strftime('%Y-%m-%d'))
 
 @supervisor_bp.route('/instruct-crews', methods=['GET', 'POST'])
 def instruct_crews():
-    return redirect(url_for('supervisor.dashboard'))
+    cli = User.query.get(session['user_id'])
+    assigned_crews = User.query.filter_by(role='crew', cli_id=cli.id, is_active=True).all()
+    if request.method == 'POST':
+        subject = request.form.get('subject', '').strip()
+        body = request.form.get('body', '').strip()
+        crew_ids = request.form.getlist('crew_ids')
+        if not crew_ids or 'ALL' in crew_ids:
+            target_crews = assigned_crews
+        else:
+            target_crews = [c for c in assigned_crews if str(c.id) in crew_ids]
+
+        sent_count = 0
+        for cr in target_crews:
+            msg = Message(
+                sender_id=cli.id,
+                recipient_id=cr.id,
+                subject=subject or 'Instruction from Nominated CLI',
+                body=body,
+                status='SENT_TO_CREW'
+            )
+            db.session.add(msg)
+            sent_count += 1
+        db.session.commit()
+        flash(f"✅ Directive sent to {sent_count} running crew member(s).", "success")
+        return redirect(url_for('supervisor.dashboard'))
+
+    return render_template('supervisor/instruct_crews.html', cli=cli, crews=assigned_crews)
 
 @supervisor_bp.route('/messages/<int:message_id>/action', methods=['POST'])
 def action_message(message_id):

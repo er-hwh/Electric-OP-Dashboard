@@ -8,7 +8,7 @@ from database import db
 from models import (
     Lobby, Notice, CounsellingTopic, CounsellingAcknowledgement,
     OfficerSay, ELearningRule, PhotoGallery, User,
-    SafetyBulletin, RuleDocument, LearningMaterial, PageContent, CarouselSlide
+    SafetyBulletin, RuleDocument, LearningMaterial, PageContent, CarouselSlide, VisitCounter
 )
 
 public_bp = Blueprint('public', __name__)
@@ -153,6 +153,8 @@ def get_lobby_strength_data():
 
 @public_bp.route('/')
 def index():
+    # Record visit & retrieve stats
+    visit_stats = VisitCounter.record_visit()
     # Fetch active carousel slides
     slides = CarouselSlide.query.filter_by(is_active=True).order_by(CarouselSlide.display_order).all()
     # Fetch active notices
@@ -183,7 +185,8 @@ def index():
         strength_summary=strength_summary,
         crew_count=crew_count,
         cli_count=cli_count,
-        clis=clis
+        clis=clis,
+        visit_stats=visit_stats
     )
 
 

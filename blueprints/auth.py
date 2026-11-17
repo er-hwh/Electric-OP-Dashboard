@@ -110,6 +110,12 @@ def admin_required(f):
     return decorated_function
 
 
+@auth_bp.route('/admin/login')
+@auth_bp.route('/admin-login')
+def admin_login_alias():
+    return redirect(url_for('auth.login', role='admin'))
+
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
@@ -286,59 +292,8 @@ def redirect_by_role(user):
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    lobbies = Lobby.query.order_by(Lobby.code).all()
-    clis = User.query.filter_by(role='supervisor', sub_role='CLI').all()
-    
-    if request.method == 'POST':
-        full_name = request.form.get('full_name', '').strip()
-        mobile = request.form.get('mobile', '').strip()
-        pf_number = request.form.get('pf_number', '').strip()
-        hrms_id = request.form.get('hrms_id', '').strip()
-        designation = request.form.get('designation', '').strip()
-        lobby_id = request.form.get('lobby_id')
-        cli_id = request.form.get('cli_id')
-        password = request.form.get('password', '12345').strip()
-
-        if not full_name or not mobile or not designation or not lobby_id:
-            flash('Please fill in all mandatory fields (Name, Mobile, Designation, Lobby).', 'danger')
-            return render_template('auth/register.html', lobbies=lobbies, clis=clis)
-
-        # Strict validation: exactly 10 digits, no country code 91
-        clean_mob = ''.join(c for c in mobile if c.isdigit())
-        if len(clean_mob) == 12 and clean_mob.startswith('91'):
-            clean_mob = clean_mob[2:]
-        if len(clean_mob) != 10:
-            flash('Mobile number must contain exactly 10 digits. Country code 91 must not be included.', 'danger')
-            return render_template('auth/register.html', lobbies=lobbies, clis=clis)
-
-        # Check existing mobile or PF
-        existing = User.query.filter((User.username == clean_mob) | (User.mobile == clean_mob)).first()
-        if existing:
-            flash(f'A user with mobile number {clean_mob} already exists. Please login.', 'warning')
-            return redirect(url_for('auth.login'))
-
-        # Create new running crew user
-        new_crew = User(
-            username=clean_mob,
-            role='crew',
-            sub_role=designation,
-            full_name=full_name,
-            mobile=clean_mob,
-            pf_number=pf_number,
-            hrms_id=hrms_id,
-            lobby_id=int(lobby_id) if lobby_id else None,
-            cli_id=int(cli_id) if cli_id else None,
-            is_active=True,  # Pre-activated as instructed
-            password_must_change=(password == '12345')
-        )
-        new_crew.set_password(password)
-        db.session.add(new_crew)
-        db.session.commit()
-
-        flash('Registration successful! You can now log in using your Mobile Number.', 'success')
-        return redirect(url_for('auth.login'))
-
-    return render_template('auth/register.html', lobbies=lobbies, clis=clis)
+    flash('Crew self-registration is disabled. Running staff accounts are imported directly from weekly CMS data. Please log in with your CMS ID or Mobile number.', 'info')
+    return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/change-password', methods=['GET', 'POST'])
